@@ -27,7 +27,7 @@ public class DownloadService {
 				URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
 				url = uri.toURL();
 			}
-			log.debug("URL:" + url.toString());
+			log.debug("URL: " + url.toString());
 			return Optional.of(IOUtils.toString(url, "UTF-8"));
 		} catch(MalformedURLException | URISyntaxException e) {
 			log.error("URL malformed.", e);
@@ -49,7 +49,7 @@ public class DownloadService {
 				URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
 				url = uri.toURL();
 			}
-			log.debug("URL:" + url.toString());
+			log.debug("URL: " + url.toString());
 			final File dest = new File(destFile);
 			if(!dest.getParentFile().exists()) {
 				if(!dest.getParentFile().mkdirs()) {

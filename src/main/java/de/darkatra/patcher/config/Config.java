@@ -6,8 +6,8 @@ import org.springframework.stereotype.Component;
 
 @Data
 @Component
-@ConfigurationProperties(prefix = "patcherconfig")
+@ConfigurationProperties(prefix = "patcherConfig")
 public class Config {
 	private String serverUrl;
-	private String patchlistPath;
+	private String patchListPath;
 }

@@ -1,9 +1,9 @@
 logging:
   level.de.darkatra: info
 
-patcherconfig:
-  server-url: https://darkatra.de
-  patchlist-path: bfmemod/version.txt
+patcherConfig:
+  serverUrl: https://darkatra.de
+  patchListPath: bfmemod/version.txt
 ---
 logging:
   level.de.darkatra: debug

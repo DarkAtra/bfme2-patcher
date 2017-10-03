@@ -18,10 +18,10 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class PatchController {
-	private Config config;
-	private DownloadService downloadService;
-	private HashingService hashingService;
-	private PatchBuilder patchBuilder;
+	private final Config config;
+	private final DownloadService downloadService;
+	private final HashingService hashingService;
+	private final PatchBuilder patchBuilder;
 
 	@Autowired
 	public PatchController(Config config, DownloadService downloadService, HashingService hashingService, PatchBuilder patchBuilder) {
@@ -34,7 +34,7 @@ public class PatchController {
 	public void initializePatch() {
 		URL url = null;
 		try {
-			url = new URL(new URL(config.getServerUrl()), config.getPatchlistPath());
+			url = new URL(new URL(config.getServerUrl()), config.getPatchListPath());
 			{
 				URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
 				url = uri.toURL();

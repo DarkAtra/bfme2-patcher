@@ -40,7 +40,7 @@ public class HashingServiceTest {
 
 	@Test
 	public void testValidGetSHA3Checksum() throws Exception {
-		final File file = new File(HashingServiceTest.class.getResource("/hashtest.txt").toURI());
+		final File file = new File(HashingServiceTest.class.getResource("/hashTest.txt").toURI());
 		final String hash = "7yNeiW9BCjmMGlEjV8GLsb0Uf06LUXTvHwsM0MhTcmI=";
 
 		final Optional<String> checksum = hashingService.getSHA3Checksum(file);
