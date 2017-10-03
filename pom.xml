@@ -8,7 +8,8 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>patcher</name>
+	<name>Patcher</name>
+	<description>An application that keeps track of a programs version and updates the programs files when needed.</description>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
