@@ -2,6 +2,7 @@ package de.darkatra.patcher.service;
 
 import com.google.gson.Gson;
 import de.darkatra.patcher.model.Patch;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +17,7 @@ public class PatchBuilder {
 		this.gson = gson;
 	}
 
-	public Optional<Patch> patchOf(String json) {
+	public Optional<Patch> patchOf(@NotNull String json) {
 		try {
 			return Optional.of(gson.fromJson(json, Patch.class));
 		} catch(Exception e) {
