@@ -83,6 +83,9 @@ public class PatchController {
 
 				final long totalPatchSize = tempPatchSize;
 				for(Packet packet : packets) {
+					if(Thread.currentThread().isInterrupted()) {
+						return;
+					}
 					File localFile = new File(packet.getDest());
 					LongProperty curProgress = new SimpleLongProperty(0);
 					downloadService.downloadFile(packet.getSrc(), packet.getDest(), progress->{

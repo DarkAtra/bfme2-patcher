@@ -1,0 +1,39 @@
+.root {
+	-fx-faint-focus-color: transparent;
+	-fx-focus-color: #999;
+}
+
+.fade-in, .fade-out {
+	-fx-background-color: transparent;
+	-fx-background-repeat: stretch;
+	-fx-background-size: stretch;
+	-fx-background-position: center center;
+}
+
+/* Progress Bar */
+.progress-bar > .track {
+	-fx-background-color: -fx-outer-border, -fx-inner-border, -fx-body-color;
+	-fx-background-insets: 0, 1, 2;
+	-fx-background-radius: 2;
+}
+
+.progress-bar > .bar {
+	-fx-background-color: #4caf50;
+	-fx-background-insets: 0;
+	-fx-background-radius: 2;
+}
+
+/* Button */
+.button {
+	-fx-cursor: hand;
+	-fx-background-color: -fx-outer-border, -fx-inner-border, -fx-body-color;
+	-fx-background-insets: 0, 1, 2;
+	-fx-background-radius: 2, 2, 2;
+}
+
+.button:disabled {
+	-fx-opacity: 1;
+	-fx-background-color: -fx-outer-border, -fx-outer-border, -fx-outer-border;
+	-fx-background-insets: 0, 1, 2;
+	-fx-background-radius: 2, 2, 2;
+}
