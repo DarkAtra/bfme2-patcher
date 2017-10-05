@@ -43,7 +43,7 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 	@FXML
 	private Button toggleModButton;
 
-	ParallelTransition fadeBackgroundTransition;
+	private ParallelTransition fadeBackgroundTransition;
 	private int currentImage = 0;
 	private String[] imagePaths;
 	private AsyncTask patchTask;
