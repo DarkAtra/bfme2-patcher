@@ -37,7 +37,7 @@ public class DownloadService {
 		return Optional.empty();
 	}
 
-	public boolean downloadFile(@NotNull String srcFile, @NotNull String destFile, @Nullable Consumer<Long> listener) {
+	public boolean downloadFile(@NotNull String srcFile, @NotNull String destFile, @Nullable Consumer<Integer> listener) {
 		if(Thread.currentThread().isInterrupted()) {
 			return false;
 		}
@@ -70,7 +70,7 @@ public class DownloadService {
 						return false;
 					}
 					if(listener != null) {
-						listener.accept((long) count);
+						listener.accept(count);
 					}
 				}
 			} catch(Exception e) {

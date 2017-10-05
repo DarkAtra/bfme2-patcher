@@ -8,7 +8,8 @@ import java.time.LocalDateTime;
 public class Packet {
 	private final String src;
 	private final String dest;
+	private final Long packetSize;
 	private final LocalDateTime dateTime;
 	private final String checksum;
-	private boolean backupExisting;
+	private final boolean backupExisting;
 }

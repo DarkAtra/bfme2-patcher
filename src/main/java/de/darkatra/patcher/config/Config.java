@@ -9,5 +9,6 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "patcherConfig")
 public class Config {
 	private String serverUrl;
+	private String patchFilesFolderPath;
 	private String patchListPath;
 }
