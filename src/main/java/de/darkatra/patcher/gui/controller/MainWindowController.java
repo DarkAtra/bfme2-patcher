@@ -181,6 +181,7 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 	}
 
 	public void onExit() {
+		AsyncExecutionService.getInstance().interruptAsyncTask(patchTask);
 		AsyncExecutionService.getInstance().interruptAsyncTask(this);
 	}
 }
