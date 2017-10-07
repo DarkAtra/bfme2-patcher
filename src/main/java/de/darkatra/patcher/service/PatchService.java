@@ -29,7 +29,9 @@ public class PatchService {
 
 	public Optional<Patch> patchOf(@NotNull String json) {
 		try {
-			return Optional.of(gson.fromJson(json, Patch.class));
+			final Patch patch = gson.fromJson(json, Patch.class);
+			patch.getPackets().stream().map(Packet::getDest).forEach(dest->patch.getFileIndex().add(dest));
+			return Optional.of(patch);
 		} catch(Exception e) {
 			return Optional.empty();
 		}

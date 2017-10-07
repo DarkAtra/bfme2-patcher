@@ -28,14 +28,28 @@ public class PatchServiceTest {
 
 	@Test
 	public void testValidPatchOf() throws Exception {
-		final String json = "{\"packets\":[],\"version\":{\"majorVersion\":0,\"minorVersion\":0,\"buildVersion\":0}}";
+		final String json = "{\"fileIndex\":[\"File\"],\"packets\":[],\"version\":{\"majorVersion\":0,\"minorVersion\":0,\"buildVersion\":0}}";
 		final Version v0 = new Version(0, 0, 0);
 
 		final Optional<Patch> result = patchService.patchOf(json);
 
 		assertTrue(result.isPresent());
-		assertTrue(result.get().getPackets().isEmpty());
 		assertEquals(result.get().getVersion(), v0);
+		assertFalse(result.get().getFileIndex().isEmpty());
+		assertTrue(result.get().getPackets().isEmpty());
+	}
+
+	@Test
+	public void testValidPatchOfFileIndex() throws Exception {
+		final String json = "{\"fileIndex\":[],\"packets\":[{\"dest\":\"Test\"}],\"version\":{\"majorVersion\":0,\"minorVersion\":0,\"buildVersion\":0}}";
+		final Version v0 = new Version(0, 0, 0);
+
+		final Optional<Patch> result = patchService.patchOf(json);
+
+		assertTrue(result.isPresent());
+		assertEquals(result.get().getVersion(), v0);
+		assertFalse(result.get().getFileIndex().isEmpty());
+		assertFalse(result.get().getPackets().isEmpty());
 	}
 
 	@Test
@@ -60,10 +74,10 @@ public class PatchServiceTest {
 
 		assertEquals(patch.getVersion(), contextualPatch.getVersion());
 		assertFalse(contextualPatch.getPackets().isEmpty());
-		assertEquals(value, contextualPatch.getPackets().get(0).getSrc());
-		assertEquals(value, contextualPatch.getPackets().get(0).getDest());
-		assertEquals(patch.getPackets().get(0).getChecksum(), contextualPatch.getPackets().get(0).getChecksum());
-		assertEquals(patch.getPackets().get(0).getPacketSize(), contextualPatch.getPackets().get(0).getPacketSize());
-		assertEquals(patch.getPackets().get(0).getDateTime(), contextualPatch.getPackets().get(0).getDateTime());
+		assertEquals(value, contextualPatch.getPackets().iterator().next().getSrc());
+		assertEquals(value, contextualPatch.getPackets().iterator().next().getDest());
+		assertEquals(patch.getPackets().iterator().next().getChecksum(), contextualPatch.getPackets().iterator().next().getChecksum());
+		assertEquals(patch.getPackets().iterator().next().getPacketSize(), contextualPatch.getPackets().iterator().next().getPacketSize());
+		assertEquals(patch.getPackets().iterator().next().getDateTime(), contextualPatch.getPackets().iterator().next().getDateTime());
 	}
 }

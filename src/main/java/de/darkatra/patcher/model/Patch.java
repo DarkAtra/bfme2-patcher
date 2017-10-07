@@ -3,11 +3,12 @@ package de.darkatra.patcher.model;
 import com.google.common.collect.Constraints;
 import lombok.Data;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 public class Patch {
-	private final List<Packet> packets = Constraints.constrainedList(new ArrayList<>(), Constraints.notNull());
+	private final Set<String> fileIndex = Constraints.constrainedSet(new HashSet<>(), Constraints.notNull());
+	private final Set<Packet> packets = Constraints.constrainedSet(new HashSet<>(), Constraints.notNull());
 	private final Version version;
 }

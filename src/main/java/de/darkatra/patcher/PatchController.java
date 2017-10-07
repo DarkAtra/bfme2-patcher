@@ -20,8 +20,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -41,11 +43,15 @@ public class PatchController {
 		this.patchService = patchService;
 	}
 
-	public void patch(PatchEventListener patchEventListener) throws IOException, URISyntaxException, ValidationException {
+	public void patch(PatchEventListener patchEventListener) throws IOException, URISyntaxException, ValidationException, InterruptedException {
 		URL url = new URL(new URL(config.getServerUrl()), config.getPatchListPath());
 		{
 			URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
 			url = uri.toURL();
+		}
+
+		if(Thread.currentThread().isInterrupted()) {
+			throw new InterruptedException("Patching thread was interrupted.");
 		}
 
 		final Optional<String> urlContent = downloadService.getURLContent(url.toString());
@@ -59,22 +65,33 @@ public class PatchController {
 				// TODO: patcher requires update?
 				// patchEventListener.onPatcherNeedsUpdate();
 
-				// TODO: delete files
-				// patchEventListener.onFilesDeleted();
+				// delete files
+				final List<String> filesToDelete = patch.getFileIndex().stream().filter(p->patch.getPackets().stream().noneMatch(p2->p.equals(p2.getDest()))).collect(Collectors.toList());
+				for(String file : filesToDelete) {
+					if(Thread.currentThread().isInterrupted()) {
+						throw new InterruptedException("Patching thread was interrupted.");
+					}
+					File f = new File(file);
+					if(f.exists()) {
+						if(!f.delete()) {
+							throw new IOException("Could not delete the file: " + f.getAbsolutePath());
+						}
+					}
+				}
+				patchEventListener.onFilesDeleted();
 
 				// calculate differences, download, validate
 				long tempPatchSize = 0L;
-				final List<Packet> packets = patch.getPackets();
-				for(int i = 0; i < packets.size(); i++) {
-					Packet packet = packets.get(i);
+				final Iterator<Packet> packets = patch.getPackets().iterator();
+				for(Packet packet; packets.hasNext(); ) {
+					packet = packets.next();
 					if(Thread.currentThread().isInterrupted()) {
-						return;
+						throw new InterruptedException("Patching thread was interrupted.");
 					}
 					File localFile = new File(packet.getDest());
 					final Optional<String> fileChecksum = hashingService.getSHA3Checksum(localFile);
 					if(fileChecksum.isPresent() && fileChecksum.get().equals(packet.getChecksum())) {
-						packets.remove(packet);
-						i--;
+						packets.remove();
 					} else {
 						tempPatchSize += packet.getPacketSize();
 					}
@@ -82,16 +99,17 @@ public class PatchController {
 				patchEventListener.onDifferencesCalculated();
 
 				final long totalPatchSize = tempPatchSize;
-				for(Packet packet : packets) {
+				final LongProperty curProgress = new SimpleLongProperty(0);
+				for(Packet packet : patch.getPackets()) {
 					if(Thread.currentThread().isInterrupted()) {
-						return;
+						throw new InterruptedException("Patching thread was interrupted.");
 					}
 					File localFile = new File(packet.getDest());
-					LongProperty curProgress = new SimpleLongProperty(0);
 					downloadService.downloadFile(packet.getSrc(), packet.getDest(), progress->{
 						curProgress.setValue(curProgress.getValue() + progress);
 						patchEventListener.onPatchProgressChanged(curProgress.getValue(), totalPatchSize);
 					});
+					patchEventListener.onValidatingPacket();
 					if(!hashingService.getSHA3Checksum(localFile).map(checksum->checksum.equals(packet.getChecksum())).orElse(false)) {
 						throw new ValidationException("The checksum specified by the server is not equal to the the downloaded files checksum.");
 					}

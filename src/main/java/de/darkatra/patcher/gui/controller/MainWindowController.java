@@ -82,11 +82,16 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 			try {
 				patchController.patch(this);
 			} catch(IOException e) {
-				GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Update error", "There was an error downloading the update. Try to rerun this application with admin privileges.").show();
+				log.debug("IOException", e);
+				Platform.runLater(()->GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Update error", "There was an error downloading the update. Try to rerun this application with admin privileges.").show());
 			} catch(URISyntaxException e) {
-				GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Unexpected application error", "There was an unexpected error reading the application config. Please try again later.").show();
+				log.debug("URISyntaxException", e);
+				Platform.runLater(()->GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Unexpected application error", "There was an unexpected error reading the application config. Please try again later.").show());
 			} catch(ValidationException e) {
-				GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Validation error", "Could not validate the update. Some files may have been changed by another application.").show();
+				log.debug("ValidationException", e);
+				Platform.runLater(()->GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Validation error", "Could not validate the update. Some files may have been changed by another application.").show());
+			} catch(InterruptedException e) {
+				log.debug("InterruptedException", e);
 			}
 			return true;
 		};
@@ -215,12 +220,17 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 	@Override
 	public void onPatchDone() {
 		Platform.runLater(()->{
-			patchProgressLabel.setText("Downloaded the patch.");
+			patchProgressLabel.setText("Ready to start the game.");
 			updateButton.setText("Start Game");
 			updateButton.setOnMouseClicked(e->{
 				// TODO: start the game
 			});
 		});
+	}
+
+	@Override
+	public void onValidatingPacket() {
+		Platform.runLater(()->patchProgressLabel.setText("Validating the packet..."));
 	}
 
 	@Override

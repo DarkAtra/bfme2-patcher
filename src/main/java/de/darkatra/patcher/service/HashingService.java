@@ -22,12 +22,15 @@ public class HashingService {
 	 *
 	 * @throws IOException if there was an error reading the file
 	 */
-	public Optional<String> getSHA3Checksum(@NotNull File file) throws IOException {
+	public Optional<String> getSHA3Checksum(@NotNull File file) throws IOException, InterruptedException {
 		if(file.isFile()) {
 			final SHA3.Digest256 sha3Digest = new SHA3.Digest256();
 			try(final FileInputStream fileInputStream = new FileInputStream(file)) {
 				byte[] buffer = new byte[1024];
 				for(int currentChar; (currentChar = fileInputStream.read(buffer)) != -1; ) {
+					if(Thread.currentThread().isInterrupted()) {
+						throw new InterruptedException("Hashing thread was stopped.");
+					}
 					sha3Digest.update(buffer, 0, currentChar);
 				}
 			}

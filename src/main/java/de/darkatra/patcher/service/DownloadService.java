@@ -37,9 +37,9 @@ public class DownloadService {
 		return Optional.empty();
 	}
 
-	public boolean downloadFile(@NotNull String srcFile, @NotNull String destFile, @Nullable Consumer<Integer> listener) {
+	public boolean downloadFile(@NotNull String srcFile, @NotNull String destFile, @Nullable Consumer<Integer> listener) throws InterruptedException {
 		if(Thread.currentThread().isInterrupted()) {
-			return false;
+			throw new InterruptedException("Downloading thread was interrupted.");
 		}
 		try {
 			log.debug("Downloading: " + srcFile);
@@ -67,12 +67,14 @@ public class DownloadService {
 				while((count = downloadStream.read(buffer, 0, buffer.length)) != -1) {
 					fileOut.write(buffer, 0, count);
 					if(Thread.currentThread().isInterrupted()) {
-						return false;
+						throw new InterruptedException("Downloading thread was interrupted.");
 					}
 					if(listener != null) {
 						listener.accept(count);
 					}
 				}
+			} catch(InterruptedException e) {
+				throw e;
 			} catch(Exception e) {
 				log.error("Exception while downloading a file:", e);
 				return false;

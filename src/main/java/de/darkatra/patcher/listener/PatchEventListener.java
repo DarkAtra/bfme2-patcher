@@ -16,4 +16,6 @@ public interface PatchEventListener {
 	void onPatchDone();
 
 	void onPatchProgressChanged(long current, long target);
+
+	void onValidatingPacket();
 }

@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 import static org.powermock.api.support.membermodification.MemberMatcher.constructor;
 import static org.powermock.api.support.membermodification.MemberModifier.suppress;
+import org.assertj.core.api.ThrowableAssert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -67,6 +68,8 @@ public class HashingServiceTest {
 		final File file = mock(File.class);
 		when(file.isFile()).thenReturn(true);
 
-		assertThatThrownBy(()->hashingService.getSHA3Checksum(file)).isInstanceOf(IOException.class);
+		final ThrowableAssert.ThrowingCallable operation = ()->hashingService.getSHA3Checksum(file);
+
+		assertThatThrownBy(operation).isInstanceOf(IOException.class);
 	}
 }
