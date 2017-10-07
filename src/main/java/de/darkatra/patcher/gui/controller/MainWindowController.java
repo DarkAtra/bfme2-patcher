@@ -64,11 +64,11 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 	@FXML
 	private MenuItem fixBfME2EP1MenuItem;
 
+	private final ParallelTransition fadeBackgroundTransition;
+	private final String[] imagePaths;
+	private final AsyncTask patchTask;
 	private GUIApplication guiApplication;
-	private ParallelTransition fadeBackgroundTransition;
 	private int currentImage = 0;
-	private String[] imagePaths;
-	private AsyncTask patchTask;
 
 	public MainWindowController() {
 		imagePaths = new String[] {
