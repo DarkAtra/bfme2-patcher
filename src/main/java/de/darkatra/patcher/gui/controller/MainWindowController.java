@@ -83,13 +83,25 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 				patchController.patch(this);
 			} catch(IOException e) {
 				log.debug("IOException", e);
-				Platform.runLater(()->GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Update error", "There was an error downloading the update. Try to rerun this application with admin privileges.").show());
+				Platform.runLater(()->{
+					patchProgressBar.setProgress(0);
+					patchProgressLabel.setText("Update failed. Please try again later.");
+					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Update error", "There was an error downloading the update. Try to rerun this application with admin privileges.").show();
+				});
 			} catch(URISyntaxException e) {
 				log.debug("URISyntaxException", e);
-				Platform.runLater(()->GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Unexpected application error", "There was an unexpected error reading the application config. Please try again later.").show());
+				Platform.runLater(()->{
+					patchProgressBar.setProgress(0);
+					patchProgressLabel.setText("Update failed. Please try again later.");
+					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Unexpected application error", "There was an unexpected error reading the application config. Please try again later.").show();
+				});
 			} catch(ValidationException e) {
 				log.debug("ValidationException", e);
-				Platform.runLater(()->GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Validation error", "Could not validate the update. Some files may have been changed by another application.").show());
+				Platform.runLater(()->{
+					patchProgressBar.setProgress(0);
+					patchProgressLabel.setText("Update failed. Please try again later.");
+					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Validation error", "Could not validate the update. Some files may have been changed by another application.").show();
+				});
 			} catch(InterruptedException e) {
 				log.debug("InterruptedException", e);
 			}
