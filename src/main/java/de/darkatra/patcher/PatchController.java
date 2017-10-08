@@ -1,6 +1,7 @@
 package de.darkatra.patcher;
 
 import de.darkatra.patcher.config.Config;
+import de.darkatra.patcher.exception.ContextConfigurationException;
 import de.darkatra.patcher.exception.ValidationException;
 import de.darkatra.patcher.listener.PatchEventListener;
 import de.darkatra.patcher.model.Context;
@@ -43,7 +44,7 @@ public class PatchController {
 		this.patchService = patchService;
 	}
 
-	public void patch(PatchEventListener patchEventListener) throws IOException, URISyntaxException, ValidationException, InterruptedException {
+	public void patch(PatchEventListener patchEventListener) throws IOException, URISyntaxException, ValidationException, InterruptedException, ContextConfigurationException {
 		URL url = new URL(new URL(config.getServerUrl()), config.getPatchListPath());
 		{
 			URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
@@ -62,8 +63,18 @@ public class PatchController {
 				final Patch patch = patchService.applyContextToPatch(context, patchOptional.get());
 				patchEventListener.onServerPatchlistRead();
 
-				// TODO: patcher requires update?
-				// patchEventListener.onPatcherNeedsUpdate();
+				final Optional<String> patcherUserDir = context.getString("patcherUserDir");
+				if(patcherUserDir.isPresent()) {
+					final String patcherUserDirPath = patcherUserDir.get();
+					File patcherJar = new File(patcherUserDirPath + "/Patcher.jar");
+					if(patch.getPackets().stream().anyMatch(packet->packet.getDest().equalsIgnoreCase(patcherJar.getAbsolutePath()))) {
+						patchEventListener.onPatcherNeedsUpdate(true);
+						return;
+					}
+				} else {
+					throw new ContextConfigurationException("patcherUserDir was not configured");
+				}
+				patchEventListener.onPatcherNeedsUpdate(false);
 
 				// delete files
 				final List<String> filesToDelete = patch.getFileIndex().stream().filter(p->patch.getPackets().stream().noneMatch(p2->p.equals(p2.getDest()))).collect(Collectors.toList());

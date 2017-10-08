@@ -5,7 +5,7 @@ public interface PatchEventListener {
 
 	void onServerPatchlistRead();
 
-	void onPatcherNeedsUpdate();
+	void onPatcherNeedsUpdate(boolean requiresUpdate);
 
 	void onDifferencesCalculated();
 

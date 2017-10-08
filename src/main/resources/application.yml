@@ -3,7 +3,7 @@ logging:
 
 patcherConfig:
   serverUrl: https://darkatra.de
-  patchFilesFolderPath: bfmemod/
+  patchFilesFolderPath: bfmemod
   patchListPath: bfmemod/version.txt
 ---
 logging:

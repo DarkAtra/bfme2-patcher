@@ -1,6 +1,8 @@
 package de.darkatra.patcher.gui.controller;
 
+import de.darkatra.patcher.ApplicationConstant;
 import de.darkatra.patcher.PatchController;
+import de.darkatra.patcher.exception.ContextConfigurationException;
 import de.darkatra.patcher.exception.ValidationException;
 import de.darkatra.patcher.gui.GUIApplication;
 import de.darkatra.patcher.listener.PatchEventListener;
@@ -9,8 +11,12 @@ import de.darkatra.patcher.service.OptionFileService;
 import de.darkatra.util.asyncapi.AsyncExecutionService;
 import de.darkatra.util.asyncapi.AsyncTask;
 import javafx.animation.FadeTransition;
+import javafx.animation.KeyFrame;
 import javafx.animation.ParallelTransition;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -65,6 +71,7 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 	private MenuItem fixBfME2EP1MenuItem;
 
 	private final ParallelTransition fadeBackgroundTransition;
+	private final Timeline updateCountdownTimeline;
 	private final String[] imagePaths;
 	private final AsyncTask patchTask;
 	private GUIApplication guiApplication;
@@ -78,6 +85,18 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 				"/images/splash13_1920x1080.jpg"
 		};
 		fadeBackgroundTransition = new ParallelTransition();
+		IntegerProperty secondsLeft = new SimpleIntegerProperty(5);
+		updateCountdownTimeline = new Timeline();
+		updateCountdownTimeline.setCycleCount(Timeline.INDEFINITE);
+		updateCountdownTimeline.getKeyFrames().add(new KeyFrame(Duration.seconds(1), event->{
+			secondsLeft.setValue(secondsLeft.getValue() - 1);
+			patchProgressLabel.setText("Patcher requires an update. Updating application in " + secondsLeft.getValue() + " seconds.");
+			if(secondsLeft.getValue() <= 0) {
+				updateCountdownTimeline.stop();
+				Platform.exit();
+				System.exit(ApplicationConstant.REQUIRES_UPDATE_EXIT_CODE);
+			}
+		}));
 		patchTask = ()->{
 			try {
 				patchController.patch(this);
@@ -101,6 +120,13 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 					patchProgressBar.setProgress(0);
 					patchProgressLabel.setText("Update failed. Please try again later.");
 					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Validation error", "Could not validate the update. Some files may have been changed by another application.").show();
+				});
+			} catch(ContextConfigurationException e) {
+				log.debug("ContextConfigurationException", e);
+				Platform.runLater(()->{
+					patchProgressBar.setProgress(0);
+					patchProgressLabel.setText("Update failed. Please try again later.");
+					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Configuration error", "Update failed due to an unexpected configuration error.").show();
 				});
 			} catch(InterruptedException e) {
 				log.debug("InterruptedException", e);
@@ -207,8 +233,15 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 	}
 
 	@Override
-	public void onPatcherNeedsUpdate() {
-		Platform.runLater(()->patchProgressLabel.setText("Patcher requires an update."));
+	public void onPatcherNeedsUpdate(boolean requiresUpdate) {
+		if(requiresUpdate) {
+			Platform.runLater(()->{
+				patchProgressBar.setProgress(0);
+				updateCountdownTimeline.playFromStart();
+			});
+		} else {
+			// TODO: close the launcher application via msg
+		}
 	}
 
 	@Override
@@ -218,7 +251,7 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 
 	@Override
 	public void onFilesDeleted() {
-		// Nothing yet
+		Platform.runLater(()->patchProgressLabel.setText("Deleted obsolete files."));
 	}
 
 	@Override
