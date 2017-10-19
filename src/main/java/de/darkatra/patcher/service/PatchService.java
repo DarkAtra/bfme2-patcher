@@ -55,6 +55,19 @@ public class PatchService {
 			dest = Paths.get(dest).normalize().toString();
 			returnPatch.getPackets().add(new Packet(src, dest, packet.getPacketSize(), packet.getDateTime(), packet.getChecksum(), packet.isBackupExisting()));
 		}
+		for(String destToRemove : patch.getFileIndex()) {
+			for(String key : context.keySet()) {
+				final Optional<String> value = context.getString(key);
+				if(value.isPresent()) {
+					destToRemove = destToRemove.replace(prefix + key + suffix, value.get());
+				} else {
+					log.error("Unexpected Error while applying the context {} for patch {}", context, patch);
+				}
+			}
+			// normalize windows path
+			destToRemove = Paths.get(destToRemove).normalize().toString();
+			returnPatch.getFileIndex().add(destToRemove);
+		}
 		return returnPatch;
 	}
 }
