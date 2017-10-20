@@ -8,7 +8,7 @@
 	<packaging>jar</packaging>
 
 	<name>Updater</name>
-	<description>An application that keeps track of a programs version and updates the programs files when needed.</description>
+	<description>An application that keeps track of another applications version and updates that application when needed.</description>
 
 	<parent>
 		<groupId>de.darkatra</groupId>

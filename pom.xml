@@ -9,7 +9,7 @@
 	<packaging>pom</packaging>
 
 	<name>Patcher</name>
-	<description>A project of applications to update files on a remote system.</description>
+	<description>This project provides tools to update another application.</description>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
