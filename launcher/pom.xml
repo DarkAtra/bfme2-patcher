@@ -3,12 +3,12 @@
 		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>update-builder</artifactId>
+	<artifactId>launcher</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>Update-Builder</name>
-	<description>An application that builds the version.txt for the updater.</description>
+	<name>Launcher</name>
+	<description>Launches and updates the Updater.</description>
 
 	<parent>
 		<groupId>de.darkatra</groupId>
@@ -28,12 +28,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
-		<!-- SHA-3 -->
-		<dependency>
-			<groupId>org.bouncycastle</groupId>
-			<artifactId>bcprov-jdk15on</artifactId>
-			<version>1.56</version>
-		</dependency>
 		<!-- Apache Commons -->
 		<dependency>
 			<groupId>commons-io</groupId>
@@ -51,16 +45,6 @@
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
 			<version>2.8.2</version>
-		</dependency>
-		<!-- Windows Registry Reader/Writer -->
-		<dependency>
-			<groupId>net.java.dev.jna</groupId>
-			<artifactId>jna-platform</artifactId>
-			<version>4.2.2</version>
-		</dependency>
-		<dependency>
-			<groupId>de.darkatra.util</groupId>
-			<artifactId>AsyncExecutionFramework</artifactId>
 		</dependency>
 
 		<!-- Optional/Provided -->

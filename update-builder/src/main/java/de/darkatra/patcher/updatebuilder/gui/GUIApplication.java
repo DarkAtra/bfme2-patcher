@@ -1,4 +1,4 @@
-package de.darkatra.patcher.updatebuilder;
+package de.darkatra.patcher.updatebuilder.gui;
 
 import javafx.application.Application;
 import javafx.stage.Stage;

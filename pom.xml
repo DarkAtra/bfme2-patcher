@@ -37,6 +37,7 @@
 	</dependencyManagement>
 
 	<modules>
+		<module>launcher</module>
 		<module>updater</module>
 		<module>update-builder</module>
 	</modules>

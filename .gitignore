@@ -169,5 +169,6 @@ hs_err_pid*
 
 .idea/
 patcher.iml
+launcher/launcher.iml
 updater/updater.iml
 update-builder/update-builder.iml
