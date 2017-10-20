@@ -116,13 +116,16 @@ public class PatchController {
 						throw new InterruptedException("Patching thread was interrupted.");
 					}
 					File localFile = new File(packet.getDest());
-					downloadService.downloadFile(packet.getSrc(), packet.getDest(), progress->{
+					if(downloadService.downloadFile(packet.getSrc(), packet.getDest(), progress->{
 						curProgress.setValue(curProgress.getValue() + progress);
 						patchEventListener.onPatchProgressChanged(curProgress.getValue(), totalPatchSize);
-					});
-					patchEventListener.onValidatingPacket();
-					if(!hashingService.getSHA3Checksum(localFile).map(checksum->checksum.equals(packet.getChecksum())).orElse(false)) {
-						throw new ValidationException("The checksum specified by the server is not equal to the the downloaded files checksum.");
+					})) {
+						patchEventListener.onValidatingPacket();
+						if(!hashingService.getSHA3Checksum(localFile).map(checksum->checksum.equals(packet.getChecksum())).orElse(false)) {
+							throw new ValidationException("The checksum specified by the server is not equal to the the downloaded files checksum.");
+						}
+					} else {
+						throw new IOException("Could not download " + url.toString());
 					}
 				}
 				patchEventListener.onPacketsDownloaded();
