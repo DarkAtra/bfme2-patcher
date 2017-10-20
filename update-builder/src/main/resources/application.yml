@@ -1,0 +1,7 @@
+logging:
+  level.de.darkatra: info
+---
+logging:
+  level.de.darkatra: debug
+spring:
+  profiles: dev
