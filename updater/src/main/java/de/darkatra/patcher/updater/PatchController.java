@@ -55,13 +55,15 @@ public class PatchController {
 			throw new InterruptedException("Patching thread was interrupted.");
 		}
 
+		patchEventListener.preDownloadServerPatchlist();
 		final Optional<String> urlContent = downloadService.getURLContent(url.toString());
-		patchEventListener.onServerPatchlistDownloaded();
+		patchEventListener.postDownloadServerPatchlist();
 		if(urlContent.isPresent()) {
+			patchEventListener.preReadServerPatchlist();
 			final Optional<Patch> patchOptional = patchService.patchOf(urlContent.get());
 			if(patchOptional.isPresent()) {
 				final Patch patch = patchService.applyContextToPatch(context, patchOptional.get());
-				patchEventListener.onServerPatchlistRead();
+				patchEventListener.postReadServerPatchlist();
 
 				final Optional<String> patcherUserDir = context.getString("patcherUserDir");
 				if(patcherUserDir.isPresent()) {
@@ -77,6 +79,7 @@ public class PatchController {
 				patchEventListener.onPatcherNeedsUpdate(false);
 
 				// delete files
+				patchEventListener.preDeleteFiles();
 				final List<String> filesToDelete = patch.getFileIndex().stream().filter(p->patch.getPackets().stream().noneMatch(p2->p.equals(p2.getDest()))).collect(Collectors.toList());
 				for(String file : filesToDelete) {
 					if(Thread.currentThread().isInterrupted()) {
@@ -89,9 +92,10 @@ public class PatchController {
 						}
 					}
 				}
-				patchEventListener.onFilesDeleted();
+				patchEventListener.postDeleteFiles();
 
 				// calculate differences, download, validate
+				patchEventListener.preCalculateDifferences();
 				long tempPatchSize = 0L;
 				final Iterator<Packet> packets = patch.getPackets().iterator();
 				for(Packet packet; packets.hasNext(); ) {
@@ -107,8 +111,9 @@ public class PatchController {
 						tempPatchSize += packet.getPacketSize();
 					}
 				}
-				patchEventListener.onDifferencesCalculated();
+				patchEventListener.postCalculateDifferences();
 
+				patchEventListener.prePacketsDownload();
 				final long totalPatchSize = tempPatchSize;
 				final LongProperty curProgress = new SimpleLongProperty(0);
 				for(Packet packet : patch.getPackets()) {
@@ -118,7 +123,7 @@ public class PatchController {
 					File localFile = new File(packet.getDest());
 					if(downloadService.downloadFile(packet.getSrc(), packet.getDest(), progress->{
 						curProgress.setValue(curProgress.getValue() + progress);
-						patchEventListener.onPatchProgressChanged(curProgress.getValue(), totalPatchSize);
+						patchEventListener.onPatchProgressChange(curProgress.getValue(), totalPatchSize);
 					})) {
 						patchEventListener.onValidatingPacket();
 						if(!hashingService.getSHA3Checksum(localFile).map(checksum->checksum.equals(packet.getChecksum())).orElse(false)) {
@@ -128,7 +133,7 @@ public class PatchController {
 						throw new IOException("Could not download " + url.toString());
 					}
 				}
-				patchEventListener.onPacketsDownloaded();
+				patchEventListener.postPacketsDownload();
 
 				patchEventListener.onPatchDone();
 			} else {

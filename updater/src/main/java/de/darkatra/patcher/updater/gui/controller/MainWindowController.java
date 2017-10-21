@@ -220,15 +220,27 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 	}
 
 	@Override
-	public void onServerPatchlistDownloaded() {
+	public void preDownloadServerPatchlist() {
 		Platform.runLater(()->{
 			patchProgressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
+			patchProgressLabel.setText("Downloading the patchlist...");
+		});
+	}
+
+	@Override
+	public void postDownloadServerPatchlist() {
+		Platform.runLater(()->{
 			patchProgressLabel.setText("Downloaded the patchlist.");
 		});
 	}
 
 	@Override
-	public void onServerPatchlistRead() {
+	public void preReadServerPatchlist() {
+		Platform.runLater(()->patchProgressLabel.setText("Reading patchlist..."));
+	}
+
+	@Override
+	public void postReadServerPatchlist() {
 		Platform.runLater(()->patchProgressLabel.setText("Read patchlist."));
 	}
 
@@ -245,17 +257,35 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 	}
 
 	@Override
-	public void onDifferencesCalculated() {
+	public void preCalculateDifferences() {
+		Platform.runLater(()->patchProgressLabel.setText("Calculating differences..."));
+	}
+
+	@Override
+	public void postCalculateDifferences() {
 		Platform.runLater(()->patchProgressLabel.setText("Calculated differences."));
 	}
 
 	@Override
-	public void onFilesDeleted() {
+	public void preDeleteFiles() {
+		Platform.runLater(()->patchProgressLabel.setText("Deleting obsolete files..."));
+	}
+
+	@Override
+	public void postDeleteFiles() {
 		Platform.runLater(()->patchProgressLabel.setText("Deleted obsolete files."));
 	}
 
 	@Override
-	public void onPacketsDownloaded() {
+	public void prePacketsDownload() {
+		Platform.runLater(()->{
+			patchProgressBar.setProgress(0);
+			patchProgressLabel.setText("Downloading the patch...");
+		});
+	}
+
+	@Override
+	public void postPacketsDownload() {
 		Platform.runLater(()->{
 			patchProgressBar.setProgress(1);
 			patchProgressLabel.setText("Downloaded the patch.");
@@ -279,7 +309,7 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 	}
 
 	@Override
-	public void onPatchProgressChanged(long current, long target) {
+	public void onPatchProgressChange(long current, long target) {
 		Platform.runLater(()->{
 			patchProgressBar.setProgress((double) current / target);
 			patchProgressLabel.setText(current + "/" + target);

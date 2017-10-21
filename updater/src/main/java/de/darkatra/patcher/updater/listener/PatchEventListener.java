@@ -1,21 +1,31 @@
 package de.darkatra.patcher.updater.listener;
 
 public interface PatchEventListener {
-	void onServerPatchlistDownloaded();
+	void preDownloadServerPatchlist();
 
-	void onServerPatchlistRead();
+	void postDownloadServerPatchlist();
+
+	void preReadServerPatchlist();
+
+	void postReadServerPatchlist();
 
 	void onPatcherNeedsUpdate(boolean requiresUpdate);
 
-	void onDifferencesCalculated();
+	void preCalculateDifferences();
 
-	void onFilesDeleted();
+	void postCalculateDifferences();
 
-	void onPacketsDownloaded();
+	void preDeleteFiles();
+
+	void postDeleteFiles();
+
+	void prePacketsDownload();
+
+	void postPacketsDownload();
 
 	void onPatchDone();
 
-	void onPatchProgressChanged(long current, long target);
+	void onPatchProgressChange(long current, long target);
 
 	void onValidatingPacket();
 }
