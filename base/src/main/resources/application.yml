@@ -1,9 +1,5 @@
 logging:
   level.de.darkatra: info
-
-launcherConfig:
-  serverUrl: https://darkatra.de
-  patcherFilePath: bfmemod/Patcher.jar
 ---
 logging:
   level.de.darkatra: debug

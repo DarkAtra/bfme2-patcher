@@ -143,32 +143,10 @@ buildNumber.properties
 
 # Avoid ignoring Maven wrapper jar file (.jar files are usually ignored)
 !/.mvn/wrapper/maven-wrapper.jar
-### Kotlin template
-# Compiled class file
-*.class
-
-# Log file
-*.log
-
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
-*.jar
-*.war
-*.ear
-*.zip
-*.tar.gz
-*.rar
-
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
 
 .idea/
 patcher.iml
+base/base.iml
 launcher/launcher.iml
 updater/updater.iml
 update-builder/update-builder.iml

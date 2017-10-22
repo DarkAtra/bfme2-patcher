@@ -1,13 +1,12 @@
 package de.darkatra.patcher.updater.gui.controller;
 
-import de.darkatra.patcher.updater.ApplicationConstant;
+import de.darkatra.patcher.exception.ContextConfigurationException;
+import de.darkatra.patcher.exception.ValidationException;
+import de.darkatra.patcher.model.Context;
+import de.darkatra.patcher.service.OptionFileService;
 import de.darkatra.patcher.updater.PatchController;
-import de.darkatra.patcher.updater.exception.ContextConfigurationException;
-import de.darkatra.patcher.updater.exception.ValidationException;
 import de.darkatra.patcher.updater.gui.GUIApplication;
 import de.darkatra.patcher.updater.listener.PatchEventListener;
-import de.darkatra.patcher.updater.model.Context;
-import de.darkatra.patcher.updater.service.OptionFileService;
 import de.darkatra.util.asyncapi.AsyncExecutionService;
 import de.darkatra.util.asyncapi.AsyncTask;
 import javafx.animation.FadeTransition;
@@ -94,7 +93,7 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 			if(secondsLeft.getValue() <= 0) {
 				updateCountdownTimeline.stop();
 				Platform.exit();
-				System.exit(ApplicationConstant.REQUIRES_UPDATE_EXIT_CODE);
+				System.exit(0);
 			}
 		}));
 		patchTask = ()->{
