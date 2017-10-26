@@ -30,7 +30,7 @@
 		<repository>
 			<id>darkatra.de</id>
 			<name>DarkAtra.de</name>
-			<url>http://darkatra.de:8081/nexus/content/repositories/releases/</url>
+			<url>http://darkatra.de:8081/artifactory/libs-release-local</url>
 		</repository>
 	</repositories>
 
@@ -44,7 +44,7 @@
 			<dependency>
 				<groupId>de.darkatra.util</groupId>
 				<artifactId>AsyncExecutionFramework</artifactId>
-				<version>1.6</version>
+				<version>1.7</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
