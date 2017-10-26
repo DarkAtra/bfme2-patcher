@@ -28,7 +28,6 @@
 		<dependency>
 			<groupId>de.darkatra</groupId>
 			<artifactId>base</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<!-- Spring -->
 		<dependency>
