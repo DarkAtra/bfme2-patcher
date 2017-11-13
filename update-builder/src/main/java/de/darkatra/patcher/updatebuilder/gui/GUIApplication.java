@@ -7,10 +7,7 @@ import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
-import java.awt.*;
-
 public class GUIApplication extends Application {
-
 	private Stage stage;
 
 	@Override
@@ -28,6 +25,10 @@ public class GUIApplication extends Application {
 		Scene scene = new Scene(root);
 		primaryStage.setScene(scene);
 		primaryStage.show();
+	}
+
+	public Stage getStage() {
+		return stage;
 	}
 
 	public static void main(String[] args) {
