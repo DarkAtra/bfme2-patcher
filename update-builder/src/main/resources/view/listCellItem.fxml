@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.text.Text?>
+
+<HBox fx:id="hBox" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <Text fx:id="fileName" strokeType="OUTSIDE" strokeWidth="0.0" text="Text" />
+      <Text fx:id="filePath" strokeType="OUTSIDE" strokeWidth="0.0" text="Text" />
+   </children>
+</HBox>
