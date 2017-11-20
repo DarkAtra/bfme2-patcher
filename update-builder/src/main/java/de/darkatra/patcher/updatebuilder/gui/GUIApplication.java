@@ -6,10 +6,15 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
+import org.springframework.context.ConfigurableApplicationContext;
 
 public class GUIApplication extends Application {
 	private Stage stage;
+	private static ConfigurableApplicationContext applicationContext;
 
+	public static void setApplicationContext(ConfigurableApplicationContext applicationContext) {
+		GUIApplication.applicationContext = applicationContext;
+	}
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		this.stage= primaryStage;
@@ -22,6 +27,7 @@ public class GUIApplication extends Application {
 		MainWindowController mainWindowController = loader.getController();
 		mainWindowController.setGuiApplication(this);
 		mainWindowController.initialize();
+		mainWindowController.setApplicationContext(applicationContext);
 		Scene scene = new Scene(root);
 		primaryStage.setScene(scene);
 		primaryStage.show();
@@ -31,7 +37,4 @@ public class GUIApplication extends Application {
 		return stage;
 	}
 
-	public static void main(String[] args) {
-		Application.launch(GUIApplication.class);
-	}
 }
