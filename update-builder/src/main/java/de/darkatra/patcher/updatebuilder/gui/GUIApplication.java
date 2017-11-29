@@ -3,8 +3,11 @@ package de.darkatra.patcher.updatebuilder.gui;
 import de.darkatra.patcher.updatebuilder.gui.controller.MainWindowController;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import org.springframework.context.ConfigurableApplicationContext;
 
@@ -23,7 +26,7 @@ public class GUIApplication extends Application {
 		stage.setResizable(false);
 		FXMLLoader loader = new FXMLLoader();
 		loader.setLocation(GUIApplication.class.getResource("/view/PatchListCreatorView.fxml"));
-		BorderPane root = (BorderPane) loader.load();
+		Parent root = (Parent) loader.load();
 		MainWindowController mainWindowController = loader.getController();
 		mainWindowController.setGuiApplication(this);
 		mainWindowController.initialize();
