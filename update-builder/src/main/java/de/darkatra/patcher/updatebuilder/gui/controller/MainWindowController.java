@@ -9,29 +9,18 @@ import de.darkatra.patcher.service.HashingService;
 import de.darkatra.patcher.updatebuilder.gui.GUIApplication;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
-import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.TrueFileFilter;
-import org.bouncycastle.jcajce.provider.digest.SHA3;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -50,7 +39,7 @@ public class MainWindowController {
     @FXML
     private Label invalidInputLabel;
 
-    private Version version;
+    private Version version;//?
 
     private GUIApplication guiApplication;
 
@@ -69,7 +58,6 @@ public class MainWindowController {
         addFilesButton.setOnMouseClicked(event -> {
             final FileChooser fc = new FileChooser();
             fc.setInitialDirectory(new File("."));
-
             fc.setTitle("Select a File");
             final List<File> files = fc.showOpenMultipleDialog(guiApplication.getStage());
             if (files != null) {
@@ -89,7 +77,7 @@ public class MainWindowController {
         });
 
         removeFilesButton.setOnMouseClicked(event -> {
-            List<File> toRemove = listView.getSelectionModel().getSelectedItems();
+            final List<File> toRemove = listView.getSelectionModel().getSelectedItems();
             if (toRemove != null) {
                 listView.getItems().removeAll(toRemove);
                 listView.getSelectionModel().clearSelection();
@@ -106,18 +94,15 @@ public class MainWindowController {
         listView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         listView.setItems(FXCollections.observableArrayList());
         listView.setOnDragOver(event -> {
-            Dragboard dragboard = event.getDragboard();
+            final Dragboard dragboard = event.getDragboard();
             if (dragboard.hasFiles()) {
                 event.acceptTransferModes(TransferMode.LINK);
             }
         });
         listView.setOnDragDropped(event -> {
-            Dragboard db = event.getDragboard();
+            final Dragboard db = event.getDragboard();
             if (db.hasFiles()) {
-                List<File> files = db.getFiles();
-                for (File file : files) {
-                    listView.getItems().add(file);
-                }
+                listView.getItems().addAll(db.getFiles());
             }
             event.setDropCompleted(true);
             event.consume();
@@ -125,12 +110,12 @@ public class MainWindowController {
 
         confirmVersionButton.setOnMouseClicked(event -> {
 
-            String versionText = versionTextField.getText();
+            final String versionText = versionTextField.getText();
             if (validateVersionData(versionText)) {
-                String[] versionData = versionText.split("\\.");
-                int major = Integer.parseInt(versionData[0]);
-                int minor = Integer.parseInt(versionData[1]);
-                int build = Integer.parseInt(versionData[2]);
+                final String[] versionData = versionText.split("\\.");
+                final int major = Integer.parseInt(versionData[0]);
+                final int minor = Integer.parseInt(versionData[1]);
+                final int build = Integer.parseInt(versionData[2]);
                 this.version = new Version(major, minor, build);
                 hideTextFieldButtons();
                 hideInvalidLabel();
@@ -151,14 +136,14 @@ public class MainWindowController {
     }
 
     private boolean validateVersionData(String version) {
-        String[] data = version.split("\\.");
+        final String[] data = version.split("\\.");
 
         if (data.length != 3) {
             return false;
         }
         for (String isDigit :
                 data) {
-            char[] characters = isDigit.toCharArray();
+            final char[] characters = isDigit.toCharArray();
             for (char character : characters) {
                 if (!(48 <= character && character <= 57)) {
                     return false;
@@ -197,7 +182,13 @@ public class MainWindowController {
                     return new Packet("${serverUrl}/" + relativePathToCWD.toString(), "${flyffDir}/" + relativePathToCWD.toFile().getPath(), file.length(), LocalDateTime.now(), sha3Checksum.get(), false);
                 }
             } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
+                if (e instanceof IOException) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error");
+                    alert.setHeaderText(null);
+                    alert.setContentText("An error occurred while creating the Patch.");
+                    alert.showAndWait();
+                }
             }
             return null;
         }).filter(Objects::nonNull).collect(Collectors.toList()));
