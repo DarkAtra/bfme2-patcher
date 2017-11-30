@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
@@ -46,6 +48,7 @@ public class MainWindowController {
     private HashingService hashingService;
     private ContextConfig contextConfig;
 
+    final private Pattern p = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+)");
 
     public void setApplicationContext(ConfigurableApplicationContext applicationContext) {
         this.hashingService = applicationContext.getBean(HashingService.class);
@@ -111,12 +114,10 @@ public class MainWindowController {
         confirmVersionButton.setOnMouseClicked(event -> {
 
             final String versionText = versionTextField.getText();
-            if (validateVersionData(versionText)) {
-                final String[] versionData = versionText.split("\\.");
-                final int major = Integer.parseInt(versionData[0]);
-                final int minor = Integer.parseInt(versionData[1]);
-                final int build = Integer.parseInt(versionData[2]);
-                this.version = new Version(major, minor, build);
+            final Optional<Version> validated = validateVersion(versionText);
+            if (validated.isPresent()) {
+                this.version = validated.get();
+                versionTextField.setText(this.version.toString());
                 hideTextFieldButtons();
                 hideInvalidLabel();
             } else {
@@ -133,24 +134,20 @@ public class MainWindowController {
         hideTextFieldButtons();
         versionTextFieldButtons.visibleProperty().bind(versionTextFieldButtons.managedProperty());
 
+
     }
 
-    private boolean validateVersionData(String version) {
-        final String[] data = version.split("\\.");
+    private Optional<Version> validateVersion(String toValidate) {
 
-        if (data.length != 3) {
-            return false;
+        final Matcher matcher = p.matcher(toValidate);
+        if (matcher.matches()){
+            final int major = Integer.parseInt(matcher.group(1));
+            final int minor = Integer.parseInt(matcher.group(2));
+            final int build = Integer.parseInt(matcher.group(3));
+            return Optional.of(new Version(major,minor,build));
+        }else{
+            return Optional.empty();
         }
-        for (String isDigit :
-                data) {
-            final char[] characters = isDigit.toCharArray();
-            for (char character : characters) {
-                if (!(48 <= character && character <= 57)) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     private void hideTextFieldButtons() {
