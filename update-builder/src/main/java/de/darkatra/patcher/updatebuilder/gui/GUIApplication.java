@@ -1,15 +1,23 @@
 package de.darkatra.patcher.updatebuilder.gui;
 
 import de.darkatra.patcher.updatebuilder.gui.controller.MainWindowController;
+import de.darkatra.patcher.updatebuilder.gui.controller.PrintedPatchWindowController;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import org.springframework.context.ConfigurableApplicationContext;
+
+import java.io.IOException;
 
 public class GUIApplication extends Application {
 	private Stage stage;
@@ -38,6 +46,37 @@ public class GUIApplication extends Application {
 
 	public Stage getStage() {
 		return stage;
+	}
+
+	public static Alert alert(Alert.AlertType alertType, String title, String header, String msg){
+		Alert alert = new Alert(alertType);
+		alert.initStyle(StageStyle.UTILITY);
+		alert.setTitle(title);
+		alert.setHeaderText(header);
+		alert.setContentText(msg);
+		return alert;
+	}
+
+	public PrintedPatchWindowController showPrintedPatch() throws IOException{
+
+		FXMLLoader fxmlLoader = new FXMLLoader();
+		fxmlLoader.setLocation(getClass().getResource("/view/PrintPatchWindow.fxml"));
+		Parent root = fxmlLoader.load();
+		PrintedPatchWindowController settingsWindow = fxmlLoader.getController();
+		Stage stage = new Stage();
+		settingsWindow.setStage(stage);
+		stage.initOwner(this.stage);
+		stage.initModality(Modality.WINDOW_MODAL);
+		stage.setTitle("Patcher Settings");
+//		stage.getIcons().add(new Image("/images/icon.jpg"));
+		stage.setResizable(false);
+		final Scene scene = new Scene(root);
+		stage.setScene(scene);
+		Platform.runLater(stage::showAndWait);
+		return settingsWindow;
+
+
+
 	}
 
 }

@@ -16,6 +16,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.springframework.context.ConfigurableApplicationContext;
 
@@ -28,7 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-
+@Slf4j
 public class MainWindowController {
     @FXML
     private Button addFilesButton, addDirectoryButton, removeFilesButton, createPatchlistButton, printPatchlistButton, confirmVersionButton, cancelVersionButton;
@@ -92,7 +93,13 @@ public class MainWindowController {
 
         });
 
-        printPatchlistButton.setOnMouseClicked(event -> buildDialog().showAndWait());
+        printPatchlistButton.setOnMouseClicked(event -> {
+            try {
+                guiApplication.showPrintedPatch().setPrintedPatchWindowArea(buildPatchFromList());
+            }catch (IOException e){
+                GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Application Error", "Could not create Patchwindow");
+            }
+            });
 
         listView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         listView.setItems(FXCollections.observableArrayList());
@@ -133,8 +140,6 @@ public class MainWindowController {
 
         hideTextFieldButtons();
         versionTextFieldButtons.visibleProperty().bind(versionTextFieldButtons.managedProperty());
-
-
     }
 
     private Optional<Version> validateVersion(String toValidate) {
@@ -180,16 +185,11 @@ public class MainWindowController {
                 }
             } catch (IOException | InterruptedException e) {
                 if (e instanceof IOException) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Error");
-                    alert.setHeaderText(null);
-                    alert.setContentText("An error occurred while creating the Patch.");
-                    alert.showAndWait();
+                    GUIApplication.alert(Alert.AlertType.ERROR,"Error","Application Error","Could not build Patchlist.").showAndWait();
                 }
             }
             return null;
         }).filter(Objects::nonNull).collect(Collectors.toList()));
-
         return p;
     }
 
