@@ -10,7 +10,8 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.net.URISyntaxException;
+import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
@@ -37,8 +38,8 @@ public class PatchService {
 		}
 	}
 
-	public Patch applyContextToPatch(@NotNull Context context, @NotNull Patch patch) throws URISyntaxException {
-		Patch returnPatch = new Patch(new Version(patch.getVersion()));
+	public Patch applyContextToPatch(@NotNull Context context, @NotNull Patch patch) {
+		final Patch returnPatch = new Patch(new Version(patch.getVersion()));
 		for(Packet packet : patch.getPackets()) {
 			String src = packet.getSrc();
 			String dest = packet.getDest();
@@ -67,6 +68,33 @@ public class PatchService {
 			// normalize windows path
 			destToRemove = Paths.get(destToRemove).normalize().toString();
 			returnPatch.getFileIndex().add(destToRemove);
+		}
+		return returnPatch;
+	}
+
+	public Patch generateContextForPatch(@NotNull Context context, @NotNull Patch patch) {
+		final Patch returnPatch = new Patch(new Version(patch.getVersion()));
+		final Path currentDir = new File(".").toPath().normalize().toAbsolutePath();
+		for(Packet packet : patch.getPackets()) {
+			final Path relativePathToCWD = currentDir.relativize(Paths.get(packet.getSrc())).normalize();
+			final String src = prefix + "serverUrl" + suffix + "/" + relativePathToCWD.toString();
+			String dest = packet.getDest();
+			for(String key : context.keySet()) {
+				try {
+					Optional<String> value = context.getString(key);
+					if(value.isPresent()) {
+						String temp = dest.replace(value.get(), prefix + key + suffix);
+						if(!temp.equalsIgnoreCase(dest)) {
+							dest = temp;
+							break;
+						}
+					}
+				} catch(ClassCastException e) {
+					log.error("Unexpected Error while generating the context {} for patch {}", context, patch);
+					log.debug("ClassCastException", e);
+				}
+			}
+			returnPatch.getPackets().add(new Packet(src, dest, packet.getPacketSize(), packet.getDateTime(), packet.getChecksum(), packet.isBackupExisting()));
 		}
 		return returnPatch;
 	}

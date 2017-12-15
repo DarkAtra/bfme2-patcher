@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<GridPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="de.darkatra.patcher.updatebuilder.gui.controller.MainWindowController">
+  <columnConstraints>
+    <ColumnConstraints hgrow="SOMETIMES" maxWidth="447.0" minWidth="10.0" prefWidth="447.0" />
+    <ColumnConstraints hgrow="SOMETIMES" maxWidth="295.0" minWidth="10.0" prefWidth="153.0" />
+  </columnConstraints>
+  <rowConstraints>
+    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+  </rowConstraints>
+   <children>
+      <ListView fx:id="listView" prefHeight="200.0" prefWidth="200.0" />
+      <VBox GridPane.columnIndex="1">
+         <children>
+            <Label fx:id="invalidInputLabel" alignment="CENTER_RIGHT" contentDisplay="RIGHT" text="Invalid Input!" textAlignment="RIGHT" textFill="RED" visible="false">
+               <VBox.margin>
+                  <Insets left="80.0" top="40.0" />
+               </VBox.margin>
+            </Label>
+            <TextField fx:id="versionTextField" alignment="CENTER_RIGHT" promptText="Version: xxx.yyy.zzz">
+               <VBox.margin>
+                  <Insets left="5.0" right="5.0" top="5.0" />
+               </VBox.margin>
+            </TextField>
+            <GridPane fx:id="versionTextFieldButtons" hgap="7.0" nodeOrientation="LEFT_TO_RIGHT" visible="false">
+              <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+              </columnConstraints>
+              <rowConstraints>
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+              </rowConstraints>
+               <VBox.margin>
+                  <Insets top="14.0" />
+               </VBox.margin>
+               <children>
+                  <Button fx:id="cancelVersionButton" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Cancel">
+                     <GridPane.margin>
+                        <Insets bottom="5.0" left="5.0" top="5.0" />
+                     </GridPane.margin>
+                  </Button>
+                  <Button fx:id="confirmVersionButton" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Confirm" GridPane.columnIndex="1">
+                     <GridPane.margin>
+                        <Insets bottom="5.0" right="5.0" top="5.0" />
+                     </GridPane.margin>
+                  </Button>
+               </children>
+            </GridPane>
+            <Button fx:id="addFilesButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Add Files">
+               <VBox.margin>
+                  <Insets left="15.0" right="15.0" top="40.0" />
+               </VBox.margin>
+            </Button>
+            <Button fx:id="addDirectoryButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Add Directory">
+               <VBox.margin>
+                  <Insets left="15.0" right="15.0" top="20.0" />
+               </VBox.margin>
+            </Button>
+            <Button fx:id="removeFilesButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Remove Files">
+               <VBox.margin>
+                  <Insets left="15.0" right="15.0" top="20.0" />
+               </VBox.margin>
+            </Button>
+            <Button fx:id="printPatchlistButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Print Patchlist">
+               <VBox.margin>
+                  <Insets left="15.0" right="15.0" top="20.0" />
+               </VBox.margin>
+            </Button>
+            <Button fx:id="createPatchlistButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Create Patchlist">
+               <VBox.margin>
+                  <Insets left="15.0" right="15.0" top="20.0" />
+               </VBox.margin>
+            </Button>
+         </children>
+      </VBox>
+   </children>
+</GridPane>
