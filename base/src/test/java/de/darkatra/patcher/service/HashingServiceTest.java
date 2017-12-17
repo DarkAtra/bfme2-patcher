@@ -18,8 +18,10 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,10 +29,10 @@ import java.io.IOException;
 import java.util.Optional;
 
 @RunWith(PowerMockRunner.class)
-@SpringBootTest
-@PowerMockRunnerDelegate(SpringRunner.class)
+@PowerMockRunnerDelegate(SpringJUnit4ClassRunner.class)
 @PrepareForTest({ HashingService.class })
 @PowerMockIgnore("javax.management.*")
+@ContextConfiguration
 public class HashingServiceTest {
 	private HashingService hashingService;
 
@@ -71,5 +73,13 @@ public class HashingServiceTest {
 		final ThrowableAssert.ThrowingCallable operation = ()->hashingService.getSHA3Checksum(file);
 
 		assertThatThrownBy(operation).isInstanceOf(IOException.class);
+	}
+
+	@Configuration
+	static class TestConfiguration {
+		@Bean
+		public HashingService patchService() {
+			return new HashingService();
+		}
 	}
 }
