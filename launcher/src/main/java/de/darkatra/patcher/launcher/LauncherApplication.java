@@ -1,16 +1,13 @@
 package de.darkatra.patcher.launcher;
 
-import de.darkatra.patcher.BaseConfiguration;
 import de.darkatra.patcher.launcher.service.CommunicationService;
 import de.darkatra.patcher.model.Context;
 import de.darkatra.patcher.service.DownloadService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.context.annotation.Import;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 import javax.swing.JOptionPane;
@@ -25,13 +22,12 @@ import java.util.Optional;
 @Slf4j
 @EnableAsync
 @SpringBootApplication
-@Import(BaseConfiguration.class)
 public class LauncherApplication implements ApplicationRunner {
 	private final Context context;
 	private final DownloadService downloadService;
 	private final CommunicationService communicationService;
 
-	public LauncherApplication(@Qualifier("launcherContext") Context context, DownloadService downloadService, CommunicationService communicationService) {
+	public LauncherApplication(Context context, DownloadService downloadService, CommunicationService communicationService) {
 		this.context = context;
 		this.downloadService = downloadService;
 		this.communicationService = communicationService;
@@ -66,6 +62,7 @@ public class LauncherApplication implements ApplicationRunner {
 		} else {
 			System.exit(1);
 		}
+		System.exit(0);
 	}
 
 	private Process startProcess(String jarPath, String[] args) throws IOException {

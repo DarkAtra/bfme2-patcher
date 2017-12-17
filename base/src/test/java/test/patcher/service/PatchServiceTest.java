@@ -1,4 +1,4 @@
-package de.darkatra.patcher.service;
+package test.patcher.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -8,11 +8,12 @@ import static org.powermock.api.mockito.PowerMockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 import static org.powermock.api.support.membermodification.MemberMatcher.constructor;
 import static org.powermock.api.support.membermodification.MemberModifier.suppress;
-import com.google.gson.Gson;
+import test.patcher.TestApplication;
 import de.darkatra.patcher.model.Context;
 import de.darkatra.patcher.model.Packet;
 import de.darkatra.patcher.model.Patch;
 import de.darkatra.patcher.model.Version;
+import de.darkatra.patcher.service.PatchService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -20,9 +21,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.test.context.ContextConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.File;
@@ -34,14 +33,13 @@ import java.util.Optional;
 @PowerMockRunnerDelegate(SpringJUnit4ClassRunner.class)
 @PrepareForTest({ PatchService.class })
 @PowerMockIgnore("javax.management.*")
-@ContextConfiguration
+@SpringBootTest(classes = TestApplication.class)
 public class PatchServiceTest {
 	private PatchService patchService;
 
 	@Autowired
 	public void setPatchService(PatchService patchService) {
 		this.patchService = patchService;
-		System.out.println(patchService);
 	}
 
 	@Test
@@ -124,13 +122,5 @@ public class PatchServiceTest {
 		assertEquals(patch.getPackets().iterator().next().getChecksum(), contextualPatch.getPackets().iterator().next().getChecksum());
 		assertEquals(patch.getPackets().iterator().next().getPacketSize(), contextualPatch.getPackets().iterator().next().getPacketSize());
 		assertEquals(patch.getPackets().iterator().next().getDateTime(), contextualPatch.getPackets().iterator().next().getDateTime());
-	}
-
-	@Configuration
-	static class TestConfiguration {
-		@Bean
-		public PatchService patchService() {
-			return new PatchService(new Gson());
-		}
 	}
 }

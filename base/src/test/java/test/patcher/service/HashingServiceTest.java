@@ -1,4 +1,4 @@
-package de.darkatra.patcher.service;
+package test.patcher.service;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -10,6 +10,8 @@ import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 import static org.powermock.api.support.membermodification.MemberMatcher.constructor;
 import static org.powermock.api.support.membermodification.MemberModifier.suppress;
+import test.patcher.TestApplication;
+import de.darkatra.patcher.service.HashingService;
 import org.assertj.core.api.ThrowableAssert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,9 +20,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.test.context.ContextConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.File;
@@ -32,7 +32,7 @@ import java.util.Optional;
 @PowerMockRunnerDelegate(SpringJUnit4ClassRunner.class)
 @PrepareForTest({ HashingService.class })
 @PowerMockIgnore("javax.management.*")
-@ContextConfiguration
+@SpringBootTest(classes = TestApplication.class)
 public class HashingServiceTest {
 	private HashingService hashingService;
 
@@ -73,13 +73,5 @@ public class HashingServiceTest {
 		final ThrowableAssert.ThrowingCallable operation = ()->hashingService.getSHA3Checksum(file);
 
 		assertThatThrownBy(operation).isInstanceOf(IOException.class);
-	}
-
-	@Configuration
-	static class TestConfiguration {
-		@Bean
-		public HashingService patchService() {
-			return new HashingService();
-		}
 	}
 }

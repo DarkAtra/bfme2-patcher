@@ -1,5 +1,6 @@
 package de.darkatra.patcher.launcher.config;
 
+import de.darkatra.patcher.launcher.properties.LauncherConfig;
 import de.darkatra.patcher.model.Context;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

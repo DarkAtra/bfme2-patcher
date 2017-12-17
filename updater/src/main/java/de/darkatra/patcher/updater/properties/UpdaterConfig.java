@@ -1,4 +1,4 @@
-package de.darkatra.patcher.updater.config;
+package de.darkatra.patcher.updater.properties;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;

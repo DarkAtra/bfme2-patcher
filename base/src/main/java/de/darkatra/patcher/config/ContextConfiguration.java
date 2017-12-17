@@ -1,7 +1,9 @@
 package de.darkatra.patcher.config;
 
 import de.darkatra.patcher.model.Context;
+import de.darkatra.patcher.properties.Config;
 import de.darkatra.patcher.service.RegistryService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -12,8 +14,9 @@ import java.net.URL;
 import java.nio.file.Paths;
 
 @Configuration
-public class ContextConfig {
+public class ContextConfiguration {
 	@Bean
+	@ConditionalOnMissingBean
 	public Context getContext(Config config, RegistryService registryService) throws MalformedURLException, URISyntaxException {
 		URL url = new URL(new URL(config.getServerUrl()), config.getPatchFilesFolderPath());
 		{

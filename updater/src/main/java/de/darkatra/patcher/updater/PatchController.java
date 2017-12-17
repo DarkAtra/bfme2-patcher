@@ -1,15 +1,15 @@
 package de.darkatra.patcher.updater;
 
-import de.darkatra.patcher.config.Config;
+import de.darkatra.patcher.properties.Config;
 import de.darkatra.patcher.exception.ContextConfigurationException;
 import de.darkatra.patcher.exception.ValidationException;
 import de.darkatra.patcher.model.Context;
 import de.darkatra.patcher.model.Packet;
 import de.darkatra.patcher.model.Patch;
-import de.darkatra.patcher.updater.listener.PatchEventListener;
 import de.darkatra.patcher.service.DownloadService;
 import de.darkatra.patcher.service.HashingService;
 import de.darkatra.patcher.service.PatchService;
+import de.darkatra.patcher.updater.listener.PatchEventListener;
 import javafx.beans.property.LongProperty;
 import javafx.beans.property.SimpleLongProperty;
 import lombok.extern.slf4j.Slf4j;

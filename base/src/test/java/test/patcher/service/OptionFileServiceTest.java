@@ -1,17 +1,17 @@
-package de.darkatra.patcher.service;
+package test.patcher.service;
 
 import static org.junit.Assert.assertTrue;
+import test.patcher.TestApplication;
 import de.darkatra.patcher.model.Context;
+import de.darkatra.patcher.service.OptionFileService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.test.context.ContextConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
+@SpringBootTest(classes = TestApplication.class)
 public class OptionFileServiceTest {
 	private OptionFileService optionFileService;
 
@@ -41,13 +41,5 @@ public class OptionFileServiceTest {
 		assertTrue(defaultOptionsIni.getInteger("TimesInGame").isPresent());
 		assertTrue(defaultOptionsIni.getBoolean("UseEAX3").isPresent());
 		assertTrue(defaultOptionsIni.getDouble("VoiceVolume").isPresent());
-	}
-
-	@Configuration
-	static class TestConfiguration {
-		@Bean
-		public OptionFileService patchService() {
-			return new OptionFileService();
-		}
 	}
 }

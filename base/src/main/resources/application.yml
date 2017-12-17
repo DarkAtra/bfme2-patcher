@@ -1,8 +1,0 @@
-logging:
-  level.de.darkatra: info
-  file: ${user.home}\AppData\Roaming\.patcher\base.log
----
-logging:
-  level.de.darkatra: debug
-spring:
-  profiles: dev
