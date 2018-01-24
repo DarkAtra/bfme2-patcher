@@ -1,7 +1,7 @@
 package de.darkatra.patcher.updatebuilder;
 
-import de.darkatra.patcher.properties.Config;
 import de.darkatra.patcher.model.Context;
+import de.darkatra.patcher.properties.Config;
 import de.darkatra.patcher.updatebuilder.gui.GUIApplication;
 import javafx.application.Application;
 import lombok.extern.slf4j.Slf4j;

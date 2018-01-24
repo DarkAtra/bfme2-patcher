@@ -1,11 +1,13 @@
 package de.darkatra.patcher.updater;
 
-import de.darkatra.patcher.properties.Config;
 import de.darkatra.patcher.exception.ContextConfigurationException;
 import de.darkatra.patcher.exception.ValidationException;
 import de.darkatra.patcher.model.Context;
 import de.darkatra.patcher.model.Packet;
 import de.darkatra.patcher.model.Patch;
+import de.darkatra.patcher.model.communication.RequiresUpdateDto;
+import de.darkatra.patcher.properties.Config;
+import de.darkatra.patcher.service.CommunicationService;
 import de.darkatra.patcher.service.DownloadService;
 import de.darkatra.patcher.service.HashingService;
 import de.darkatra.patcher.service.PatchService;
@@ -13,7 +15,6 @@ import de.darkatra.patcher.updater.listener.PatchEventListener;
 import javafx.beans.property.LongProperty;
 import javafx.beans.property.SimpleLongProperty;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -34,14 +35,15 @@ public class PatchController {
 	private final DownloadService downloadService;
 	private final HashingService hashingService;
 	private final PatchService patchService;
+	private final CommunicationService communicationService;
 
-	@Autowired
-	public PatchController(Context context, Config config, DownloadService downloadService, HashingService hashingService, PatchService patchService) {
+	public PatchController(Context context, Config config, DownloadService downloadService, HashingService hashingService, PatchService patchService, CommunicationService communicationService) {
 		this.context = context;
 		this.config = config;
 		this.downloadService = downloadService;
 		this.hashingService = hashingService;
 		this.patchService = patchService;
+		this.communicationService = communicationService;
 	}
 
 	public void patch(PatchEventListener patchEventListener) throws IOException, URISyntaxException, ValidationException, InterruptedException, ContextConfigurationException {
@@ -68,14 +70,18 @@ public class PatchController {
 				final Optional<String> patcherUserDir = context.getString("patcherUserDir");
 				if(patcherUserDir.isPresent()) {
 					final String patcherUserDirPath = patcherUserDir.get();
-					File patcherJar = new File(patcherUserDirPath + "/Patcher.jar");
+					final File patcherJar = new File(patcherUserDirPath + "/Patcher.jar");
 					if(patch.getPackets().stream().anyMatch(packet->packet.getDest().equalsIgnoreCase(patcherJar.getAbsolutePath()))) {
+						log.debug("sendMessage update");
+						communicationService.sendMessage(new RequiresUpdateDto(true));
 						patchEventListener.onPatcherNeedsUpdate(true);
 						return;
 					}
 				} else {
 					throw new ContextConfigurationException("patcherUserDir was not configured");
 				}
+				log.debug("sendMessage exit");
+				communicationService.sendMessage(new RequiresUpdateDto(false));
 				patchEventListener.onPatcherNeedsUpdate(false);
 
 				// delete files

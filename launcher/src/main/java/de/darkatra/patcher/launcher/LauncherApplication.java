@@ -1,7 +1,9 @@
 package de.darkatra.patcher.launcher;
 
-import de.darkatra.patcher.launcher.service.CommunicationService;
-import de.darkatra.patcher.model.Context;
+import com.google.gson.Gson;
+import de.darkatra.patcher.launcher.properties.LauncherConfig;
+import de.darkatra.patcher.model.communication.RequiresUpdateDto;
+import de.darkatra.patcher.service.CommunicationService;
 import de.darkatra.patcher.service.DownloadService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -17,52 +19,77 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @EnableAsync
 @SpringBootApplication
 public class LauncherApplication implements ApplicationRunner {
-	private final Context context;
 	private final DownloadService downloadService;
 	private final CommunicationService communicationService;
+	private final Gson gson;
+	private final LauncherConfig launcherConfig;
+	private boolean needsRestart = false;
 
-	public LauncherApplication(Context context, DownloadService downloadService, CommunicationService communicationService) {
-		this.context = context;
+	public LauncherApplication(LauncherConfig launcherConfig, DownloadService downloadService, CommunicationService communicationService, Gson gson) {
+		this.launcherConfig = launcherConfig;
 		this.downloadService = downloadService;
 		this.communicationService = communicationService;
-		communicationService.addListener(message->{
-			if(message.equalsIgnoreCase("true")) {
-				log.debug("Exit");
-				System.exit(0);
-			}
-		});
+		this.gson = gson;
 	}
 
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
-		final Optional<String> patcherUserDir = context.getString("patcherUserDir");
-		final Optional<String> patcherServerFilePath = context.getString("patcherServerFilePath");
-		if(patcherUserDir.isPresent() && patcherServerFilePath.isPresent()) {
-			final File patcherJarPath = Paths.get(patcherUserDir.get(), "Patcher.jar").normalize().toFile();
-			boolean isInitialDownload = !patcherJarPath.exists();
-			if(isInitialDownload) {
-				final boolean downloadSucceed = downloadService.downloadFile(patcherServerFilePath.get(), patcherJarPath.getAbsolutePath());
-				if(!downloadSucceed) {
-					JOptionPane.showMessageDialog(null, "Could not download the updater. Try again with admin privileges.", "Error", JOptionPane.ERROR_MESSAGE);
-					System.exit(1);
-				}
+		final File patcherJarPath = Paths.get(launcherConfig.getPatcherUserDir(), "Patcher.jar").normalize().toFile();
+		final String patcherSrc = launcherConfig.getPatcherServerFilePath();
+		communicationService.addListener(message->{
+			final RequiresUpdateDto requiresUpdateDto = gson.fromJson(message, RequiresUpdateDto.class);
+			log.debug(requiresUpdateDto.toString());
+			if(!requiresUpdateDto.isRequiresUpdate()) {
+				log.debug("Exit launcher");
+			} else {
+				log.debug("Download and restart patcher");
+				needsRestart = true;
 			}
-			final Process patcherProcess = startProcess(patcherJarPath.getAbsolutePath(), new String[] { "--updater.launcherPort=" + communicationService.getCommunicationPort() });
-			patcherProcess.waitFor();
-			if(patcherProcess.exitValue() != 0) {
-				JOptionPane.showMessageDialog(null, "The Updater was closed by an unexpected error.", "Error", JOptionPane.ERROR_MESSAGE);
+		});
+		final boolean isInitialDownload = !patcherJarPath.exists();
+		if(isInitialDownload) {
+			downloadUpdater(patcherSrc, patcherJarPath.getAbsolutePath());
+		}
+		log.debug("LauncherPort: {}", communicationService.getCommunicationPort());
+		launchUpdater(patcherJarPath.getAbsolutePath());
+		while(needsRestart) {
+			needsRestart = false;
+			downloadUpdater(patcherSrc, patcherJarPath.getAbsolutePath());
+			try {
+				launchUpdater(patcherJarPath.getAbsolutePath());
+			} catch(InterruptedException | IOException e) {
+				e.printStackTrace();
 				System.exit(1);
 			}
-		} else {
-			System.exit(1);
 		}
 		System.exit(0);
+	}
+
+	private void downloadUpdater(String src, String dest) {
+		try {
+			final boolean downloadSucceed = downloadService.downloadFile(src, dest);
+			if(!downloadSucceed) {
+				JOptionPane.showMessageDialog(null, "Could not download the updater. Try again with admin privileges.", "Error", JOptionPane.ERROR_MESSAGE);
+				System.exit(1);
+			}
+		} catch(InterruptedException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+
+	private void launchUpdater(String updaterPath) throws InterruptedException, IOException {
+		final Process patcherProcess = startProcess(updaterPath, new String[] { "--updater.launcherPort=" + communicationService.getCommunicationPort() });
+		patcherProcess.waitFor();
+		if(patcherProcess.exitValue() != 0) {
+			JOptionPane.showMessageDialog(null, "The Updater was closed by an unexpected error.", "Error", JOptionPane.ERROR_MESSAGE);
+			System.exit(1);
+		}
 	}
 
 	private Process startProcess(String jarPath, String[] args) throws IOException {
@@ -72,16 +99,10 @@ public class LauncherApplication implements ApplicationRunner {
 		params.add(jarPath);
 		params.addAll(Arrays.asList(args));
 		final ProcessBuilder pb = new ProcessBuilder(params);
-		final Optional<String> patcherUserDir = context.getString("patcherUserDir");
-		if(patcherUserDir.isPresent()) {
-			final File outputFile = Paths.get(patcherUserDir.get(), "output.log").normalize().toFile();
-			final File errorFile = Paths.get(patcherUserDir.get(), "error.log").normalize().toFile();
-			pb.redirectOutput(outputFile);
-			pb.redirectError(errorFile);
-		} else {
-			pb.redirectOutput(new File("output.log"));
-			pb.redirectError(new File("error.log"));
-		}
+		final File outputFile = Paths.get(launcherConfig.getPatcherUserDir(), "output.log").normalize().toFile();
+		final File errorFile = Paths.get(launcherConfig.getPatcherUserDir(), "error.log").normalize().toFile();
+		pb.redirectOutput(outputFile);
+		pb.redirectError(errorFile);
 		return pb.start();
 	}
 

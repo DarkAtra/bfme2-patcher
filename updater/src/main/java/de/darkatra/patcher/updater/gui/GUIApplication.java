@@ -38,8 +38,9 @@ public class GUIApplication extends Application {
 		mainWindowController.setGuiApplication(this);
 		mainWindowController.setApplicationContext(applicationContext);
 		primaryStage.setOnCloseRequest(event->{
-			mainWindowController.onExit();
 			AsyncExecutionService.getInstance().interruptAllAsyncTasks();
+			Platform.exit();
+			System.exit(0);
 		});
 		primaryStage.setScene(new Scene(parent, 600, 400));
 		primaryStage.setResizable(false);

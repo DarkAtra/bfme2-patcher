@@ -129,6 +129,7 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 				});
 			} catch(InterruptedException e) {
 				log.debug("InterruptedException", e);
+				throw e;
 			}
 			return true;
 		};
@@ -250,8 +251,6 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 				patchProgressBar.setProgress(0);
 				updateCountdownTimeline.playFromStart();
 			});
-		} else {
-			// TODO: close the launcher application via msg
 		}
 	}
 
@@ -355,10 +354,5 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 
 	public void setGuiApplication(GUIApplication guiApplication) {
 		this.guiApplication = guiApplication;
-	}
-
-	public void onExit() {
-		AsyncExecutionService.getInstance().interruptAsyncTask(patchTask);
-		AsyncExecutionService.getInstance().interruptAsyncTask(this);
 	}
 }
