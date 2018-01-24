@@ -71,11 +71,15 @@ public class PatchController {
 				if(patcherUserDir.isPresent()) {
 					final String patcherUserDirPath = patcherUserDir.get();
 					final File patcherJar = new File(patcherUserDirPath + "/Patcher.jar");
-					if(patch.getPackets().stream().anyMatch(packet->packet.getDest().equalsIgnoreCase(patcherJar.getAbsolutePath()))) {
-						log.debug("sendMessage update");
-						communicationService.sendMessage(new RequiresUpdateDto(true));
-						patchEventListener.onPatcherNeedsUpdate(true);
-						return;
+					final Optional<Packet> first = patch.getPackets().stream().filter(packet->packet.getDest().equalsIgnoreCase(patcherJar.getAbsolutePath())).findFirst();
+					if(first.isPresent()) {
+						final Optional<String> fileChecksum = hashingService.getSHA3Checksum(patcherJar);
+						if(fileChecksum.isPresent() && fileChecksum.get().equals(first.get().getChecksum())) {
+							log.debug("sendMessage update");
+							communicationService.sendMessage(new RequiresUpdateDto(true));
+							patchEventListener.onPatcherNeedsUpdate(true);
+							return;
+						}
 					}
 				} else {
 					throw new ContextConfigurationException("patcherUserDir was not configured");
@@ -126,7 +130,7 @@ public class PatchController {
 					if(Thread.currentThread().isInterrupted()) {
 						throw new InterruptedException("Patching thread was interrupted.");
 					}
-					File localFile = new File(packet.getDest());
+					final File localFile = new File(packet.getDest());
 					if(downloadService.downloadFile(packet.getSrc(), packet.getDest(), progress->{
 						curProgress.setValue(curProgress.getValue() + progress);
 						patchEventListener.onPatchProgressChange(curProgress.getValue(), totalPatchSize);
