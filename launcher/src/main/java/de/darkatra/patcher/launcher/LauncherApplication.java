@@ -6,6 +6,7 @@ import de.darkatra.patcher.properties.Config;
 import de.darkatra.patcher.service.CommunicationService;
 import de.darkatra.patcher.service.DownloadService;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.util.test.Test;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -15,9 +16,13 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import javax.swing.JOptionPane;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 
 @Slf4j
@@ -82,7 +87,10 @@ public class LauncherApplication implements ApplicationRunner {
 	}
 
 	private void launchUpdater(String updaterPath) throws InterruptedException, IOException {
-		final Process patcherProcess = startProcess(updaterPath, new String[] { "--updater.launcherPort=" + communicationService.getCommunicationPort() });
+		final Process patcherProcess = startProcess(updaterPath, new String[] {
+				"--updater.launcherPort=" + communicationService.getCommunicationPort(),
+				"--updater.launcherLocation=" + getJarLocation()
+		});
 		patcherProcess.waitFor();
 		if(patcherProcess.exitValue() != 0) {
 			JOptionPane.showMessageDialog(null, "The Updater was closed by an unexpected error.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -102,6 +110,11 @@ public class LauncherApplication implements ApplicationRunner {
 		pb.redirectOutput(outputFile);
 		pb.redirectError(errorFile);
 		return pb.start();
+	}
+
+	private String getJarLocation() throws UnsupportedEncodingException {
+		String path = Test.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+		return new String(Base64.getEncoder().encode(URLDecoder.decode(path, String.valueOf(StandardCharsets.UTF_8)).getBytes()), StandardCharsets.UTF_8);
 	}
 
 	public static void main(String[] args) {

@@ -11,7 +11,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Paths;
 
 @Configuration
 public class ContextConfiguration {
@@ -25,16 +24,16 @@ public class ContextConfiguration {
 		}
 		Context applicationContext = new Context();
 		applicationContext.putIfAbsent("serverUrl", url.toString());
-		//		applicationContext.putIfAbsent("patcherUserDir", config.getPatcherUserDir());
-		//		registryService.findBfME2HomeDirectory().ifPresent(value->applicationContext.putIfAbsent("bfme2HomeDir", value.toString()));
-		//		registryService.findBfME2UserDirectory().ifPresent(value->applicationContext.putIfAbsent("bfme2UserDir", value.toString()));
-		//		registryService.findBfME2RotWKHomeDirectory().ifPresent(value->applicationContext.putIfAbsent("rotwkHomeDir", value.toString()));
-		//		registryService.findBfME2RotWKUserDirectory().ifPresent(value->applicationContext.putIfAbsent("rotwkUserDir", value.toString()));
-		applicationContext.putIfAbsent("patcherUserDir", Paths.get("C:\\Users\\DarkAtra\\Desktop\\Test" + "\\.bfme2rotwkPatcher\\").normalize().toString());
-		applicationContext.putIfAbsent("bfme2HomeDir", Paths.get("C:\\Users\\DarkAtra\\Desktop\\Test\\bfme2\\").normalize().toString());
-		applicationContext.putIfAbsent("bfme2UserDir", Paths.get("C:\\Users\\DarkAtra\\Desktop\\Test\\userDirBfme2\\").normalize().toString());
-		applicationContext.putIfAbsent("rotwkHomeDir", Paths.get("C:\\Users\\DarkAtra\\Desktop\\Test\\bfme2ep1\\").normalize().toString());
-		applicationContext.putIfAbsent("rotwkUserDir", Paths.get("C:\\Users\\DarkAtra\\Desktop\\Test\\userDirBfme2Ep1\\").normalize().toString());
+		applicationContext.putIfAbsent("patcherUserDir", config.getPatcherUserDir());
+		registryService.findBfME2HomeDirectory().ifPresent(value->applicationContext.putIfAbsent("bfme2HomeDir", value.toString()));
+		registryService.findBfME2UserDirectory().ifPresent(value->applicationContext.putIfAbsent("bfme2UserDir", value.toString()));
+		registryService.findBfME2RotWKHomeDirectory().ifPresent(value->applicationContext.putIfAbsent("rotwkHomeDir", value.toString()));
+		registryService.findBfME2RotWKUserDirectory().ifPresent(value->applicationContext.putIfAbsent("rotwkUserDir", value.toString()));
+		//		applicationContext.putIfAbsent("patcherUserDir", Paths.get("C:\\Users\\DarkAtra\\Desktop\\Test" + "\\.bfme2rotwkPatcher\\").normalize().toString());
+		//		applicationContext.putIfAbsent("bfme2HomeDir", Paths.get("C:\\Users\\DarkAtra\\Desktop\\Test\\bfme2\\").normalize().toString());
+		//		applicationContext.putIfAbsent("bfme2UserDir", Paths.get("C:\\Users\\DarkAtra\\Desktop\\Test\\userDirBfme2\\").normalize().toString());
+		//		applicationContext.putIfAbsent("rotwkHomeDir", Paths.get("C:\\Users\\DarkAtra\\Desktop\\Test\\bfme2ep1\\").normalize().toString());
+		//		applicationContext.putIfAbsent("rotwkUserDir", Paths.get("C:\\Users\\DarkAtra\\Desktop\\Test\\userDirBfme2Ep1\\").normalize().toString());
 		return applicationContext;
 	}
 }
