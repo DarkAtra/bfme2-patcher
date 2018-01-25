@@ -45,8 +45,8 @@ public class LauncherApplication implements ApplicationRunner {
 
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
-		final File patcherJarPath = Paths.get(config.getPatcherUserDir(), "Patcher.jar").normalize().toFile();
-		final String patcherSrc = config.getPatchFilesFolderPath();
+		final File patcherJarPath = Paths.get(config.getPatcherUserDir(), config.getUpdaterJarName()).normalize().toFile();
+		final String patcherSrc = config.getPatchFileFolder() + "/" + config.getUpdaterJarName();
 		communicationService.addListener(message->{
 			final RequiresUpdateDto requiresUpdateDto = gson.fromJson(message, RequiresUpdateDto.class);
 			if(requiresUpdateDto.isRequiresUpdate()) {
