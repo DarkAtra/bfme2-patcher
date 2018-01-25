@@ -1,9 +1,10 @@
 logging:
   level.de.darkatra: info
   file: ${user.home}\AppData\Roaming\.patcher\launcher.log
-launcherConfig:
+patcherConfig:
   serverUrl: https://darkatra.de
-  patcherFilePath: bfmemod/Patcher.jar
+  patchFilesFolderPath: bfmemod
+  updaterJarName: Patcher.jar
   patcherUserDir: ${user.home}\AppData\Roaming\.bfme2rotwkPatcher\
 ---
 logging:

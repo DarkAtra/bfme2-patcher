@@ -4,7 +4,9 @@ logging:
 patcherConfig:
   serverUrl: https://darkatra.de
   patchFilesFolderPath: bfmemod
+  updaterJarName: Patcher.jar
   patchListPath: bfmemod/version.txt
+  patcherUserDir: ${user.home}\AppData\Roaming\.bfme2rotwkPatcher\
 ---
 logging:
   level.de.darkatra: debug

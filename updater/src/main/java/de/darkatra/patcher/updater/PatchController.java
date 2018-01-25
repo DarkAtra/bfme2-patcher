@@ -1,6 +1,5 @@
 package de.darkatra.patcher.updater;
 
-import de.darkatra.patcher.exception.ContextConfigurationException;
 import de.darkatra.patcher.exception.ValidationException;
 import de.darkatra.patcher.model.Context;
 import de.darkatra.patcher.model.Packet;
@@ -22,6 +21,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class PatchController {
-	private Context context;
+	private final Context context;
 	private final Config config;
 	private final DownloadService downloadService;
 	private final HashingService hashingService;
@@ -46,7 +46,7 @@ public class PatchController {
 		this.communicationService = communicationService;
 	}
 
-	public void patch(PatchEventListener patchEventListener) throws IOException, URISyntaxException, ValidationException, InterruptedException, ContextConfigurationException {
+	public void patch(PatchEventListener patchEventListener) throws IOException, URISyntaxException, ValidationException, InterruptedException {
 		URL url = new URL(new URL(config.getServerUrl()), config.getPatchListPath());
 		{
 			URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
@@ -67,24 +67,18 @@ public class PatchController {
 				final Patch patch = patchService.applyContextToPatch(context, patchOptional.get());
 				patchEventListener.postReadServerPatchlist();
 
-				final Optional<String> patcherUserDir = context.getString("patcherUserDir");
-				if(patcherUserDir.isPresent()) {
-					final String patcherUserDirPath = patcherUserDir.get();
-					final File patcherJar = new File(patcherUserDirPath + "/Patcher.jar");
-					final Optional<Packet> first = patch.getPackets().stream().filter(packet->packet.getDest().equalsIgnoreCase(patcherJar.getAbsolutePath())).findFirst();
-					if(first.isPresent()) {
-						final Optional<String> fileChecksum = hashingService.getSHA3Checksum(patcherJar);
-						if(fileChecksum.isPresent() && fileChecksum.get().equals(first.get().getChecksum())) {
-							log.debug("sendMessage update");
-							communicationService.sendMessage(new RequiresUpdateDto(true));
-							patchEventListener.onPatcherNeedsUpdate(true);
-							return;
-						}
+				// updater needs update
+				final String patcherUserDir = config.getPatcherUserDir();
+				final File patcherJar = Paths.get(patcherUserDir, config.getUpdaterJarName()).toFile();
+				final Optional<Packet> firstUpdater = patch.getPackets().stream().filter(packet->packet.getDest().equalsIgnoreCase(patcherJar.getAbsolutePath())).findFirst();
+				if(firstUpdater.isPresent()) {
+					final Optional<String> fileChecksum = hashingService.getSHA3Checksum(patcherJar);
+					if(fileChecksum.isPresent() && fileChecksum.get().equals(firstUpdater.get().getChecksum())) {
+						communicationService.sendMessage(new RequiresUpdateDto(true));
+						patchEventListener.onPatcherNeedsUpdate(true);
+						return;
 					}
-				} else {
-					throw new ContextConfigurationException("patcherUserDir was not configured");
 				}
-				log.debug("sendMessage exit");
 				communicationService.sendMessage(new RequiresUpdateDto(false));
 				patchEventListener.onPatcherNeedsUpdate(false);
 

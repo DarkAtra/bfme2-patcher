@@ -25,7 +25,7 @@ public class ContextConfiguration {
 		}
 		Context applicationContext = new Context();
 		applicationContext.putIfAbsent("serverUrl", url.toString());
-		//		applicationContext.putIfAbsent("patcherUserDir", System.getenv("APPDATA") + "/.bfme2rotwkPatcher/");
+		//		applicationContext.putIfAbsent("patcherUserDir", config.getPatcherUserDir());
 		//		registryService.findBfME2HomeDirectory().ifPresent(value->applicationContext.putIfAbsent("bfme2HomeDir", value.toString()));
 		//		registryService.findBfME2UserDirectory().ifPresent(value->applicationContext.putIfAbsent("bfme2UserDir", value.toString()));
 		//		registryService.findBfME2RotWKHomeDirectory().ifPresent(value->applicationContext.putIfAbsent("rotwkHomeDir", value.toString()));

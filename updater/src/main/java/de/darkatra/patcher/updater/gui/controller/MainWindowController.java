@@ -1,6 +1,5 @@
 package de.darkatra.patcher.updater.gui.controller;
 
-import de.darkatra.patcher.exception.ContextConfigurationException;
 import de.darkatra.patcher.exception.ValidationException;
 import de.darkatra.patcher.model.Context;
 import de.darkatra.patcher.service.OptionFileService;
@@ -119,13 +118,6 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 					patchProgressBar.setProgress(0);
 					patchProgressLabel.setText("Update failed. Please try again later.");
 					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Validation error", "Could not validate the update. Some files may have been changed by another application.").show();
-				});
-			} catch(ContextConfigurationException e) {
-				log.debug("ContextConfigurationException", e);
-				Platform.runLater(()->{
-					patchProgressBar.setProgress(0);
-					patchProgressLabel.setText("Update failed. Please try again later.");
-					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Configuration error", "Update failed due to an unexpected configuration error.").show();
 				});
 			} catch(InterruptedException e) {
 				log.debug("InterruptedException", e);
