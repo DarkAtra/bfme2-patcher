@@ -2,12 +2,14 @@ package de.darkatra.patcher.updater.gui.controller;
 
 import de.darkatra.patcher.exception.ValidationException;
 import de.darkatra.patcher.model.Context;
+import de.darkatra.patcher.properties.Config;
 import de.darkatra.patcher.service.OptionFileService;
 import de.darkatra.patcher.updater.PatchController;
 import de.darkatra.patcher.updater.gui.GUIApplication;
 import de.darkatra.patcher.updater.listener.PatchEventListener;
 import de.darkatra.util.asyncapi.AsyncExecutionService;
 import de.darkatra.util.asyncapi.AsyncTask;
+import de.darkatra.util.asyncapi.Callback;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.ParallelTransition;
@@ -38,11 +40,13 @@ import java.util.Optional;
 @Slf4j
 public class MainWindowController implements AsyncTask, PatchEventListener {
 	private Context context;
+	private Config config;
 	private PatchController patchController;
 	private OptionFileService optionFileService;
 
 	public void setApplicationContext(ConfigurableApplicationContext applicationContext) {
 		this.context = applicationContext.getBean(Context.class);
+		this.config = applicationContext.getBean(Config.class);
 		this.patchController = applicationContext.getBean(PatchController.class);
 		this.optionFileService = applicationContext.getBean(OptionFileService.class);
 	}
@@ -105,6 +109,7 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 					patchProgressLabel.setText("Update failed. Please try again later.");
 					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Update error", "There was an error downloading the update. Try to rerun this application with admin privileges.").show();
 				});
+				return false;
 			} catch(URISyntaxException e) {
 				log.debug("URISyntaxException", e);
 				Platform.runLater(()->{
@@ -112,6 +117,7 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 					patchProgressLabel.setText("Update failed. Please try again later.");
 					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Unexpected application error", "There was an unexpected error reading the application config. Please try again later.").show();
 				});
+				return false;
 			} catch(ValidationException e) {
 				log.debug("ValidationException", e);
 				Platform.runLater(()->{
@@ -119,6 +125,7 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 					patchProgressLabel.setText("Update failed. Please try again later.");
 					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Validation error", "Could not validate the update. Some files may have been changed by another application.").show();
 				});
+				return false;
 			} catch(InterruptedException e) {
 				log.debug("InterruptedException", e);
 				throw e;
@@ -153,16 +160,20 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 		updateButton.setOnMouseClicked(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
+				updateButton.setDisable(true);
 				final EventHandler<MouseEvent> consumer = e->{};
 				updateButton.setOnMouseClicked(consumer);
-				AsyncExecutionService.getInstance().executeAsyncTask(patchTask).onSuccessAndFailure(()->{
+				final Callback callback = ()->{
 					if(updateButton.getOnMouseClicked() == consumer) {
 						updateButton.setOnMouseClicked(this);
 					}
-				});
+					updateButton.setDisable(false);
+				};
+				AsyncExecutionService.getInstance().executeAsyncTask(patchTask).onFailure(callback).onInterrupt(callback);
 			}
 		});
 
+		toggleModButton.setDisable(true);
 		toggleModButton.setOnMouseClicked(event->{
 			// TODO: toggle mod (enable/disable)
 		});
@@ -221,9 +232,7 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 
 	@Override
 	public void postDownloadServerPatchlist() {
-		Platform.runLater(()->{
-			patchProgressLabel.setText("Downloaded the patchlist.");
-		});
+		Platform.runLater(()->patchProgressLabel.setText("Downloaded the patchlist."));
 	}
 
 	@Override
@@ -285,10 +294,32 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 	@Override
 	public void onPatchDone() {
 		Platform.runLater(()->{
+			updateButton.setDisable(false);
+			//			toggleModButton.setDisable(false);
 			patchProgressLabel.setText("Ready to start the game.");
 			updateButton.setText("Start Game");
-			updateButton.setOnMouseClicked(e->{
-				// TODO: start the game
+			updateButton.setOnMouseClicked(event->{
+				updateButton.setDisable(true);
+				//				toggleModButton.setDisable(true);
+				final Optional<String> rotwkHomeDirPath = context.getString("rotwkHomeDir");
+				if(rotwkHomeDirPath.isPresent()) {
+					final ProcessBuilder pb = new ProcessBuilder(rotwkHomeDirPath.get() + "/lotrbfme2ep1.exe");
+					try {
+						final Process p = pb.start();
+						guiApplication.setStageVisible(false);
+						p.waitFor();
+						guiApplication.setStageVisible(true);
+					} catch(IOException e) {
+						guiApplication.setStageVisible(true);
+						Platform.runLater(()->GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Game Error", "Could not start the Game. Please try again.").showAndWait());
+					} catch(InterruptedException e) {
+						guiApplication.setStageVisible(true);
+					}
+					updateButton.setDisable(false);
+					//					toggleModButton.setDisable(false);
+				} else {
+					Platform.runLater(()->GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Game Error", "Could not find the game. Is it installed?").showAndWait());
+				}
 			});
 		});
 	}

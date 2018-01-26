@@ -77,7 +77,7 @@ public class CommunicationService {
 				// only accept 1 connection at a time
 				readSocket();
 			} catch(IOException e) {
-				log.warn("Exception accepting a new connection.", e);
+				log.debug("Exception accepting a new connection.", e);
 			}
 		}
 	}
@@ -92,7 +92,7 @@ public class CommunicationService {
 				});
 			}
 		} catch(IOException e) {
-			log.warn("Exception communicating with the launcher. Possible the socket just got closed (which is okay).", e);
+			log.debug("Exception communicating with the launcher. Possible the socket just got closed (which is okay).", e);
 		} finally {
 			close();
 		}

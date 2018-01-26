@@ -47,6 +47,14 @@ public class GUIApplication extends Application {
 		primaryStage.show();
 	}
 
+	public void setStageVisible(boolean isVisible) {
+		if(isVisible) {
+			primaryStage.show();
+		} else {
+			primaryStage.hide();
+		}
+	}
+
 	public GameSettingsWindowController showGameSettingsWindow() throws IOException {
 		FXMLLoader fxmlLoader = new FXMLLoader();
 		fxmlLoader.setLocation(getClass().getResource("/view/gameSettingsWindow.fxml"));
