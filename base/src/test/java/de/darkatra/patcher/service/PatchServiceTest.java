@@ -1,4 +1,4 @@
-package test.patcher.service;
+package de.darkatra.patcher.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -8,12 +8,11 @@ import static org.powermock.api.mockito.PowerMockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 import static org.powermock.api.support.membermodification.MemberMatcher.constructor;
 import static org.powermock.api.support.membermodification.MemberModifier.suppress;
-import test.patcher.TestApplication;
+import de.darkatra.patcher.TestApplication;
 import de.darkatra.patcher.model.Context;
 import de.darkatra.patcher.model.Packet;
 import de.darkatra.patcher.model.Patch;
 import de.darkatra.patcher.model.Version;
-import de.darkatra.patcher.service.PatchService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;

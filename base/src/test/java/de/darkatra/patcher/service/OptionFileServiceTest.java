@@ -1,9 +1,8 @@
-package test.patcher.service;
+package de.darkatra.patcher.service;
 
 import static org.junit.Assert.assertTrue;
-import test.patcher.TestApplication;
+import de.darkatra.patcher.TestApplication;
 import de.darkatra.patcher.model.Context;
-import de.darkatra.patcher.service.OptionFileService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;

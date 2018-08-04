@@ -7,6 +7,7 @@ patcherConfig:
   updaterJarName: Patcher.jar
   patchListPath: bfmemod/version.txt
   patcherUserDir: ${user.home}\AppData\Roaming\.bfme2rotwkPatcher\
+  configFilePath: ${patcherUserDir}\config.json
 ---
 logging:
   level.de.darkatra: debug

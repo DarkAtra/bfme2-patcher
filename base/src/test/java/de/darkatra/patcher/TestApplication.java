@@ -1,4 +1,4 @@
-package test.patcher;
+package de.darkatra.patcher;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
