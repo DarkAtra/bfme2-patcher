@@ -15,7 +15,7 @@ mvn clean package
 ```
 Das wars. Die Jar-Dateien befinden sich nun im target-Ordner der jeweiligen Anwendung. Bsp.: `updater/target/updater-0.0.1-SNAPSHOT.jar`
 
-## Develope
+## Develop
 Sollte das Projekt nicht nicht geklont sein muss der folgende Befehl ausgeführt werden.
 ```
 git clone https://git.darkatra.de/DarkAtra/Patcher.git
