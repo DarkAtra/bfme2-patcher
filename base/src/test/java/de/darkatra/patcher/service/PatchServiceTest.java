@@ -30,7 +30,7 @@ import java.util.Optional;
 
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(SpringJUnit4ClassRunner.class)
-@PrepareForTest({ PatchService.class })
+@PrepareForTest({PatchService.class})
 @PowerMockIgnore("javax.management.*")
 @SpringBootTest(classes = TestApplication.class)
 public class PatchServiceTest {

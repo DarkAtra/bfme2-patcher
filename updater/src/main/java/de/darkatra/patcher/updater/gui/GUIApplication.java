@@ -3,7 +3,6 @@ package de.darkatra.patcher.updater.gui;
 import de.darkatra.patcher.updater.gui.controller.GameSettingsWindowController;
 import de.darkatra.patcher.updater.gui.controller.MainWindowController;
 import de.darkatra.patcher.updater.gui.controller.PatcherSettingsWindowController;
-import de.darkatra.util.asyncapi.AsyncExecutionService;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -37,8 +36,8 @@ public class GUIApplication extends Application {
 		final MainWindowController mainWindowController = fxmlLoader.getController();
 		mainWindowController.setGuiApplication(this);
 		mainWindowController.setApplicationContext(applicationContext);
-		primaryStage.setOnCloseRequest(event->{
-			AsyncExecutionService.getInstance().interruptAllAsyncTasks();
+		primaryStage.setOnCloseRequest(event -> {
+			mainWindowController.preDestroy();
 			Platform.exit();
 			System.exit(0);
 		});
@@ -48,7 +47,7 @@ public class GUIApplication extends Application {
 	}
 
 	public void setStageVisible(boolean isVisible) {
-		if(isVisible) {
+		if (isVisible) {
 			primaryStage.show();
 		} else {
 			primaryStage.hide();

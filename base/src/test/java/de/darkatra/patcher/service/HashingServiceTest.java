@@ -30,7 +30,7 @@ import java.util.Optional;
 
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(SpringJUnit4ClassRunner.class)
-@PrepareForTest({ HashingService.class })
+@PrepareForTest({HashingService.class})
 @PowerMockIgnore("javax.management.*")
 @SpringBootTest(classes = TestApplication.class)
 public class HashingServiceTest {
@@ -70,7 +70,7 @@ public class HashingServiceTest {
 		final File file = mock(File.class);
 		when(file.isFile()).thenReturn(true);
 
-		final ThrowableAssert.ThrowingCallable operation = ()->hashingService.getSHA3Checksum(file);
+		final ThrowableAssert.ThrowingCallable operation = () -> hashingService.getSHA3Checksum(file);
 
 		assertThatThrownBy(operation).isInstanceOf(IOException.class);
 	}
@@ -83,7 +83,7 @@ public class HashingServiceTest {
 		when(threadMock.isInterrupted()).thenReturn(true);
 		final File file = new File(HashingServiceTest.class.getResource("/hashTest.txt").toURI());
 
-		final ThrowableAssert.ThrowingCallable operation = ()->hashingService.getSHA3Checksum(file);
+		final ThrowableAssert.ThrowingCallable operation = () -> hashingService.getSHA3Checksum(file);
 
 		assertThatThrownBy(operation).isInstanceOf(InterruptedException.class);
 	}

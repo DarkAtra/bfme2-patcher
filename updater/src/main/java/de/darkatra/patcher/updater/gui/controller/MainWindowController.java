@@ -7,9 +7,6 @@ import de.darkatra.patcher.service.OptionFileService;
 import de.darkatra.patcher.updater.PatchController;
 import de.darkatra.patcher.updater.gui.GUIApplication;
 import de.darkatra.patcher.updater.listener.PatchEventListener;
-import de.darkatra.util.asyncapi.AsyncExecutionService;
-import de.darkatra.util.asyncapi.AsyncTask;
-import de.darkatra.util.asyncapi.Callback;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.ParallelTransition;
@@ -31,14 +28,20 @@ import javafx.util.Duration;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.task.AsyncListenableTaskExecutor;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class MainWindowController implements AsyncTask, PatchEventListener {
+public class MainWindowController implements PatchEventListener {
 	private Context context;
 	private Config config;
 	private PatchController patchController;
@@ -75,60 +78,62 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 	private final ParallelTransition fadeBackgroundTransition;
 	private final Timeline updateCountdownTimeline;
 	private final String[] imagePaths;
-	private final AsyncTask patchTask;
+	private final Callable<Boolean> patchTask;
+	private final AsyncListenableTaskExecutor taskExecutor = new SimpleAsyncTaskExecutor();
+	private final ScheduledExecutorService animationExecutor = Executors.newSingleThreadScheduledExecutor();
 	private GUIApplication guiApplication;
 	private int currentImage = 0;
 
 	public MainWindowController() {
-		imagePaths = new String[] {
-				"/images/splash2_1920x1080.jpg",
-				"/images/splash10_1920x1080.jpg",
-				"/images/splash12_1920x1080.jpg",
-				"/images/splash13_1920x1080.jpg"
+		imagePaths = new String[]{
+			"/images/splash2_1920x1080.jpg",
+			"/images/splash10_1920x1080.jpg",
+			"/images/splash12_1920x1080.jpg",
+			"/images/splash13_1920x1080.jpg"
 		};
 		fadeBackgroundTransition = new ParallelTransition();
 		IntegerProperty secondsLeft = new SimpleIntegerProperty(5);
 		updateCountdownTimeline = new Timeline();
 		updateCountdownTimeline.setCycleCount(Timeline.INDEFINITE);
-		updateCountdownTimeline.getKeyFrames().add(new KeyFrame(Duration.seconds(1), event->{
+		updateCountdownTimeline.getKeyFrames().add(new KeyFrame(Duration.seconds(1), event -> {
 			secondsLeft.setValue(secondsLeft.getValue() - 1);
 			patchProgressLabel.setText("Patcher requires an update. Updating application in " + secondsLeft.getValue() + " seconds.");
-			if(secondsLeft.getValue() <= 0) {
+			if (secondsLeft.getValue() <= 0) {
 				updateCountdownTimeline.stop();
 				Platform.exit();
 				System.exit(0);
 			}
 		}));
-		patchTask = ()->{
+		patchTask = () -> {
 			try {
 				patchController.patch(this);
-			} catch(IOException e) {
+			} catch (IOException e) {
 				log.debug("IOException", e);
-				Platform.runLater(()->{
+				Platform.runLater(() -> {
 					patchProgressBar.setProgress(0);
 					patchProgressLabel.setText("Update failed. Please try again later.");
-					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Update error", "There was an error downloading the update. Try to rerun this application with admin privileges.").show();
+					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Update error",
+						"There was an error downloading the update. Try to rerun this application with admin privileges.").show();
 				});
 				return false;
-			} catch(URISyntaxException e) {
+			} catch (URISyntaxException e) {
 				log.debug("URISyntaxException", e);
-				Platform.runLater(()->{
+				Platform.runLater(() -> {
 					patchProgressBar.setProgress(0);
 					patchProgressLabel.setText("Update failed. Please try again later.");
-					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Unexpected application error", "There was an unexpected error reading the application config. Please try again later.").show();
+					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Unexpected application error",
+						"There was an unexpected error reading the application config. Please try again later.").show();
 				});
 				return false;
-			} catch(ValidationException e) {
+			} catch (ValidationException e) {
 				log.debug("ValidationException", e);
-				Platform.runLater(()->{
+				Platform.runLater(() -> {
 					patchProgressBar.setProgress(0);
 					patchProgressLabel.setText("Update failed. Please try again later.");
-					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Validation error", "Could not validate the update. Some files may have been changed by another application.").show();
+					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Validation error",
+						"Could not validate the update. Some files may have been changed by another application.").show();
 				});
 				return false;
-			} catch(InterruptedException e) {
-				log.debug("InterruptedException", e);
-				throw e;
 			}
 			return true;
 		};
@@ -145,14 +150,14 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 		fadeOutTransition.setFromValue(1.0);
 		fadeOutTransition.setToValue(0.0);
 		fadeBackgroundTransition.getChildren().addAll(fadeInTransition, fadeOutTransition);
-		fadeBackgroundTransition.setOnFinished((event)->{
+		fadeBackgroundTransition.setOnFinished((event) -> {
 			fadeOut.setStyle("-fx-background-image: url('" + imagePaths[currentImage] + "');");
 			fadeOut.setOpacity(1);
 			fadeIn.setOpacity(0);
 			currentImage = ++currentImage % imagePaths.length;
 			fadeIn.setStyle("-fx-background-image: url('" + imagePaths[currentImage] + "');");
 		});
-		AsyncExecutionService.getInstance().executeAsyncTask(this, "GUIFadeInFadeOutThread");
+		animationExecutor.scheduleWithFixedDelay(() -> Platform.runLater(fadeBackgroundTransition::playFromStart), 0, 10, TimeUnit.SECONDS);
 
 		patchProgressBar.setProgress(0);
 		patchProgressLabel.setText("Waiting for user input.");
@@ -161,62 +166,72 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 			@Override
 			public void handle(MouseEvent event) {
 				updateButton.setDisable(true);
-				final EventHandler<MouseEvent> consumer = e->{};
+				final EventHandler<MouseEvent> consumer = e -> {
+				};
 				updateButton.setOnMouseClicked(consumer);
-				final Callback callback = ()->{
-					if(updateButton.getOnMouseClicked() == consumer) {
+				final Runnable callback = () -> {
+					if (updateButton.getOnMouseClicked() == consumer) {
 						updateButton.setOnMouseClicked(this);
 					}
 					updateButton.setDisable(false);
 				};
-				AsyncExecutionService.getInstance().executeAsyncTask(patchTask).onFailure(callback).onInterrupt(callback);
+				taskExecutor.submitListenable(patchTask)
+					.completable()
+					.thenRun(callback)
+					.exceptionally(ex -> {
+						log.debug("TaskExecutor with exception", ex);
+						callback.run();
+						return null;
+					});
 			}
 		});
 
 		toggleModButton.setDisable(true);
-		toggleModButton.setOnMouseClicked(event->{
+		toggleModButton.setOnMouseClicked(event -> {
 			// TODO: toggle mod (enable/disable)
 		});
 
-		fixBfME2MenuItem.setOnAction(event->{
+		fixBfME2MenuItem.setOnAction(event -> {
 			final Optional<String> bfme2UserDir = context.getString("bfme2UserDir");
-			if(bfme2UserDir.isPresent()) {
+			if (bfme2UserDir.isPresent()) {
 				final int result = writeDefaultOptionsIni(bfme2UserDir.get());
-				if(result == 1) {
+				if (result == 1) {
 					GUIApplication.alert(Alert.AlertType.INFORMATION, "Success", "Fixed BfME 2", "The options.ini file was created successfully.").show();
 					return;
-				} else if(result == 0) {
+				} else if (result == 0) {
 					return;
 				}
 			}
-			GUIApplication.alert(Alert.AlertType.ERROR, "Application error", "Could not fix BfME 2", "There was an error writing the default options.ini").show();
+			GUIApplication.alert(Alert.AlertType.ERROR, "Application error", "Could not fix BfME 2", "There was an error writing the default options.ini")
+				.show();
 		});
 
-		fixBfME2EP1MenuItem.setOnAction(event->{
+		fixBfME2EP1MenuItem.setOnAction(event -> {
 			final Optional<String> rotwkUserDir = context.getString("rotwkUserDir");
-			if(rotwkUserDir.isPresent()) {
+			if (rotwkUserDir.isPresent()) {
 				final int result = writeDefaultOptionsIni(rotwkUserDir.get());
-				if(result == 1) {
+				if (result == 1) {
 					GUIApplication.alert(Alert.AlertType.INFORMATION, "Success", "Fixed BfME 2 RotWK", "The options.ini file was created successfully.").show();
 					return;
-				} else if(result == 0) {
+				} else if (result == 0) {
 					return;
 				}
 			}
-			GUIApplication.alert(Alert.AlertType.ERROR, "Application error", "Could not fix BfME 2 RotWK", "There was an error writing the default options.ini").show();
+			GUIApplication.alert(Alert.AlertType.ERROR, "Application error", "Could not fix BfME 2 RotWK", "There was an error writing the default options.ini")
+				.show();
 		});
 
-		gameSettingsMenuItem.setOnAction(event->{
+		gameSettingsMenuItem.setOnAction(event -> {
 			try {
 				guiApplication.showGameSettingsWindow();
-			} catch(IOException e) {
+			} catch (IOException e) {
 				GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Application error", "Could not open the game settings.").show();
 			}
 		});
-		patcherSettingsMenuItem.setOnAction(event->{
+		patcherSettingsMenuItem.setOnAction(event -> {
 			try {
 				guiApplication.showPatcherSettingsWindow();
-			} catch(IOException e) {
+			} catch (IOException e) {
 				GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Application error", "Could not open the patcher settings.").show();
 			}
 		});
@@ -224,7 +239,7 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 
 	@Override
 	public void preDownloadServerPatchlist() {
-		Platform.runLater(()->{
+		Platform.runLater(() -> {
 			patchProgressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
 			patchProgressLabel.setText("Downloading the patchlist...");
 		});
@@ -232,23 +247,23 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 
 	@Override
 	public void postDownloadServerPatchlist() {
-		Platform.runLater(()->patchProgressLabel.setText("Downloaded the patchlist."));
+		Platform.runLater(() -> patchProgressLabel.setText("Downloaded the patchlist."));
 	}
 
 	@Override
 	public void preReadServerPatchlist() {
-		Platform.runLater(()->patchProgressLabel.setText("Reading patchlist..."));
+		Platform.runLater(() -> patchProgressLabel.setText("Reading patchlist..."));
 	}
 
 	@Override
 	public void postReadServerPatchlist() {
-		Platform.runLater(()->patchProgressLabel.setText("Read patchlist."));
+		Platform.runLater(() -> patchProgressLabel.setText("Read patchlist."));
 	}
 
 	@Override
 	public void onPatcherNeedsUpdate(boolean requiresUpdate) {
-		if(requiresUpdate) {
-			Platform.runLater(()->{
+		if (requiresUpdate) {
+			Platform.runLater(() -> {
 				patchProgressBar.setProgress(0);
 				updateCountdownTimeline.playFromStart();
 			});
@@ -257,27 +272,27 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 
 	@Override
 	public void preCalculateDifferences() {
-		Platform.runLater(()->patchProgressLabel.setText("Calculating differences..."));
+		Platform.runLater(() -> patchProgressLabel.setText("Calculating differences..."));
 	}
 
 	@Override
 	public void postCalculateDifferences() {
-		Platform.runLater(()->patchProgressLabel.setText("Calculated differences."));
+		Platform.runLater(() -> patchProgressLabel.setText("Calculated differences."));
 	}
 
 	@Override
 	public void preDeleteFiles() {
-		Platform.runLater(()->patchProgressLabel.setText("Deleting obsolete files..."));
+		Platform.runLater(() -> patchProgressLabel.setText("Deleting obsolete files..."));
 	}
 
 	@Override
 	public void postDeleteFiles() {
-		Platform.runLater(()->patchProgressLabel.setText("Deleted obsolete files."));
+		Platform.runLater(() -> patchProgressLabel.setText("Deleted obsolete files."));
 	}
 
 	@Override
 	public void prePacketsDownload() {
-		Platform.runLater(()->{
+		Platform.runLater(() -> {
 			patchProgressBar.setProgress(0);
 			patchProgressLabel.setText("Downloading the patch...");
 		});
@@ -285,7 +300,7 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 
 	@Override
 	public void postPacketsDownload() {
-		Platform.runLater(()->{
+		Platform.runLater(() -> {
 			patchProgressBar.setProgress(1);
 			patchProgressLabel.setText("Downloaded the patch.");
 		});
@@ -293,32 +308,35 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 
 	@Override
 	public void onPatchDone() {
-		Platform.runLater(()->{
+		Platform.runLater(() -> {
 			updateButton.setDisable(false);
-			//			toggleModButton.setDisable(false);
+			// toggleModButton.setDisable(false);
 			patchProgressLabel.setText("Ready to start the game.");
 			updateButton.setText("Start Game");
-			updateButton.setOnMouseClicked(event->{
+			updateButton.setOnMouseClicked(event -> {
 				updateButton.setDisable(true);
-				//				toggleModButton.setDisable(true);
+				// toggleModButton.setDisable(true);
 				final Optional<String> rotwkHomeDirPath = context.getString("rotwkHomeDir");
-				if(rotwkHomeDirPath.isPresent()) {
+				if (rotwkHomeDirPath.isPresent()) {
 					final ProcessBuilder pb = new ProcessBuilder(rotwkHomeDirPath.get() + "/lotrbfme2ep1.exe");
 					try {
 						final Process p = pb.start();
 						guiApplication.setStageVisible(false);
 						p.waitFor();
 						guiApplication.setStageVisible(true);
-					} catch(IOException e) {
+					} catch (IOException e) {
 						guiApplication.setStageVisible(true);
-						Platform.runLater(()->GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Game Error", "Could not start the Game. Please try again.").showAndWait());
-					} catch(InterruptedException e) {
+						Platform.runLater(
+							() -> GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Game Error", "Could not start the Game. Please try again.")
+								.showAndWait());
+					} catch (InterruptedException e) {
 						guiApplication.setStageVisible(true);
 					}
 					updateButton.setDisable(false);
-					//					toggleModButton.setDisable(false);
+					// toggleModButton.setDisable(false);
 				} else {
-					Platform.runLater(()->GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Game Error", "Could not find the game. Is it installed?").showAndWait());
+					Platform.runLater(
+						() -> GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Game Error", "Could not find the game. Is it installed?").showAndWait());
 				}
 			});
 		});
@@ -326,49 +344,39 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 
 	@Override
 	public void onValidatingPacket() {
-		Platform.runLater(()->patchProgressLabel.setText("Validating the packet..."));
+		Platform.runLater(() -> patchProgressLabel.setText("Validating the packet..."));
 	}
 
 	@Override
 	public void onPatchProgressChange(long current, long target) {
-		Platform.runLater(()->{
+		Platform.runLater(() -> {
 			patchProgressBar.setProgress((double) current / target);
 			patchProgressLabel.setText(current + "/" + target);
 		});
 	}
 
-	@Override
-	public boolean run() {
-		while(!Thread.currentThread().isInterrupted()) {
-			try {
-				Thread.sleep(3000);
-				Platform.runLater(fadeBackgroundTransition::playFromStart);
-			} catch(InterruptedException | IllegalArgumentException e) {
-				return false;
-			}
-		}
-		return true;
-	}
-
 	private int writeDefaultOptionsIni(@NotNull String userDit) {
 		File userDirFile = new File(userDit);
-		if(!userDirFile.exists()) {
-			if(!userDirFile.mkdirs()) {
+		if (!userDirFile.exists()) {
+			if (!userDirFile.mkdirs()) {
 				return -1;
 			}
 		}
-		if(userDirFile.exists()) {
+		if (userDirFile.exists()) {
 			File optionsIni = new File(userDirFile.getAbsolutePath() + "/options.ini");
-			if(optionsIni.exists()) {
-				final Optional<ButtonType> confirmation = GUIApplication.alert(Alert.AlertType.CONFIRMATION, "Confirmation", "The game seems to be working just fine.", "The game seems to be working just fine. Trying the fix again could result in loss of progress in game. Are you sure that u want to continue?").showAndWait();
-				if(!confirmation.isPresent() || confirmation.get() != ButtonType.OK) {
+			if (optionsIni.exists()) {
+				final Optional<ButtonType> confirmation = GUIApplication
+					.alert(Alert.AlertType.CONFIRMATION, "Confirmation", "The game seems to be working just fine.",
+						"The game seems to be working just fine. Trying the fix again could result in loss of progress in game. Are you sure that u want to continue?")
+					.showAndWait();
+				if (!confirmation.isPresent() || confirmation.get() != ButtonType.OK) {
 					return 0;
 				}
 			}
 			try {
 				optionFileService.writeOptionsFile(optionsIni, optionFileService.buildDefaultOptionsIni());
 				return 1;
-			} catch(IOException e) {
+			} catch (IOException e) {
 				log.error("Could not generate default options.ini", e);
 			}
 		}
@@ -377,5 +385,9 @@ public class MainWindowController implements AsyncTask, PatchEventListener {
 
 	public void setGuiApplication(GUIApplication guiApplication) {
 		this.guiApplication = guiApplication;
+	}
+
+	public void preDestroy() {
+		animationExecutor.shutdown();
 	}
 }

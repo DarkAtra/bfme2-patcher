@@ -10,7 +10,7 @@ import java.net.URL;
 import java.nio.file.Paths;
 
 @Data
-@ConfigurationProperties(prefix = "patcherConfig")
+@ConfigurationProperties(prefix = "patcher-config")
 public class Config {
 	private String serverUrl = "https://localhost";
 	private String patchFilesFolderPath = "patch";
