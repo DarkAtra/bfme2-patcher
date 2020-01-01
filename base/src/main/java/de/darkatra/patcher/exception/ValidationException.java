@@ -1,21 +1,16 @@
 package de.darkatra.patcher.exception;
 
 public class ValidationException extends Exception {
-	public ValidationException() {}
 
-	public ValidationException(String message) {
-		super(message);
+	public ValidationException(final String message) {
+		this(message, null);
 	}
 
-	public ValidationException(String message, Throwable cause) {
+	public ValidationException(final Throwable cause) {
+		this(null, cause);
+	}
+
+	public ValidationException(final String message, final Throwable cause) {
 		super(message, cause);
-	}
-
-	public ValidationException(Throwable cause) {
-		super(cause);
-	}
-
-	public ValidationException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-		super(message, cause, enableSuppression, writableStackTrace);
 	}
 }

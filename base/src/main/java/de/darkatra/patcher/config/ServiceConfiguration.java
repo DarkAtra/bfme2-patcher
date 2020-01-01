@@ -1,6 +1,6 @@
 package de.darkatra.patcher.config;
 
-import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.darkatra.patcher.service.DownloadService;
 import de.darkatra.patcher.service.HashingService;
 import de.darkatra.patcher.service.OptionFileService;
@@ -32,8 +32,8 @@ public class ServiceConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public PatchService patchService(Gson gson) {
-		return new PatchService(gson);
+	public PatchService patchService(final ObjectMapper objectMapper) {
+		return new PatchService(objectMapper);
 	}
 
 	@Bean

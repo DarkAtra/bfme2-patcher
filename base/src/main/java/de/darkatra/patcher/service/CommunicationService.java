@@ -1,6 +1,6 @@
 package de.darkatra.patcher.service;
 
-import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.PreDestroy;
@@ -19,15 +19,15 @@ import java.util.function.Consumer;
 
 @Slf4j
 public class CommunicationService {
-	private final Gson gson;
+	private final ObjectMapper objectMapper;
 	private final Set<Consumer<String>> listeners;
 	private final ServerSocket server;
 	private Socket socket;
 	private DataInputStream reader;
 	private DataOutputStream writer;
 
-	public CommunicationService(Gson gson, SocketAddress endpoint) throws IOException {
-		this.gson = gson;
+	public CommunicationService(final ObjectMapper objectMapper, final SocketAddress endpoint) throws IOException {
+		this.objectMapper = objectMapper;
 		listeners = new LinkedHashSet<>();
 		server = null;
 		socket = new Socket();
@@ -38,8 +38,8 @@ public class CommunicationService {
 		executor.execute(this::readSocket);
 	}
 
-	public CommunicationService(Gson gson) throws IOException {
-		this.gson = gson;
+	public CommunicationService(final ObjectMapper objectMapper) throws IOException {
+		this.objectMapper = objectMapper;
 		listeners = new LinkedHashSet<>();
 		server = new ServerSocket(0);
 		final Executor executor = Executors.newSingleThreadExecutor();
@@ -51,11 +51,12 @@ public class CommunicationService {
 		close();
 		try {
 			server.close();
-		} catch(IOException ignored) {}
+		} catch (final IOException ignored) {
+		}
 	}
 
-	public boolean addListener(Consumer<String> onRead) {
-		synchronized(listeners) {
+	public boolean addListener(final Consumer<String> onRead) {
+		synchronized (listeners) {
 			return listeners.add(onRead);
 		}
 	}
@@ -64,19 +65,19 @@ public class CommunicationService {
 		return server != null ? server.getLocalPort() : -1;
 	}
 
-	public void sendMessage(Object object) throws IOException {
-		writer.writeUTF(gson.toJson(object));
+	public void sendMessage(final Object object) throws IOException {
+		writer.writeUTF(objectMapper.writeValueAsString(object));
 	}
 
 	private void accept() {
-		while(server != null && !server.isClosed()) {
+		while (server != null && !server.isClosed()) {
 			try {
 				socket = server.accept();
 				reader = new DataInputStream(socket.getInputStream());
 				writer = new DataOutputStream(socket.getOutputStream());
 				// only accept 1 connection at a time
 				readSocket();
-			} catch(IOException e) {
+			} catch (final IOException e) {
 				log.debug("Exception accepting a new connection.", e);
 			}
 		}
@@ -84,14 +85,14 @@ public class CommunicationService {
 
 	private void readSocket() {
 		try {
-			while(socket != null && !socket.isClosed()) {
-				readMessage().ifPresent(json->{
-					synchronized(listeners) {
-						listeners.forEach(listener->listener.accept(json));
+			while (socket != null && !socket.isClosed()) {
+				readMessage().ifPresent(json -> {
+					synchronized (listeners) {
+						listeners.forEach(listener -> listener.accept(json));
 					}
 				});
 			}
-		} catch(IOException e) {
+		} catch (final IOException e) {
 			log.debug("Exception communicating with the launcher. Possible the socket just got closed (which is okay).", e);
 		} finally {
 			close();
@@ -100,7 +101,7 @@ public class CommunicationService {
 
 	private Optional<String> readMessage() throws IOException {
 		final String in = reader.readUTF();
-		if(in.trim().isEmpty()) {
+		if (in.trim().isEmpty()) {
 			return Optional.empty();
 		} else {
 			return Optional.of(in);
@@ -110,9 +111,11 @@ public class CommunicationService {
 	private void close() {
 		try {
 			reader.close();
-		} catch(IOException ignored) {}
+		} catch (IOException ignored) {
+		}
 		try {
 			writer.close();
-		} catch(IOException ignored) {}
+		} catch (IOException ignored) {
+		}
 	}
 }

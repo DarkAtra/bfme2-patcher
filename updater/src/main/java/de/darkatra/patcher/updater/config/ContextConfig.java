@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ContextConfig {
 	@Autowired
-	public void configureContext(Context context, UpdaterConfig updaterConfig) {
+	public void configureContext(final Context context, final UpdaterConfig updaterConfig) {
 		context.putIfAbsent("launcherLocation", updaterConfig.getLauncherLocation());
 	}
 }

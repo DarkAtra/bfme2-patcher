@@ -7,6 +7,6 @@ import org.springframework.context.annotation.Import;
 
 @Configuration
 @EnableConfigurationProperties(Config.class)
-@Import({ ContextConfiguration.class, GsonConfiguration.class, ServiceConfiguration.class })
+@Import({ContextConfiguration.class, ServiceConfiguration.class})
 public class BaseAutoConfiguration {
 }

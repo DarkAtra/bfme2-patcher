@@ -23,7 +23,7 @@ public class RegistryService {
 	public Optional<Path> findBfME2HomeDirectory() {
 		try {
 			return Optional.of(Paths.get(Advapi32Util.registryGetStringValue(HKEY_LOCAL_MACHINE, BFME2_REGISTRY_KEY, "InstallPath")).normalize());
-		} catch(Exception e) {
+		} catch (final Exception e) {
 			log.warn("Can not find the BfME2 install dir.", e);
 			return Optional.empty();
 		}
@@ -36,8 +36,9 @@ public class RegistryService {
 	 */
 	public Optional<Path> findBfME2UserDirectory() {
 		try {
-			return Optional.of(Paths.get(System.getenv("APPDATA"), Advapi32Util.registryGetStringValue(HKEY_LOCAL_MACHINE, BFME2_REGISTRY_KEY, "UserDataLeafName")));
-		} catch(Exception e) {
+			return Optional
+				.of(Paths.get(System.getenv("APPDATA"), Advapi32Util.registryGetStringValue(HKEY_LOCAL_MACHINE, BFME2_REGISTRY_KEY, "UserDataLeafName")));
+		} catch (final Exception e) {
 			log.warn("Can not find the BfME2 user dir.", e);
 			return Optional.empty();
 		}
@@ -51,7 +52,7 @@ public class RegistryService {
 	public Optional<Path> findBfME2RotWKHomeDirectory() {
 		try {
 			return Optional.of(Paths.get(Advapi32Util.registryGetStringValue(HKEY_LOCAL_MACHINE, BFME2EP1_REGISTRY_KEY, "InstallPath")));
-		} catch(Exception e) {
+		} catch (final Exception e) {
 			log.warn("Can not find the BfME2EP1 install dir.", e);
 			return Optional.empty();
 		}
@@ -64,8 +65,9 @@ public class RegistryService {
 	 */
 	public Optional<Path> findBfME2RotWKUserDirectory() {
 		try {
-			return Optional.of(Paths.get(System.getenv("APPDATA"), Advapi32Util.registryGetStringValue(HKEY_LOCAL_MACHINE, BFME2EP1_REGISTRY_KEY, "UserDataLeafName")));
-		} catch(Exception e) {
+			return Optional
+				.of(Paths.get(System.getenv("APPDATA"), Advapi32Util.registryGetStringValue(HKEY_LOCAL_MACHINE, BFME2EP1_REGISTRY_KEY, "UserDataLeafName")));
+		} catch (final Exception e) {
 			log.warn("Can not find the BfME2EP1 user dir.", e);
 			return Optional.empty();
 		}

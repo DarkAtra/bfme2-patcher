@@ -1,6 +1,7 @@
 package de.darkatra.patcher.launcher;
 
-import com.google.gson.Gson;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.darkatra.patcher.model.communication.RequiresUpdateDto;
 import de.darkatra.patcher.properties.Config;
 import de.darkatra.patcher.service.CommunicationService;
@@ -31,15 +32,15 @@ import java.util.List;
 public class LauncherApplication implements ApplicationRunner {
 	private final DownloadService downloadService;
 	private final CommunicationService communicationService;
-	private final Gson gson;
+	private final ObjectMapper objectMapper;
 	private final Config config;
 	private boolean needsRestart = false;
 
-	public LauncherApplication(Config config, DownloadService downloadService, CommunicationService communicationService, Gson gson) {
+	public LauncherApplication(Config config, DownloadService downloadService, CommunicationService communicationService, ObjectMapper objectMapper) {
 		this.config = config;
 		this.downloadService = downloadService;
 		this.communicationService = communicationService;
-		this.gson = gson;
+		this.objectMapper = objectMapper;
 		log.debug("LauncherPort: {}", communicationService.getCommunicationPort());
 	}
 
@@ -47,25 +48,29 @@ public class LauncherApplication implements ApplicationRunner {
 	public void run(ApplicationArguments args) throws Exception {
 		final File patcherJarPath = Paths.get(config.getPatcherUserDir(), config.getUpdaterJarName()).normalize().toFile();
 		final String patcherSrc = config.getPatchFileFolder() + "/" + config.getUpdaterJarName();
-		communicationService.addListener(message->{
-			final RequiresUpdateDto requiresUpdateDto = gson.fromJson(message, RequiresUpdateDto.class);
-			if(requiresUpdateDto.isRequiresUpdate()) {
-				needsRestart = true;
-			} else {
+		communicationService.addListener(message -> {
+			try {
+				final RequiresUpdateDto requiresUpdateDto = objectMapper.readValue(message, RequiresUpdateDto.class);
+				if (requiresUpdateDto.isRequiresUpdate()) {
+					needsRestart = true;
+				} else {
+					System.exit(0);
+				}
+			} catch (JsonProcessingException e) {
 				System.exit(0);
 			}
 		});
 		final boolean isInitialDownload = !patcherJarPath.exists();
-		if(isInitialDownload) {
+		if (isInitialDownload) {
 			downloadUpdater(patcherSrc, patcherJarPath.getAbsolutePath());
 		}
 		launchUpdater(patcherJarPath.getAbsolutePath());
-		while(needsRestart) {
+		while (needsRestart) {
 			needsRestart = false;
 			downloadUpdater(patcherSrc, patcherJarPath.getAbsolutePath());
 			try {
 				launchUpdater(patcherJarPath.getAbsolutePath());
-			} catch(InterruptedException | IOException e) {
+			} catch (InterruptedException | IOException e) {
 				log.debug("Exception launching the updater.", e);
 				System.exit(1);
 			}
@@ -76,23 +81,23 @@ public class LauncherApplication implements ApplicationRunner {
 	private void downloadUpdater(String src, String dest) {
 		try {
 			final boolean downloadSucceed = downloadService.downloadFile(src, dest);
-			if(!downloadSucceed) {
+			if (!downloadSucceed) {
 				JOptionPane.showMessageDialog(null, "Could not download the updater. Try again with admin privileges.", "Error", JOptionPane.ERROR_MESSAGE);
 				System.exit(1);
 			}
-		} catch(InterruptedException e) {
+		} catch (InterruptedException e) {
 			log.debug("Exception downloading the updater.", e);
 			System.exit(1);
 		}
 	}
 
 	private void launchUpdater(String updaterPath) throws InterruptedException, IOException {
-		final Process patcherProcess = startProcess(updaterPath, new String[] {
-				"--updater.launcherPort=" + communicationService.getCommunicationPort(),
-				"--updater.launcherLocation=" + getJarLocation()
+		final Process patcherProcess = startProcess(updaterPath, new String[]{
+			"--updater.launcherPort=" + communicationService.getCommunicationPort(),
+			"--updater.launcherLocation=" + getJarLocation()
 		});
 		patcherProcess.waitFor();
-		if(patcherProcess.exitValue() != 0) {
+		if (patcherProcess.exitValue() != 0) {
 			JOptionPane.showMessageDialog(null, "The Updater was closed by an unexpected error.", "Error", JOptionPane.ERROR_MESSAGE);
 			System.exit(1);
 		}

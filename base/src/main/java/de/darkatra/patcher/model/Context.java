@@ -1,24 +1,25 @@
 package de.darkatra.patcher.model;
 
+import lombok.ToString;
+
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+@ToString
 public class Context {
-	private final Map<String, Object> map;
+	private final Map<String, Object> map = new LinkedHashMap<>();
 
-	public Context() {
-		map = new LinkedHashMap<>();
+	public Context put(final String key, final Object value) {
+		map.put(key, value);
+		return this;
 	}
 
-	public Object put(String key, Object value) {
-		return map.put(key, value);
-	}
-
-	public Object putIfAbsent(String key, Object value) {
-		return map.putIfAbsent(key, value);
+	public Context putIfAbsent(final String key, final Object value) {
+		map.putIfAbsent(key, value);
+		return this;
 	}
 
 	public boolean containsKey(String key) {
@@ -41,38 +42,27 @@ public class Context {
 		return map.isEmpty();
 	}
 
-	public <T> Optional<T> getValue(String key, Class<T> classOfT) throws ClassCastException {
+	public <T> Optional<T> getValue(final String key, final Class<T> classOfT) throws ClassCastException {
 		return Optional.ofNullable(classOfT.cast(map.get(key)));
 	}
 
-	public Optional<Object> getValue(String key) throws ClassCastException {
-		return getValue(key, Object.class);
-	}
-
-	public Optional<String> getString(String key) throws ClassCastException {
+	public Optional<String> getString(final String key) throws ClassCastException {
 		return getValue(key, String.class);
 	}
 
-	public Optional<Integer> getInteger(String key) throws ClassCastException {
+	public Optional<Integer> getInteger(final String key) throws ClassCastException {
 		return getValue(key, Integer.class);
 	}
 
-	public Optional<Double> getDouble(String key) throws ClassCastException {
+	public Optional<Double> getDouble(final String key) throws ClassCastException {
 		return getValue(key, Double.class);
 	}
 
-	public Optional<Boolean> getBoolean(String key) throws ClassCastException {
+	public Optional<Boolean> getBoolean(final String key) throws ClassCastException {
 		return getValue(key, Boolean.class);
 	}
 
-	@Override
-	public String toString() {
-		return "Context{" +
-				"map=" + map +
-				'}';
-	}
-
-	public void apply(Context other) {
+	public void apply(final Context other) {
 		other.map.forEach(this.map::put);
 	}
 }

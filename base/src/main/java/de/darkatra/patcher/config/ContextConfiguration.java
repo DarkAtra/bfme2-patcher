@@ -6,34 +6,41 @@ import de.darkatra.patcher.service.RegistryService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
+import java.nio.file.Paths;
 
 @Configuration
 public class ContextConfiguration {
 	@Bean
+	@Profile("!dev")
 	@ConditionalOnMissingBean
-	public Context getContext(Config config, RegistryService registryService) throws MalformedURLException, URISyntaxException {
-		URL url = new URL(new URL(config.getServerUrl()), config.getPatchFilesFolderPath());
-		{
-			URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
-			url = uri.toURL();
-		}
-		Context applicationContext = new Context();
-		applicationContext.putIfAbsent("serverUrl", url.toString());
-		applicationContext.putIfAbsent("patcherUserDir", config.getPatcherUserDir());
-		registryService.findBfME2HomeDirectory().ifPresent(value->applicationContext.putIfAbsent("bfme2HomeDir", value.toString()));
-		registryService.findBfME2UserDirectory().ifPresent(value->applicationContext.putIfAbsent("bfme2UserDir", value.toString()));
-		registryService.findBfME2RotWKHomeDirectory().ifPresent(value->applicationContext.putIfAbsent("rotwkHomeDir", value.toString()));
-		registryService.findBfME2RotWKUserDirectory().ifPresent(value->applicationContext.putIfAbsent("rotwkUserDir", value.toString()));
-		//		applicationContext.putIfAbsent("patcherUserDir", Paths.get("C:\\Users\\DarkAtra\\Desktop\\Test" + "\\.bfme2rotwkPatcher\\").normalize().toString());
-		//		applicationContext.putIfAbsent("bfme2HomeDir", Paths.get("C:\\Users\\DarkAtra\\Desktop\\Test\\bfme2\\").normalize().toString());
-		//		applicationContext.putIfAbsent("bfme2UserDir", Paths.get("C:\\Users\\DarkAtra\\Desktop\\Test\\userDirBfme2\\").normalize().toString());
-		//		applicationContext.putIfAbsent("rotwkHomeDir", Paths.get("C:\\Users\\DarkAtra\\Desktop\\Test\\bfme2ep1\\").normalize().toString());
-		//		applicationContext.putIfAbsent("rotwkUserDir", Paths.get("C:\\Users\\DarkAtra\\Desktop\\Test\\userDirBfme2Ep1\\").normalize().toString());
+	public Context getContext(final Config config, final RegistryService registryService) throws MalformedURLException, URISyntaxException {
+
+		final Context applicationContext = new Context()
+			.putIfAbsent("serverUrl", config.getPatchFileFolder())
+			.putIfAbsent("patcherUserDir", config.getPatcherUserDir());
+		registryService.findBfME2HomeDirectory().ifPresent(value -> applicationContext.putIfAbsent("bfme2HomeDir", value.toString()));
+		registryService.findBfME2UserDirectory().ifPresent(value -> applicationContext.putIfAbsent("bfme2UserDir", value.toString()));
+		registryService.findBfME2RotWKHomeDirectory().ifPresent(value -> applicationContext.putIfAbsent("rotwkHomeDir", value.toString()));
+		registryService.findBfME2RotWKUserDirectory().ifPresent(value -> applicationContext.putIfAbsent("rotwkUserDir", value.toString()));
 		return applicationContext;
+	}
+
+	@Bean
+	@Profile("dev")
+	@ConditionalOnMissingBean
+	public Context getDevContext(final Config config) throws MalformedURLException, URISyntaxException {
+
+		return new Context()
+			.putIfAbsent("serverUrl", config.getPatchFileFolder())
+			.putIfAbsent("patcherUserDir", config.getPatcherUserDir())
+			.putIfAbsent("patcherUserDir", Paths.get(System.getProperty("user.home"), "Desktop\\Test" + "\\.patcher\\").normalize().toString())
+			.putIfAbsent("bfme2HomeDir", Paths.get(System.getProperty("user.home"), "Desktop\\Test\\bfme2\\").normalize().toString())
+			.putIfAbsent("bfme2UserDir", Paths.get(System.getProperty("user.home"), "Desktop\\Test\\userDirBfme2\\").normalize().toString())
+			.putIfAbsent("rotwkHomeDir", Paths.get(System.getProperty("user.home"), "Desktop\\Test\\bfme2ep1\\").normalize().toString())
+			.putIfAbsent("rotwkUserDir", Paths.get(System.getProperty("user.home"), "Desktop\\Test\\userDirBfme2Ep1\\").normalize().toString());
 	}
 }

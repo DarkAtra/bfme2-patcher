@@ -1,20 +1,16 @@
 package de.darkatra.patcher.model;
 
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
 @Data
+@RequiredArgsConstructor
 public class Version {
 	private final int majorVersion;
 	private final int minorVersion;
 	private final int buildVersion;
 
-	public Version(int majorVersion, int minorVersion, int buildVersion) {
-		this.majorVersion = majorVersion;
-		this.minorVersion = minorVersion;
-		this.buildVersion = buildVersion;
-	}
-
-	public Version(Version other) {
+	public Version(final Version other) {
 		this.majorVersion = other.majorVersion;
 		this.minorVersion = other.minorVersion;
 		this.buildVersion = other.buildVersion;

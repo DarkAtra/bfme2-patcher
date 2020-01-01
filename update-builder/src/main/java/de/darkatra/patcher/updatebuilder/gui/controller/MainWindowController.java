@@ -48,7 +48,8 @@ public class MainWindowController {
 	}
 
 	@FXML
-	private Button addFilesButton, addDirectoryButton, removeFilesButton, createPatchlistButton, printPatchlistButton, confirmVersionButton, cancelVersionButton;
+	private Button addFilesButton, addDirectoryButton, removeFilesButton, createPatchlistButton, printPatchlistButton, confirmVersionButton,
+		cancelVersionButton;
 	@FXML
 	private ListView<File> listView;
 	@FXML
@@ -64,44 +65,44 @@ public class MainWindowController {
 
 	@FXML
 	public void initialize() {
-		addFilesButton.setOnMouseClicked(event->{
+		addFilesButton.setOnMouseClicked(event -> {
 			final FileChooser fc = new FileChooser();
 			fc.setInitialDirectory(new File("."));
 			fc.setTitle("Select a File");
 			final List<File> files = fc.showOpenMultipleDialog(guiApplication.getStage());
-			if(files != null) {
+			if (files != null) {
 				listView.getItems().addAll(files);
 			}
 		});
 
-		addDirectoryButton.setOnMouseClicked(event->{
+		addDirectoryButton.setOnMouseClicked(event -> {
 			final DirectoryChooser dc = new DirectoryChooser();
 			dc.setInitialDirectory(new File((".")));
 			dc.setTitle("Select a directory");
 			final File directory = dc.showDialog(guiApplication.getStage());
-			if(directory != null) {
+			if (directory != null) {
 				final Collection<File> files = FileUtils.listFiles(directory, null, true);
 				listView.getItems().addAll(files);
 			}
 		});
 
-		removeFilesButton.setOnMouseClicked(event->{
+		removeFilesButton.setOnMouseClicked(event -> {
 			final List<File> toRemove = listView.getSelectionModel().getSelectedItems();
-			if(toRemove != null) {
+			if (toRemove != null) {
 				listView.getItems().removeAll(toRemove);
 				listView.getSelectionModel().clearSelection();
 			}
 		});
 
-		createPatchlistButton.setOnMouseClicked(event->{
+		createPatchlistButton.setOnMouseClicked(event -> {
 			// TODO: generate patchlist and upload file to ftp
 		});
 
-		printPatchlistButton.setOnMouseClicked(event->{
+		printPatchlistButton.setOnMouseClicked(event -> {
 			try {
 				final PrintedPatchWindowController printedPatchWindowController = guiApplication.showPrintedPatch();
 				printedPatchWindowController.setPrintedPatchWindowArea(buildPatchFromList());
-			} catch(IOException e) {
+			} catch (IOException e) {
 				log.error("Could not create Patchwindow", e);
 				GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Application Error", "Could not create Patchwindow");
 			}
@@ -109,25 +110,25 @@ public class MainWindowController {
 
 		listView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 		listView.setItems(FXCollections.observableArrayList());
-		listView.setOnDragOver(event->{
+		listView.setOnDragOver(event -> {
 			final Dragboard dragboard = event.getDragboard();
-			if(dragboard.hasFiles()) {
+			if (dragboard.hasFiles()) {
 				event.acceptTransferModes(TransferMode.LINK);
 			}
 		});
-		listView.setOnDragDropped(event->{
+		listView.setOnDragDropped(event -> {
 			final Dragboard db = event.getDragboard();
-			if(db.hasFiles()) {
+			if (db.hasFiles()) {
 				listView.getItems().addAll(db.getFiles());
 			}
 			event.setDropCompleted(true);
 			event.consume();
 		});
 
-		confirmVersionButton.setOnMouseClicked(event->{
+		confirmVersionButton.setOnMouseClicked(event -> {
 			final String versionText = versionTextField.getText();
 			final Optional<Version> validated = validateVersion(versionText);
-			if(validated.isPresent()) {
+			if (validated.isPresent()) {
 				this.version = validated.get();
 				versionTextField.setText(this.version.toString());
 				hideTextFieldButtons();
@@ -137,13 +138,13 @@ public class MainWindowController {
 			}
 		});
 
-		cancelVersionButton.setOnMouseClicked(event->{
+		cancelVersionButton.setOnMouseClicked(event -> {
 			hideTextFieldButtons();
 			hideInvalidLabel();
 			versionTextField.clear();
 		});
 
-		versionTextField.setOnMouseClicked(event->{
+		versionTextField.setOnMouseClicked(event -> {
 			hideInvalidLabel();
 			versionTextFieldButtons.setManaged(true);
 		});
@@ -154,7 +155,7 @@ public class MainWindowController {
 
 	private Optional<Version> validateVersion(String toValidate) {
 		final Matcher matcher = versionRegexPattern.matcher(toValidate);
-		if(matcher.matches()) {
+		if (matcher.matches()) {
 			final int major = Integer.parseInt(matcher.group(1));
 			final int minor = Integer.parseInt(matcher.group(2));
 			final int build = Integer.parseInt(matcher.group(3));
@@ -173,22 +174,22 @@ public class MainWindowController {
 	}
 
 	private Patch buildPatchFromList() {
-		final Patch patch = new Patch(version);
+		final Patch patch = Patch.builder().version(version).build();
 		patch.getPackets().addAll(listView.getItems().stream()
-				.map(file->{
-					try {
-						final Optional<String> sha3Checksum = hashingService.getSHA3Checksum(file);
-						if(sha3Checksum.isPresent()) {
-							return new Packet(file.getAbsolutePath(), file.getAbsolutePath(), file.length(), LocalDateTime.now(), sha3Checksum.get(), false);
-						}
-					} catch(IOException e) {
-						GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Application Error", "Could not build Patchlist.").showAndWait();
-					} catch(InterruptedException ignored) {
+			.map(file -> {
+				try {
+					final Optional<String> sha3Checksum = hashingService.getSHA3Checksum(file);
+					if (sha3Checksum.isPresent()) {
+						return new Packet(file.getAbsolutePath(), file.getAbsolutePath(), file.length(), LocalDateTime.now(), sha3Checksum.get(), false);
 					}
-					return null;
-				})
-				.filter(Objects::nonNull)
-				.collect(Collectors.toList()));
+				} catch (IOException e) {
+					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Application Error", "Could not build Patchlist.").showAndWait();
+				} catch (InterruptedException ignored) {
+				}
+				return null;
+			})
+			.filter(Objects::nonNull)
+			.collect(Collectors.toList()));
 		return patchService.generateContextForPatch(context, patch);
 	}
 
