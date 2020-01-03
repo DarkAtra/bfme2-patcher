@@ -9,12 +9,18 @@ updater-properties:
   patch-files-folder-url: ${updater-properties.server-url}/bfmemod
   patch-list-url: ${updater-properties.patch-files-folder-url}/version.txt
   updater-jar-name: updater.jar
-  patcher-user-dir: ${user.home}\AppData\Roaming\.bfme2rotwkPatcher\
-  config-file-path: ${updater-properties.patcher-user-dir}\config.json
+  patcher-user-folder-url: file://${user.home}\AppData\Roaming\.bfme2rotwkPatcher\
+  patcher-resolution:
+    width: 800
+    height: 600
+  game-resolutions:
+    - width: 1920
+      height: 1080
 
 ---
 spring:
   profiles: dev
 
 logging:
-  level.de.darkatra: debug
+  level:
+    de.darkatra: debug

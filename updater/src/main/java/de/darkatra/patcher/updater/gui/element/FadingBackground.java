@@ -17,10 +17,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class FadingBackground extends StackPane implements DisposableBean {
 
+	private static final Duration TRANSITION_PAUSE_DURATION = Duration.seconds(10);
 	private final String[] imagePaths = new String[]{
 		"/images/splash2_1920x1080.jpg",
-		"/images/splash10_1920x1080.jpg",
-		"/images/splash12_1920x1080.jpg",
+		"/images/splash6_1920x1200.jpg",
+		"/images/splash8_2560x1600.jpg",
+		"/images/splash9_1920x1200.jpg",
+		"/images/splash11_1920x1200.jpg",
 		"/images/splash13_1920x1080.jpg"
 	};
 	private final SequentialTransition backgroundTransition = new SequentialTransition();
@@ -54,9 +57,9 @@ public class FadingBackground extends StackPane implements DisposableBean {
 			setBackgroundImage(fadeIn, currentImage);
 		}));
 
-		backgroundTransition.setDelay(Duration.seconds(2));
+		backgroundTransition.setDelay(TRANSITION_PAUSE_DURATION);
 		backgroundTransition.setCycleCount(Animation.INDEFINITE);
-		backgroundTransition.getChildren().addAll(fadeTransitions, new PauseTransition(Duration.seconds(2)));
+		backgroundTransition.getChildren().addAll(fadeTransitions, new PauseTransition(TRANSITION_PAUSE_DURATION));
 		backgroundTransition.playFromStart();
 	}
 

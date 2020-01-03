@@ -16,11 +16,12 @@ module de.darkatra.patcher.updater {
 
 	exports de.darkatra.patcher.updater;
 	exports de.darkatra.patcher.updater.gui.element to spring.beans, spring.context, javafx.fxml;
+	exports de.darkatra.patcher.updater.properties to spring.beans, spring.boot;
 	exports de.darkatra.patcher.updater.gui.controller to spring.beans;
 	exports de.darkatra.patcher.updater.service to spring.beans;
-	exports de.darkatra.patcher.updater.service.model;
 
 	opens de.darkatra.patcher.updater to spring.core;
+	opens de.darkatra.patcher.updater.properties to org.hibernate.validator, spring.core;
 	opens de.darkatra.patcher.updater.gui.controller to javafx.fxml;
 	opens de.darkatra.patcher.updater.gui.element to spring.core;
 	opens de.darkatra.patcher.updater.service to spring.core;

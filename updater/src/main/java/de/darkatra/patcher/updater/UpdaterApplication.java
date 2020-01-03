@@ -1,5 +1,6 @@
 package de.darkatra.patcher.updater;
 
+import de.darkatra.patcher.updater.properties.UpdaterProperties;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -10,6 +11,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.Arrays;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @SpringBootApplication
+@EnableConfigurationProperties(UpdaterProperties.class)
 public class UpdaterApplication extends Application implements ApplicationRunner {
 
 	private ConfigurableApplicationContext context;
@@ -34,9 +37,10 @@ public class UpdaterApplication extends Application implements ApplicationRunner
 
 	@Override
 	public void start(final Stage primaryStage) {
-		primaryStage.setScene(new Scene(mainWindow, 600, 400));
+		final UpdaterProperties updaterProperties = context.getBean(UpdaterProperties.class);
+		primaryStage.setScene(new Scene(mainWindow, updaterProperties.getPatcherResolution().getWidth(), updaterProperties.getPatcherResolution().getHeight()));
 		primaryStage.centerOnScreen();
-		//		primaryStage.setResizable(false);
+		primaryStage.setResizable(false);
 		primaryStage.show();
 	}
 
