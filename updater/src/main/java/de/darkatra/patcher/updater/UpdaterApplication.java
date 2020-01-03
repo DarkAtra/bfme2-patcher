@@ -53,4 +53,8 @@ public class UpdaterApplication extends Application implements ApplicationRunner
 		log.debug("NonOptionArguments: {}", args.getNonOptionArgs());
 		log.debug("OptionArguments: {}", args.getOptionNames().stream().map(arg -> arg + ": " + args.getOptionValues(arg)).collect(Collectors.toList()));
 	}
+
+	public static void main(String[] args) {
+		Application.launch(UpdaterApplication.class);
+	}
 }
