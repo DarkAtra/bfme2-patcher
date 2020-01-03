@@ -1,15 +1,20 @@
 logging:
-  level.de.darkatra: info
-  file: ${user.home}\AppData\Roaming\.patcher\updater.log
-patcherConfig:
-  serverUrl: https://darkatra.de
-  patchFilesFolderPath: bfmemod
-  updaterJarName: Patcher.jar
-  patchListPath: bfmemod/version.txt
-  patcherUserDir: ${user.home}\AppData\Roaming\.bfme2rotwkPatcher\
-  configFilePath: ${patcherUserDir}\config.json
+  file:
+    name: ${user.home}\AppData\Roaming\.patcher\updater.log
+  level:
+    de.darkatra: info
+
+updater-properties:
+  server-url: https://darkatra.de
+  patch-files-folder-url: ${updater-properties.server-url}/bfmemod
+  patch-list-url: ${updater-properties.patch-files-folder-url}/version.txt
+  updater-jar-name: updater.jar
+  patcher-user-dir: ${user.home}\AppData\Roaming\.bfme2rotwkPatcher\
+  config-file-path: ${updater-properties.patcher-user-dir}\config.json
+
 ---
-logging:
-  level.de.darkatra: debug
 spring:
   profiles: dev
+
+logging:
+  level.de.darkatra: debug

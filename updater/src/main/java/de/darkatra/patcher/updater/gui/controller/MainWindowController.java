@@ -1,63 +1,26 @@
 package de.darkatra.patcher.updater.gui.controller;
 
-import de.darkatra.patcher.exception.ValidationException;
-import de.darkatra.patcher.model.Context;
-import de.darkatra.patcher.properties.Config;
-import de.darkatra.patcher.service.OptionFileService;
-import de.darkatra.patcher.updater.PatchController;
-import de.darkatra.patcher.updater.gui.GUIApplication;
 import de.darkatra.patcher.updater.listener.PatchEventListener;
-import javafx.animation.FadeTransition;
-import javafx.animation.KeyFrame;
-import javafx.animation.ParallelTransition;
-import javafx.animation.Timeline;
+import de.darkatra.patcher.updater.util.UIUtils;
 import javafx.application.Platform;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Pane;
-import javafx.util.Duration;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.task.AsyncListenableTaskExecutor;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import org.springframework.stereotype.Component;
 
 @Slf4j
+@Component
+//@RequiredArgsConstructor
 public class MainWindowController implements PatchEventListener {
-	private Context context;
-	private Config config;
-	private PatchController patchController;
-	private OptionFileService optionFileService;
 
-	public void setApplicationContext(ConfigurableApplicationContext applicationContext) {
-		this.context = applicationContext.getBean(Context.class);
-		this.config = applicationContext.getBean(Config.class);
-		this.patchController = applicationContext.getBean(PatchController.class);
-		this.optionFileService = applicationContext.getBean(OptionFileService.class);
-	}
+	//	private final PatchController patchController;
+	//	private final OptionFileService optionFileService;
 
-	@FXML
-	private Pane fadeOut;
-	@FXML
-	private Pane fadeIn;
 	@FXML
 	private ProgressBar patchProgressBar;
 	@FXML
@@ -75,166 +38,108 @@ public class MainWindowController implements PatchEventListener {
 	@FXML
 	private MenuItem fixBfME2EP1MenuItem;
 
-	private final ParallelTransition fadeBackgroundTransition;
-	private final Timeline updateCountdownTimeline;
-	private final String[] imagePaths;
-	private final Callable<Boolean> patchTask;
+	//	private final Callable<Boolean> patchTask = () -> {
+	//		try {
+	//			patchController.patch(this);
+	//		} catch (IOException e) {
+	//			log.debug("IOException", e);
+	//			Platform.runLater(() -> {
+	//				patchProgressBar.setProgress(0);
+	//				patchProgressLabel.setText("Update failed. Please try again later.");
+	//				UIUtils.alert(Alert.AlertType.ERROR, "Error", "Update error",
+	//					"There was an error downloading the update. Try to rerun this application with admin privileges.").show();
+	//			});
+	//			return false;
+	//		} catch (URISyntaxException e) {
+	//			log.debug("URISyntaxException", e);
+	//			Platform.runLater(() -> {
+	//				patchProgressBar.setProgress(0);
+	//				patchProgressLabel.setText("Update failed. Please try again later.");
+	//				UIUtils.alert(Alert.AlertType.ERROR, "Error", "Unexpected application error",
+	//					"There was an unexpected error reading the application config. Please try again later.").show();
+	//			});
+	//			return false;
+	//		} catch (ValidationException e) {
+	//			log.debug("ValidationException", e);
+	//			Platform.runLater(() -> {
+	//				patchProgressBar.setProgress(0);
+	//				patchProgressLabel.setText("Update failed. Please try again later.");
+	//				UIUtils.alert(Alert.AlertType.ERROR, "Error", "Validation error",
+	//					"Could not validate the update. Some files may have been changed by another application.").show();
+	//			});
+	//			return false;
+	//		}
+	//		return true;
+	//	};
 	private final AsyncListenableTaskExecutor taskExecutor = new SimpleAsyncTaskExecutor();
-	private final ScheduledExecutorService animationExecutor = Executors.newSingleThreadScheduledExecutor();
-	private GUIApplication guiApplication;
-	private int currentImage = 0;
-
-	public MainWindowController() {
-		imagePaths = new String[]{
-			"/images/splash2_1920x1080.jpg",
-			"/images/splash10_1920x1080.jpg",
-			"/images/splash12_1920x1080.jpg",
-			"/images/splash13_1920x1080.jpg"
-		};
-		fadeBackgroundTransition = new ParallelTransition();
-		IntegerProperty secondsLeft = new SimpleIntegerProperty(5);
-		updateCountdownTimeline = new Timeline();
-		updateCountdownTimeline.setCycleCount(Timeline.INDEFINITE);
-		updateCountdownTimeline.getKeyFrames().add(new KeyFrame(Duration.seconds(1), event -> {
-			secondsLeft.setValue(secondsLeft.getValue() - 1);
-			patchProgressLabel.setText("Patcher requires an update. Updating application in " + secondsLeft.getValue() + " seconds.");
-			if (secondsLeft.getValue() <= 0) {
-				updateCountdownTimeline.stop();
-				Platform.exit();
-				System.exit(0);
-			}
-		}));
-		patchTask = () -> {
-			try {
-				patchController.patch(this);
-			} catch (IOException e) {
-				log.debug("IOException", e);
-				Platform.runLater(() -> {
-					patchProgressBar.setProgress(0);
-					patchProgressLabel.setText("Update failed. Please try again later.");
-					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Update error",
-						"There was an error downloading the update. Try to rerun this application with admin privileges.").show();
-				});
-				return false;
-			} catch (URISyntaxException e) {
-				log.debug("URISyntaxException", e);
-				Platform.runLater(() -> {
-					patchProgressBar.setProgress(0);
-					patchProgressLabel.setText("Update failed. Please try again later.");
-					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Unexpected application error",
-						"There was an unexpected error reading the application config. Please try again later.").show();
-				});
-				return false;
-			} catch (ValidationException e) {
-				log.debug("ValidationException", e);
-				Platform.runLater(() -> {
-					patchProgressBar.setProgress(0);
-					patchProgressLabel.setText("Update failed. Please try again later.");
-					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Validation error",
-						"Could not validate the update. Some files may have been changed by another application.").show();
-				});
-				return false;
-			}
-			return true;
-		};
-	}
 
 	@FXML
 	public void initialize() {
-		fadeOut.setStyle("-fx-background-image: url('" + imagePaths[currentImage] + "');");
-		fadeIn.setStyle("-fx-background-image: url('" + imagePaths[++currentImage] + "');");
-		FadeTransition fadeInTransition = new FadeTransition(Duration.millis(2000), fadeIn);
-		fadeInTransition.setFromValue(0.0);
-		fadeInTransition.setToValue(1.0);
-		FadeTransition fadeOutTransition = new FadeTransition(Duration.millis(2000), fadeOut);
-		fadeOutTransition.setFromValue(1.0);
-		fadeOutTransition.setToValue(0.0);
-		fadeBackgroundTransition.getChildren().addAll(fadeInTransition, fadeOutTransition);
-		fadeBackgroundTransition.setOnFinished((event) -> {
-			fadeOut.setStyle("-fx-background-image: url('" + imagePaths[currentImage] + "');");
-			fadeOut.setOpacity(1);
-			fadeIn.setOpacity(0);
-			currentImage = ++currentImage % imagePaths.length;
-			fadeIn.setStyle("-fx-background-image: url('" + imagePaths[currentImage] + "');");
-		});
-		animationExecutor.scheduleWithFixedDelay(() -> Platform.runLater(fadeBackgroundTransition::playFromStart), 0, 10, TimeUnit.SECONDS);
+
 
 		patchProgressBar.setProgress(0);
 		patchProgressLabel.setText("Waiting for user input.");
 
-		updateButton.setOnMouseClicked(new EventHandler<MouseEvent>() {
-			@Override
-			public void handle(MouseEvent event) {
-				updateButton.setDisable(true);
-				final EventHandler<MouseEvent> consumer = e -> {
-				};
-				updateButton.setOnMouseClicked(consumer);
-				final Runnable callback = () -> {
-					if (updateButton.getOnMouseClicked() == consumer) {
-						updateButton.setOnMouseClicked(this);
-					}
-					updateButton.setDisable(false);
-				};
-				taskExecutor.submitListenable(patchTask)
-					.completable()
-					.thenRun(callback)
-					.exceptionally(ex -> {
-						log.debug("TaskExecutor with exception", ex);
-						callback.run();
-						return null;
-					});
-			}
-		});
+		//		updateButton.setOnMouseClicked(new EventHandler<>() {
+		//			@Override
+		//			public void handle(MouseEvent event) {
+		//				updateButton.setDisable(true);
+		//				final EventHandler<MouseEvent> consumer = e -> {
+		//				};
+		//				updateButton.setOnMouseClicked(consumer);
+		//				final Runnable callback = () -> {
+		//					if (updateButton.getOnMouseClicked() == consumer) {
+		//						updateButton.setOnMouseClicked(this);
+		//					}
+		//					updateButton.setDisable(false);
+		//				};
+		//				taskExecutor.submitListenable(patchTask)
+		//					.completable()
+		//					.thenRun(callback)
+		//					.exceptionally(ex -> {
+		//						log.debug("TaskExecutor with exception", ex);
+		//						callback.run();
+		//						return null;
+		//					});
+		//			}
+		//		});
 
 		toggleModButton.setDisable(true);
 		toggleModButton.setOnMouseClicked(event -> {
 			// TODO: toggle mod (enable/disable)
 		});
 
-		fixBfME2MenuItem.setOnAction(event -> {
-			final Optional<String> bfme2UserDir = context.getString("bfme2UserDir");
-			if (bfme2UserDir.isPresent()) {
-				final int result = writeDefaultOptionsIni(bfme2UserDir.get());
-				if (result == 1) {
-					GUIApplication.alert(Alert.AlertType.INFORMATION, "Success", "Fixed BfME 2", "The options.ini file was created successfully.").show();
-					return;
-				} else if (result == 0) {
-					return;
-				}
-			}
-			GUIApplication.alert(Alert.AlertType.ERROR, "Application error", "Could not fix BfME 2", "There was an error writing the default options.ini")
-				.show();
-		});
+		//		fixBfME2MenuItem.setOnAction(event -> {
+		//			final Optional<String> bfme2UserDir = context.getString("bfme2UserDir");
+		//			if (bfme2UserDir.isPresent()) {
+		//				final int result = writeDefaultOptionsIni(bfme2UserDir.get());
+		//				if (result == 1) {
+		//					UIUtils.alert(Alert.AlertType.INFORMATION, "Success", "Fixed BfME 2", "The options.ini file was created successfully.").show();
+		//					return;
+		//				} else if (result == 0) {
+		//					return;
+		//				}
+		//			}
+		//			UIUtils.alert(Alert.AlertType.ERROR, "Application error", "Could not fix BfME 2", "There was an error writing the default options.ini")
+		//				.show();
+		//		});
 
-		fixBfME2EP1MenuItem.setOnAction(event -> {
-			final Optional<String> rotwkUserDir = context.getString("rotwkUserDir");
-			if (rotwkUserDir.isPresent()) {
-				final int result = writeDefaultOptionsIni(rotwkUserDir.get());
-				if (result == 1) {
-					GUIApplication.alert(Alert.AlertType.INFORMATION, "Success", "Fixed BfME 2 RotWK", "The options.ini file was created successfully.").show();
-					return;
-				} else if (result == 0) {
-					return;
-				}
-			}
-			GUIApplication.alert(Alert.AlertType.ERROR, "Application error", "Could not fix BfME 2 RotWK", "There was an error writing the default options.ini")
-				.show();
-		});
-
-		gameSettingsMenuItem.setOnAction(event -> {
-			try {
-				guiApplication.showGameSettingsWindow();
-			} catch (IOException e) {
-				GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Application error", "Could not open the game settings.").show();
-			}
-		});
-		patcherSettingsMenuItem.setOnAction(event -> {
-			try {
-				guiApplication.showPatcherSettingsWindow();
-			} catch (IOException e) {
-				GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Application error", "Could not open the patcher settings.").show();
-			}
-		});
+		//		fixBfME2EP1MenuItem.setOnAction(event -> {
+		//			final Optional<String> rotwkUserDir = context.getString("rotwkUserDir");
+		//			if (rotwkUserDir.isPresent()) {
+		//				final int result = writeDefaultOptionsIni(rotwkUserDir.get());
+		//				if (result == 1) {
+		//					UIUtils.alert(Alert.AlertType.INFORMATION, "Success", "Fixed BfME 2 RotWK", "The options.ini file was created successfully.")
+		//						.show();
+		//					return;
+		//				} else if (result == 0) {
+		//					return;
+		//				}
+		//			}
+		//			UIUtils
+		//				.alert(Alert.AlertType.ERROR, "Application error", "Could not fix BfME 2 RotWK", "There was an error writing the default options.ini")
+		//				.show();
+		//		});
 	}
 
 	@Override
@@ -261,11 +166,16 @@ public class MainWindowController implements PatchEventListener {
 	}
 
 	@Override
-	public void onPatcherNeedsUpdate(boolean requiresUpdate) {
+	public void onPatcherNeedsUpdate(final boolean requiresUpdate) {
 		if (requiresUpdate) {
 			Platform.runLater(() -> {
 				patchProgressBar.setProgress(0);
-				updateCountdownTimeline.playFromStart();
+				UIUtils.getCountdownTimeline(5, secondsLeft -> {
+					patchProgressLabel.setText(String.format("Patcher requires an update. Updating application in %d seconds.", secondsLeft));
+					if (secondsLeft <= 0) {
+						Platform.exit();
+					}
+				}).playFromStart();
 			});
 		}
 	}
@@ -308,38 +218,32 @@ public class MainWindowController implements PatchEventListener {
 
 	@Override
 	public void onPatchDone() {
-		Platform.runLater(() -> {
-			updateButton.setDisable(false);
-			// toggleModButton.setDisable(false);
-			patchProgressLabel.setText("Ready to start the game.");
-			updateButton.setText("Start Game");
-			updateButton.setOnMouseClicked(event -> {
-				updateButton.setDisable(true);
-				// toggleModButton.setDisable(true);
-				final Optional<String> rotwkHomeDirPath = context.getString("rotwkHomeDir");
-				if (rotwkHomeDirPath.isPresent()) {
-					final ProcessBuilder pb = new ProcessBuilder(rotwkHomeDirPath.get() + "/lotrbfme2ep1.exe");
-					try {
-						final Process p = pb.start();
-						guiApplication.setStageVisible(false);
-						p.waitFor();
-						guiApplication.setStageVisible(true);
-					} catch (IOException e) {
-						guiApplication.setStageVisible(true);
-						Platform.runLater(
-							() -> GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Game Error", "Could not start the Game. Please try again.")
-								.showAndWait());
-					} catch (InterruptedException e) {
-						guiApplication.setStageVisible(true);
-					}
-					updateButton.setDisable(false);
-					// toggleModButton.setDisable(false);
-				} else {
-					Platform.runLater(
-						() -> GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Game Error", "Could not find the game. Is it installed?").showAndWait());
-				}
-			});
-		});
+		//		Platform.runLater(() -> {
+		//			updateButton.setDisable(false);
+		//			patchProgressLabel.setText("Ready to start the game.");
+		//			updateButton.setText("Start Game");
+		//			updateButton.setOnMouseClicked(event -> {
+		//				updateButton.setDisable(true);
+		//				final Optional<String> rotwkHomeDirPath = context.getString("rotwkHomeDir");
+		//				if (rotwkHomeDirPath.isPresent()) {
+		//					final ProcessBuilder pb = new ProcessBuilder(rotwkHomeDirPath.get() + "/lotrbfme2ep1.exe");
+		//					try {
+		//						final Process p = pb.start();
+		//						p.waitFor();
+		//					} catch (IOException e) {
+		//						Platform.runLater(
+		//							() -> UIUtils.alert(Alert.AlertType.ERROR, "Error", "Game Error", "Could not start the Game. Please try again.")
+		//								.showAndWait());
+		//					} catch (InterruptedException e) {
+		//						log.debug("InterruptedException:", e);
+		//					}
+		//				} else {
+		//					Platform.runLater(
+		//						() -> UIUtils.alert(Alert.AlertType.ERROR, "Error", "Game Error", "Could not find the game. Is it installed?")
+		//							.showAndWait());
+		//				}
+		//			});
+		//		});
 	}
 
 	@Override
@@ -355,39 +259,31 @@ public class MainWindowController implements PatchEventListener {
 		});
 	}
 
-	private int writeDefaultOptionsIni(@NotNull String userDit) {
-		File userDirFile = new File(userDit);
-		if (!userDirFile.exists()) {
-			if (!userDirFile.mkdirs()) {
-				return -1;
-			}
-		}
-		if (userDirFile.exists()) {
-			File optionsIni = new File(userDirFile.getAbsolutePath() + "/options.ini");
-			if (optionsIni.exists()) {
-				final Optional<ButtonType> confirmation = GUIApplication
-					.alert(Alert.AlertType.CONFIRMATION, "Confirmation", "The game seems to be working just fine.",
-						"The game seems to be working just fine. Trying the fix again could result in loss of progress in game. Are you sure that u want to continue?")
-					.showAndWait();
-				if (!confirmation.isPresent() || confirmation.get() != ButtonType.OK) {
-					return 0;
-				}
-			}
-			try {
-				optionFileService.writeOptionsFile(optionsIni, optionFileService.buildDefaultOptionsIni());
-				return 1;
-			} catch (IOException e) {
-				log.error("Could not generate default options.ini", e);
-			}
-		}
-		return -1;
-	}
-
-	public void setGuiApplication(GUIApplication guiApplication) {
-		this.guiApplication = guiApplication;
-	}
-
-	public void preDestroy() {
-		animationExecutor.shutdown();
-	}
+	//	private int writeDefaultOptionsIni(@NonNull String userDit) {
+	//		File userDirFile = new File(userDit);
+	//		if (!userDirFile.exists()) {
+	//			if (!userDirFile.mkdirs()) {
+	//				return -1;
+	//			}
+	//		}
+	//		if (userDirFile.exists()) {
+	//			final File optionsIni = new File(userDirFile.getAbsolutePath() + "/options.ini");
+	//			if (optionsIni.exists()) {
+	//				final Optional<ButtonType> confirmation = UIUtils
+	//					.alert(Alert.AlertType.CONFIRMATION, "Confirmation", "The game seems to be working just fine.",
+	//						"The game seems to be working just fine. Trying the fix again could result in loss of progress in game. Are you sure that u want to continue?")
+	//					.showAndWait();
+	//				if (confirmation.isEmpty() || confirmation.get() != ButtonType.OK) {
+	//					return 0;
+	//				}
+	//			}
+	//			try {
+	//				optionFileService.writeOptionsFile(optionsIni, optionFileService.buildDefaultOptions());
+	//				return 1;
+	//			} catch (IOException e) {
+	//				log.error("Could not generate default options.ini", e);
+	//			}
+	//		}
+	//		return -1;
+	//	}
 }

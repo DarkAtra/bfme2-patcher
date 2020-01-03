@@ -3,13 +3,6 @@
 	-fx-focus-color: #999;
 }
 
-.fade-in, .fade-out {
-	-fx-background-color: transparent;
-	-fx-background-repeat: stretch;
-	-fx-background-size: stretch;
-	-fx-background-position: center center;
-}
-
 /* Progress Bar */
 .progress-bar > .track {
 	-fx-background-color: -fx-outer-border, -fx-inner-border, -fx-body-color;

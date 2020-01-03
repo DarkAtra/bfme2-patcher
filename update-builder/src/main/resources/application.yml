@@ -1,8 +1,11 @@
 logging:
   level.de.darkatra: info
-  file: ${user.home}\AppData\Roaming\.patcher\updater-builder.log
+  file:
+    name: ${user.home}\AppData\Roaming\.patcher\updater-builder.log
 ---
 logging:
   level.de.darkatra: debug
 spring:
   profiles: dev
+patcher-config:
+  server-url: http://localhost
