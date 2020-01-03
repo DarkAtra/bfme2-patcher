@@ -11,7 +11,6 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.Arrays;
@@ -19,7 +18,6 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @SpringBootApplication
-@EnableConfigurationProperties(UpdaterProperties.class)
 public class UpdaterApplication extends Application implements ApplicationRunner {
 
 	private ConfigurableApplicationContext context;
@@ -38,7 +36,7 @@ public class UpdaterApplication extends Application implements ApplicationRunner
 	@Override
 	public void start(final Stage primaryStage) {
 		final UpdaterProperties updaterProperties = context.getBean(UpdaterProperties.class);
-		primaryStage.setScene(new Scene(mainWindow, updaterProperties.getPatcherResolution().getWidth(), updaterProperties.getPatcherResolution().getHeight()));
+		primaryStage.setScene(new Scene(mainWindow, updaterProperties.getUpdaterResolution().getWidth(), updaterProperties.getUpdaterResolution().getHeight()));
 		primaryStage.centerOnScreen();
 		primaryStage.setResizable(false);
 		primaryStage.show();

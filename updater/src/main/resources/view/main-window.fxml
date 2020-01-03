@@ -55,10 +55,9 @@
 					<MenuItem fx:id="fixBfME2MenuItem" mnemonicParsing="false" text="Fix BfME 2"/>
 					<MenuItem fx:id="fixBfME2EP1MenuItem" mnemonicParsing="false" text="Fix BfME 2 RotWK"/>
 				</Menu>
-				<Menu mnemonicParsing="false" text="Settings">
-					<MenuItem fx:id="gameSettingsMenuItem" mnemonicParsing="false" text="Game Settings"/>
-					<MenuItem fx:id="patcherSettingsMenuItem" mnemonicParsing="false" text="Patcher Settings"/>
-				</Menu>
+				<!-- <Menu mnemonicParsing="false" text="Settings">-->
+				<!--	 <MenuItem fx:id="gameSettingsMenuItem" mnemonicParsing="false" text="Game Settings"/>-->
+				<!-- </Menu>-->
 			</MenuBar>
 		</top>
 	</BorderPane>

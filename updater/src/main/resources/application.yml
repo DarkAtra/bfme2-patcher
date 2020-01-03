@@ -8,9 +8,9 @@ updater-properties:
   server-url: https://darkatra.de
   patch-files-folder-url: ${updater-properties.server-url}/bfmemod
   patch-list-url: ${updater-properties.patch-files-folder-url}/version.txt
-  updater-jar-name: updater.jar
-  patcher-user-folder-url: file://${user.home}\AppData\Roaming\.bfme2rotwkPatcher\
-  patcher-resolution:
+  updater-user-folder-url: file://${user.home}\AppData\Roaming\.bfme2rotwkPatcher
+  updater-jar-url: ${updater-properties.updater-user-folder-url}/updater.jar
+  updater-resolution:
     width: 800
     height: 600
   game-resolutions:

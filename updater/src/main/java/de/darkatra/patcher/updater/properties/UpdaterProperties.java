@@ -25,15 +25,15 @@ public class UpdaterProperties {
 	@NotNull
 	private URL patchListUrl;
 
-	@NotEmpty
-	private String updaterJarName;
+	@NotNull
+	private URL updaterUserFolderUrl;
 
 	@NotNull
-	private URL patcherUserFolderUrl;
+	private URL updaterJarUrl;
 
 	@Valid
 	@NotNull
-	private Resolution patcherResolution;
+	private Resolution updaterResolution;
 
 	@NotEmpty
 	private Set<@Valid @NotNull Resolution> gameResolutions;

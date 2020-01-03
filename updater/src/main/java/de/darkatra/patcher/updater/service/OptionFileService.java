@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 
 @Slf4j
 @Service
-class OptionFileService {
+public class OptionFileService {
 	private final Pattern floatingPointNumberPattern = Pattern.compile("[+-]?([0-9]*[.])?[0-9]+");
 
 	public Hashtable<String, Object> readOptionsFile(final File file) throws IOException {
@@ -59,7 +59,7 @@ class OptionFileService {
 		}
 		try (final FileWriter fw = new FileWriter(file)) {
 			final StringBuilder content = new StringBuilder();
-			for (Map.Entry<String, Object> entry : options.entrySet()) {
+			for (final Map.Entry<String, Object> entry : options.entrySet()) {
 				final String key = entry.getKey();
 				final Object value = entry.getValue();
 				if (entry.getValue() == Boolean.TRUE || entry.getValue() == Boolean.FALSE) {
