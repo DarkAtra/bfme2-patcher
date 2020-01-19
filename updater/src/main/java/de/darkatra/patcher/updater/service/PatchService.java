@@ -34,8 +34,6 @@ public class PatchService {
 	private final HashingService hashingService;
 	private final Context context;
 	private final ObjectMapper objectMapper;
-	private final String prefix = "${";
-	private final String suffix = "}";
 
 	public void patch(final PatchEventListener patchEventListener) throws IOException, ValidationException, InterruptedException, URISyntaxException {
 
@@ -118,6 +116,7 @@ public class PatchService {
 	}
 
 	private Optional<Patch> patchOf(final String json) {
+
 		try {
 			final Patch patch = objectMapper.readValue(json, Patch.class);
 			patch.getPackets().stream().map(Packet::getDest).forEach(dest -> patch.getFileIndex().add(dest));
@@ -129,17 +128,25 @@ public class PatchService {
 	}
 
 	private Patch applyContextToPatch(final Context context, final Patch patch) {
+
 		final Patch returnPatch = new Patch().setVersion(new Version(patch.getVersion()));
+		final String prefix = "${";
+		final String suffix = "}";
+
 		for (final Packet packet : patch.getPackets()) {
+
 			String src = packet.getSrc();
 			String dest = packet.getDest();
+
 			for (final Map.Entry<String, String> entry : context.entrySet()) {
 				final String key = entry.getKey();
 				final String value = entry.getValue();
 				src = src.replace(prefix + key + suffix, value);
 				dest = dest.replace(prefix + key + suffix, value);
 			}
+
 			dest = Paths.get(dest).normalize().toString();
+
 			returnPatch.getPackets().add(
 				new Packet()
 					.setSrc(src)
@@ -150,15 +157,18 @@ public class PatchService {
 					.setBackupExisting(packet.isBackupExisting())
 			);
 		}
+
 		for (String destToRemove : patch.getFileIndex()) {
+
 			for (final Map.Entry<String, String> entry : context.entrySet()) {
 				final String key = entry.getKey();
 				final String value = entry.getValue();
 				destToRemove = destToRemove.replace(prefix + key + suffix, value);
 			}
-			destToRemove = Paths.get(destToRemove).normalize().toString();
-			returnPatch.getFileIndex().add(destToRemove);
+
+			returnPatch.getFileIndex().add(Paths.get(destToRemove).normalize().toString());
 		}
+
 		return returnPatch;
 	}
 

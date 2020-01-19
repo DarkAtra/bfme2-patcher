@@ -16,6 +16,7 @@ public class LegacyInstantConverter extends StdConverter<Map<String, Map<String,
 		final int year = date.get("year");
 		final int month = date.get("month");
 		final int day = date.get("day");
+
 		final Map<String, Integer> time = legacyDateFormat.get("time");
 		final int hour = time.get("hour");
 		final int minute = time.get("minute");
