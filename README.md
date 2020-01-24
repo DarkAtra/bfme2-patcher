@@ -1,6 +1,6 @@
 # Patcher
 Der Patcher besteht aus zwei Anwendungen:
-- **Updater**: Der Updater hällt alle Dateien für ein Programm auf dem aktuellen Stand. Er berechnet beim start alle Unterschiede zwischen dem aktuellen Programm und der neusten Version vom Server. Dazu wird zu jeder Datei ein SHA-3 Hash gebildet und mit dem des Servers verglichen. Im Anschluss werden alle neueren/beschädigten Dateien vom Server heruntergeladen und alte Dateien gelöscht.
+- **Updater**: Der Updater hält alle Dateien für ein Programm auf dem aktuellen Stand. Er berechnet beim start alle Unterschiede zwischen dem aktuellen Programm und der neusten Version vom Server. Dazu wird zu jeder Datei ein SHA-3 Hash gebildet und mit dem des Servers verglichen. Im Anschluss werden alle neueren/beschädigten Dateien vom Server heruntergeladen und alte Dateien gelöscht.
 - **Update-Builder**: Der Update-Builder ist eine Anwendung, die das Erstellen der `version.json` erleichtert. Der Updater benötigt diese Datei um Unterschiede zwischen Client und Server zu berechnen. In dieser Datei befinden sich die Checksummen, Größenangaben, Pfade und Zeitstempel der einzelnen Dateien.
 
 ## Build
