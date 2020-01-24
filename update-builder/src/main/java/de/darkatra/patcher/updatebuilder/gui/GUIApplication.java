@@ -11,41 +11,35 @@ import javafx.scene.control.Alert;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import org.springframework.context.ConfigurableApplicationContext;
 
 import java.io.IOException;
 
+// TODO: rewrite with javafx as dependency
 public class GUIApplication extends Application {
-	private static ConfigurableApplicationContext applicationContext;
 	private Stage stage;
 
-	public static void setApplicationContext(ConfigurableApplicationContext applicationContext) {
-		GUIApplication.applicationContext = applicationContext;
-	}
-
 	@Override
-	public void start(Stage primaryStage) throws Exception {
+	public void start(final Stage primaryStage) throws Exception {
 		this.stage = primaryStage;
 		stage.setTitle("Patchlistcreator");
 		stage.setResizable(false);
-		FXMLLoader loader = new FXMLLoader();
+		final FXMLLoader loader = new FXMLLoader();
 		loader.setLocation(GUIApplication.class.getResource("/view/PatchListCreatorView.fxml"));
-		Parent root = (Parent) loader.load();
-		MainWindowController mainWindowController = loader.getController();
+		final Parent root = (Parent) loader.load();
+		final MainWindowController mainWindowController = loader.getController();
 		mainWindowController.setGuiApplication(this);
 		mainWindowController.initialize();
-		mainWindowController.setApplicationContext(applicationContext);
-		Scene scene = new Scene(root);
+		final Scene scene = new Scene(root);
 		primaryStage.setScene(scene);
 		primaryStage.show();
 	}
 
 	public PrintedPatchWindowController showPrintedPatch() throws IOException {
-		FXMLLoader fxmlLoader = new FXMLLoader();
+		final FXMLLoader fxmlLoader = new FXMLLoader();
 		fxmlLoader.setLocation(getClass().getResource("/view/PrintPatchWindow.fxml"));
-		Parent root = fxmlLoader.load();
-		PrintedPatchWindowController settingsWindow = fxmlLoader.getController();
-		Stage stage = new Stage();
+		final Parent root = fxmlLoader.load();
+		final PrintedPatchWindowController settingsWindow = fxmlLoader.getController();
+		final Stage stage = new Stage();
 		settingsWindow.setStage(stage);
 		stage.initOwner(this.stage);
 		stage.initModality(Modality.WINDOW_MODAL);
@@ -58,8 +52,8 @@ public class GUIApplication extends Application {
 		return settingsWindow;
 	}
 
-	public static Alert alert(Alert.AlertType alertType, String title, String header, String msg) {
-		Alert alert = new Alert(alertType);
+	public static Alert alert(final Alert.AlertType alertType, final String title, final String header, final String msg) {
+		final Alert alert = new Alert(alertType);
 		alert.initStyle(StageStyle.UTILITY);
 		alert.setTitle(title);
 		alert.setHeaderText(header);

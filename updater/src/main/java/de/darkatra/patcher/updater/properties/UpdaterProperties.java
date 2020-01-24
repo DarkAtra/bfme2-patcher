@@ -5,6 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
@@ -17,19 +18,16 @@ import java.util.Set;
 public class UpdaterProperties {
 
 	@NotNull
-	private URL serverUrl;
-
-	@NotNull
-	private URL patchFilesFolderUrl;
+	private URL baseUrl;
 
 	@NotNull
 	private URL patchListUrl;
 
-	@NotNull
-	private URL updaterUserFolderUrl;
+	@NotBlank
+	private String updaterJarName;
 
-	@NotNull
-	private URL updaterJarUrl;
+	@NotBlank
+	private String version;
 
 	@Valid
 	@NotNull
@@ -40,8 +38,10 @@ public class UpdaterProperties {
 
 	@Data
 	public static class Resolution {
+
 		@Positive
 		private int width;
+
 		@Positive
 		private int height;
 	}

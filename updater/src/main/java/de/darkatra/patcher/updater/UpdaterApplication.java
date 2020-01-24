@@ -25,6 +25,7 @@ public class UpdaterApplication extends Application implements ApplicationRunner
 
 	@Override
 	public void init() throws Exception {
+
 		final SpringApplicationBuilder builder = new SpringApplicationBuilder(UpdaterApplication.class);
 		context = builder.run(getParameters().getRaw().toArray(new String[0]));
 
@@ -35,6 +36,7 @@ public class UpdaterApplication extends Application implements ApplicationRunner
 
 	@Override
 	public void start(final Stage primaryStage) {
+
 		final UpdaterProperties updaterProperties = context.getBean(UpdaterProperties.class);
 		primaryStage.setScene(new Scene(mainWindow, updaterProperties.getUpdaterResolution().getWidth(), updaterProperties.getUpdaterResolution().getHeight()));
 		primaryStage.centerOnScreen();
@@ -49,12 +51,15 @@ public class UpdaterApplication extends Application implements ApplicationRunner
 
 	@Override
 	public void run(final ApplicationArguments args) {
+
 		log.debug("CmdArguments: {}", Arrays.toString(args.getSourceArgs()));
 		log.debug("NonOptionArguments: {}", args.getNonOptionArgs());
-		log.debug("OptionArguments: {}", args.getOptionNames().stream().map(arg -> arg + ": " + args.getOptionValues(arg)).collect(Collectors.toList()));
+		log.debug("OptionArguments: {}", args.getOptionNames().stream()
+			.map(arg -> String.format("'%s': '%s'", arg, args.getOptionValues(arg)))
+			.collect(Collectors.toList()));
 	}
 
-	public static void main(String[] args) {
+	public static void main(final String[] args) {
 		Application.launch(UpdaterApplication.class);
 	}
 }

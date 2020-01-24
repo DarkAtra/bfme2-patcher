@@ -1,8 +1,6 @@
-package de.darkatra.patcher.service;
+package de.darkatra.patcher.updatebuilder;
 
 import org.bouncycastle.jcajce.provider.digest.SHA3;
-import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Optional;
 
-@Service
 public class HashingService {
 	/**
 	 * Create a base64 encoded sha3-checksum for the given file.
@@ -22,7 +19,7 @@ public class HashingService {
 	 *
 	 * @throws IOException if there was an error reading the file
 	 */
-	public Optional<String> getSHA3Checksum(@NonNull final File file) throws IOException, InterruptedException {
+	public Optional<String> getSHA3Checksum(final File file) throws IOException, InterruptedException {
 		if (file.isFile()) {
 			final SHA3.Digest256 sha3Digest = new SHA3.Digest256();
 			try (final FileInputStream fileInputStream = new FileInputStream(file)) {

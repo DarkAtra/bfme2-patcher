@@ -55,9 +55,9 @@
 					<MenuItem fx:id="fixBfME2MenuItem" mnemonicParsing="false" text="Fix BfME 2"/>
 					<MenuItem fx:id="fixBfME2EP1MenuItem" mnemonicParsing="false" text="Fix BfME 2 RotWK"/>
 				</Menu>
-				<!-- <Menu mnemonicParsing="false" text="Settings">-->
-				<!--	 <MenuItem fx:id="gameSettingsMenuItem" mnemonicParsing="false" text="Game Settings"/>-->
-				<!-- </Menu>-->
+				<Menu mnemonicParsing="false" text="Version">
+					<MenuItem fx:id="versionMenuItem" mnemonicParsing="false" text="unknown"/>
+				</Menu>
 			</MenuBar>
 		</top>
 	</BorderPane>

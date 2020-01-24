@@ -1,4 +1,4 @@
-package de.darkatra.patcher.updater.service.model;
+package de.darkatra.patcher.updatebuilder.model;
 
 import lombok.Data;
 import lombok.experimental.Accessors;

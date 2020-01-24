@@ -16,6 +16,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.zip.GZIPInputStream;
 
 @Slf4j
 @Service
@@ -35,7 +36,8 @@ public class DownloadService {
 		return Optional.empty();
 	}
 
-	public boolean downloadFile(final String srcFile, final String destFile, @Nullable final Consumer<Integer> listener) throws InterruptedException {
+	public boolean downloadFile(final String srcFile, final String destFile, final boolean isCompressed, @Nullable final Consumer<Integer> listener)
+		throws InterruptedException {
 
 		if (Thread.currentThread().isInterrupted()) {
 			throw new InterruptedException("Downloading thread was interrupted.");
@@ -61,7 +63,7 @@ public class DownloadService {
 					return false;
 				}
 			}
-			try (final BufferedInputStream downloadStream = new BufferedInputStream(url.openStream());
+			try (final InputStream downloadStream = new BufferedInputStream(getConnectionStream(url, isCompressed));
 				 final FileOutputStream fileOut = new FileOutputStream(dest)) {
 
 				final byte[] buffer = new byte[1024];
@@ -89,5 +91,9 @@ public class DownloadService {
 			log.error("Exception while creating a file:", e);
 			return false;
 		}
+	}
+
+	private InputStream getConnectionStream(final URL url, final boolean isCompressed) throws IOException {
+		return isCompressed ? new GZIPInputStream(url.openStream()) : url.openStream();
 	}
 }

@@ -1,70 +1,54 @@
 package de.darkatra.patcher.updatebuilder.gui.controller;
 
-import de.darkatra.patcher.model.Context;
-import de.darkatra.patcher.model.Packet;
-import de.darkatra.patcher.model.Patch;
-import de.darkatra.patcher.model.Version;
-import de.darkatra.patcher.service.HashingService;
-import de.darkatra.patcher.service.PatchService;
+import de.darkatra.patcher.updatebuilder.HashingService;
 import de.darkatra.patcher.updatebuilder.gui.GUIApplication;
+import de.darkatra.patcher.updatebuilder.model.Context;
+import de.darkatra.patcher.updatebuilder.model.Packet;
+import de.darkatra.patcher.updatebuilder.model.Patch;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TextField;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
-import javafx.scene.layout.GridPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.lang.NonNull;
+import org.springframework.util.FileCopyUtils;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.time.LocalDateTime;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.GZIPOutputStream;
 
 @Slf4j
 public class MainWindowController {
-	private HashingService hashingService;
-	private Context context;
-	private PatchService patchService;
 
-	public void setApplicationContext(ConfigurableApplicationContext applicationContext) {
-		this.hashingService = applicationContext.getBean(HashingService.class);
-		this.context = applicationContext.getBean(Context.class);
-		this.patchService = applicationContext.getBean(PatchService.class);
-	}
+	private final HashingService hashingService = new HashingService();
 
 	@FXML
-	private Button addFilesButton, addDirectoryButton, removeFilesButton, createPatchlistButton, printPatchlistButton, confirmVersionButton,
-		cancelVersionButton;
+	private Button addFilesButton, addDirectoryButton, removeFilesButton, createPatchlistButton, printPatchlistButton, gzipButton;
 	@FXML
 	private ListView<File> listView;
-	@FXML
-	private TextField versionTextField;
-	@FXML
-	private GridPane versionTextFieldButtons;
-	@FXML
-	private Label invalidInputLabel;
 
-	private final Pattern versionRegexPattern = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+)");
 	private GUIApplication guiApplication;
-	private Version version = new Version(0, 0, 1);
 
 	@FXML
 	public void initialize() {
+
 		addFilesButton.setOnMouseClicked(event -> {
 			final FileChooser fc = new FileChooser();
 			fc.setInitialDirectory(new File("."));
@@ -108,6 +92,16 @@ public class MainWindowController {
 			}
 		});
 
+		gzipButton.setOnMouseClicked(event -> listView.getItems()
+			.forEach(file -> {
+				try (final GZIPOutputStream out = new GZIPOutputStream(new FileOutputStream(file.getAbsolutePath() + ".gz"));
+					 final FileInputStream in = new FileInputStream(file)) {
+					FileCopyUtils.copy(in, out);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}));
+
 		listView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 		listView.setItems(FXCollections.observableArrayList());
 		listView.setOnDragOver(event -> {
@@ -124,63 +118,22 @@ public class MainWindowController {
 			event.setDropCompleted(true);
 			event.consume();
 		});
-
-		confirmVersionButton.setOnMouseClicked(event -> {
-			final String versionText = versionTextField.getText();
-			final Optional<Version> validated = validateVersion(versionText);
-			if (validated.isPresent()) {
-				this.version = validated.get();
-				versionTextField.setText(this.version.toString());
-				hideTextFieldButtons();
-				hideInvalidLabel();
-			} else {
-				invalidInputLabel.setVisible(true);
-			}
-		});
-
-		cancelVersionButton.setOnMouseClicked(event -> {
-			hideTextFieldButtons();
-			hideInvalidLabel();
-			versionTextField.clear();
-		});
-
-		versionTextField.setOnMouseClicked(event -> {
-			hideInvalidLabel();
-			versionTextFieldButtons.setManaged(true);
-		});
-
-		versionTextFieldButtons.visibleProperty().bind(versionTextFieldButtons.managedProperty());
-		hideTextFieldButtons();
-	}
-
-	private Optional<Version> validateVersion(String toValidate) {
-		final Matcher matcher = versionRegexPattern.matcher(toValidate);
-		if (matcher.matches()) {
-			final int major = Integer.parseInt(matcher.group(1));
-			final int minor = Integer.parseInt(matcher.group(2));
-			final int build = Integer.parseInt(matcher.group(3));
-			return Optional.of(new Version(major, minor, build));
-		} else {
-			return Optional.empty();
-		}
-	}
-
-	private void hideTextFieldButtons() {
-		versionTextFieldButtons.setManaged(false);
-	}
-
-	private void hideInvalidLabel() {
-		invalidInputLabel.setVisible(false);
 	}
 
 	private Patch buildPatchFromList() {
-		final Patch patch = Patch.builder().version(version).build();
+		final Patch patch = new Patch();
 		patch.getPackets().addAll(listView.getItems().stream()
 			.map(file -> {
 				try {
 					final Optional<String> sha3Checksum = hashingService.getSHA3Checksum(file);
 					if (sha3Checksum.isPresent()) {
-						return new Packet(file.getAbsolutePath(), file.getAbsolutePath(), file.length(), LocalDateTime.now(), sha3Checksum.get(), false);
+						return new Packet()
+							.setSrc(file.getAbsolutePath())
+							.setDest(file.getAbsolutePath())
+							.setPacketSize(file.length())
+							.setDateTime(Instant.now())
+							.setChecksum(sha3Checksum.get())
+							.setBackupExisting(false);
 					}
 				} catch (IOException e) {
 					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Application Error", "Could not build Patchlist.").showAndWait();
@@ -190,7 +143,73 @@ public class MainWindowController {
 			})
 			.filter(Objects::nonNull)
 			.collect(Collectors.toList()));
-		return patchService.generateContextForPatch(context, patch);
+		return generateContextForPatch(getDevContext(), patch);
+	}
+
+	/*
+	 * TODO: Lets say we have a context containing:
+	 * <key>		<value>
+	 * bfme2		/test/bfme2
+	 * bfme2ep1		/test/bfme2something-else
+	 *
+	 * Currently has a bug that causes the generated context to contain '${bfme2}something-else/ instead of '${bfme2ep1}'.
+	 * Should be rewritten so that the directories are resolved against the file system and only the most specific directory alias is used.
+	 *
+	 * Same problem could occur for the following setup:
+	 * <key>		<value>
+	 * bfme2ep1		/test/rotwk
+	 * patcherDir	/test/rotwk/.patcher
+	 *
+	 * All files in /test/rotwk/.patcher should be resolved via '${patcherDir}/...' instead of '${bfme2ep1}/.patcher/...'.
+	 */
+	public Patch generateContextForPatch(@NonNull final Context context, @NonNull final Patch patch) {
+		final String prefix = "${";
+		final String suffix = "}";
+		final Patch returnPatch = new Patch();
+		final Path currentDir = new File(".").toPath().normalize().toAbsolutePath();
+		for (final Packet packet : patch.getPackets()) {
+			final Path relativePathToCWD = currentDir.relativize(Paths.get(packet.getSrc())).normalize();
+			final String src = prefix + "serverUrl" + suffix + "/" + relativePathToCWD.toString();
+			String dest = packet.getDest();
+			for (final String key : context.keySet()) {
+				try {
+					final String value = context.getOrDefault(key, null);
+					if (value != null) {
+						String temp = dest.replace(value, prefix + key + suffix);
+						if (!temp.equalsIgnoreCase(dest)) {
+							dest = temp;
+							break;
+						}
+					}
+				} catch (final ClassCastException e) {
+					log.error("Unexpected Error while generating the context {} for patch {}", context, patch);
+					log.debug("ClassCastException", e);
+				}
+			}
+
+			returnPatch.getPackets().add(
+				new Packet()
+					.setSrc(src)
+					.setDest(dest)
+					.setPacketSize(packet.getPacketSize())
+					.setDateTime(packet.getDateTime())
+					.setChecksum(packet.getChecksum())
+					.setBackupExisting(packet.isBackupExisting())
+			);
+		}
+		return returnPatch;
+	}
+
+	private Context getDevContext() {
+
+		final Context applicationContext = new Context();
+		applicationContext.putIfAbsent("serverUrl", "https://darkatra.de");
+		applicationContext.putIfAbsent("bfme2HomeDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/bfme2/").normalize().toString());
+		applicationContext.putIfAbsent("bfme2UserDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/userDirBfme2/").normalize().toString());
+		applicationContext.putIfAbsent("rotwkHomeDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/rotwk/").normalize().toString());
+		applicationContext.putIfAbsent("patcherUserDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/rotwk/.patcher").normalize().toString());
+		applicationContext.putIfAbsent("rotwkUserDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/userDirRotwk/").normalize().toString());
+		return applicationContext;
 	}
 
 	public void setGuiApplication(GUIApplication guiApplication) {

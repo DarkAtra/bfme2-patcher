@@ -17,7 +17,6 @@ module de.darkatra.patcher.updater {
 	requires org.bouncycastle.provider;
 
 	exports de.darkatra.patcher.updater;
-	exports de.darkatra.patcher.updater.deserializer to spring.beans;
 	exports de.darkatra.patcher.updater.config to spring.beans, spring.context;
 	exports de.darkatra.patcher.updater.listener;
 	exports de.darkatra.patcher.updater.service.model;

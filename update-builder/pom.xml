@@ -25,10 +25,6 @@
 	</properties>
 
 	<dependencies>
-		<dependency>
-			<groupId>de.darkatra</groupId>
-			<artifactId>base</artifactId>
-		</dependency>
 		<!-- Spring -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

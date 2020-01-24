@@ -1,5 +1,0 @@
-logging:
-  level.: off
-
-patcher-config:
-  server-url: http://localhost

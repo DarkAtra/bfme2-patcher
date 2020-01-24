@@ -21,11 +21,13 @@ public class ContextConfiguration {
 	public Context getContext(final UpdaterProperties updaterProperties, final RegistryService registryService) {
 
 		final Context applicationContext = new Context();
-		applicationContext.putIfAbsent("serverUrl", updaterProperties.getPatchFilesFolderUrl().toExternalForm());
-		applicationContext.putIfAbsent("patcherUserDir", updaterProperties.getUpdaterUserFolderUrl().toExternalForm());
+		applicationContext.putIfAbsent("serverUrl", updaterProperties.getBaseUrl().toString());
 		registryService.findBfME2HomeDirectory().ifPresent(value -> applicationContext.putIfAbsent("bfme2HomeDir", value.toString()));
 		registryService.findBfME2UserDirectory().ifPresent(value -> applicationContext.putIfAbsent("bfme2UserDir", value.toString()));
-		registryService.findBfME2RotWKHomeDirectory().ifPresent(value -> applicationContext.putIfAbsent("rotwkHomeDir", value.toString()));
+		registryService.findBfME2RotWKHomeDirectory().ifPresent(value -> {
+			applicationContext.putIfAbsent("rotwkHomeDir", value.toString());
+			applicationContext.putIfAbsent("patcherUserDir", value.resolve(".patcher").toString());
+		});
 		registryService.findBfME2RotWKUserDirectory().ifPresent(value -> applicationContext.putIfAbsent("rotwkUserDir", value.toString()));
 		return applicationContext;
 	}
@@ -36,13 +38,12 @@ public class ContextConfiguration {
 	public Context getDevContext(final UpdaterProperties updaterProperties) {
 
 		final Context applicationContext = new Context();
-		applicationContext.putIfAbsent("serverUrl", updaterProperties.getPatchFilesFolderUrl().toExternalForm());
-		applicationContext.putIfAbsent("patcherUserDir", updaterProperties.getUpdaterUserFolderUrl().toExternalForm());
-		applicationContext.putIfAbsent("patcherUserDir", Paths.get(System.getProperty("user.home"), "Desktop\\Test\\.patcher\\").normalize().toString());
-		applicationContext.putIfAbsent("bfme2HomeDir", Paths.get(System.getProperty("user.home"), "Desktop\\Test\\bfme2\\").normalize().toString());
-		applicationContext.putIfAbsent("bfme2UserDir", Paths.get(System.getProperty("user.home"), "Desktop\\Test\\userDirBfme2\\").normalize().toString());
-		applicationContext.putIfAbsent("rotwkHomeDir", Paths.get(System.getProperty("user.home"), "Desktop\\Test\\bfme2ep1\\").normalize().toString());
-		applicationContext.putIfAbsent("rotwkUserDir", Paths.get(System.getProperty("user.home"), "Desktop\\Test\\userDirBfme2Ep1\\").normalize().toString());
+		applicationContext.putIfAbsent("serverUrl", updaterProperties.getBaseUrl().toString());
+		applicationContext.putIfAbsent("bfme2HomeDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/bfme2/").normalize().toString());
+		applicationContext.putIfAbsent("bfme2UserDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/userDirBfme2/").normalize().toString());
+		applicationContext.putIfAbsent("rotwkHomeDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/bfme2ep1/").normalize().toString());
+		applicationContext.putIfAbsent("patcherUserDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/bfme2ep1/.patcher").normalize().toString());
+		applicationContext.putIfAbsent("rotwkUserDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/userDirBfme2Ep1/").normalize().toString());
 		return applicationContext;
 	}
 }

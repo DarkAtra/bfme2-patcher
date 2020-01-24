@@ -1,6 +1,7 @@
 package de.darkatra.patcher.updater.gui.controller;
 
 import de.darkatra.patcher.updater.listener.PatchEventListener;
+import de.darkatra.patcher.updater.properties.UpdaterProperties;
 import de.darkatra.patcher.updater.service.OptionFileService;
 import de.darkatra.patcher.updater.service.PatchService;
 import de.darkatra.patcher.updater.service.RegistryService;
@@ -32,6 +33,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class MainWindowController implements PatchEventListener {
 
+	private final UpdaterProperties updaterProperties;
 	private final PatchService patchService;
 	private final OptionFileService optionFileService;
 	private final RegistryService registryService;
@@ -44,8 +46,8 @@ public class MainWindowController implements PatchEventListener {
 	private Button updateButton;
 	@FXML
 	private Button toggleModButton;
-	// @FXML
-	// private MenuItem gameSettingsMenuItem;
+	@FXML
+	private MenuItem versionMenuItem;
 	@FXML
 	private MenuItem fixBfME2MenuItem;
 	@FXML
@@ -55,6 +57,8 @@ public class MainWindowController implements PatchEventListener {
 
 	@FXML
 	public void initialize() {
+
+		versionMenuItem.setText(updaterProperties.getVersion());
 
 		patchProgressBar.setProgress(0);
 		patchProgressLabel.setText("Waiting for user input.");
@@ -70,7 +74,6 @@ public class MainWindowController implements PatchEventListener {
 				return true;
 			}).completable().whenComplete((patchResult, e) -> {
 				if (e != null) {
-					log.error("An unexpected error occurred.", e);
 					Platform.runLater(() -> {
 						patchProgressBar.setProgress(0);
 						patchProgressLabel.setText("Update failed. Please try again later.");
@@ -246,7 +249,7 @@ public class MainWindowController implements PatchEventListener {
 				Alert.AlertType.ERROR,
 				"Error",
 				"Update error",
-				"There was an error downloading the update. Try to rerun this application with admin privileges."
+				"There was an error downloading the update. Please try again later."
 			);
 		} else if (throwable instanceof URISyntaxException) {
 			return UIUtils.alert(
@@ -263,6 +266,7 @@ public class MainWindowController implements PatchEventListener {
 				"Could not validate the update. Some files may have been changed by another application."
 			);
 		}
+		log.error("An unexpected error occurred.", throwable);
 		return UIUtils.alert(
 			Alert.AlertType.ERROR,
 			"Error",
