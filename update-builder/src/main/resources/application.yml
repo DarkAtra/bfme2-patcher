@@ -1,11 +1,20 @@
+spring:
+  main:
+    banner-mode: off
+
 logging:
-  level.de.darkatra: info
   file:
-    name: ${user.home}\AppData\Roaming\.patcher\updater-builder.log
+    name: ${user.home}/AppData/Roaming/.patcher/updater-builder.log
+  level:
+    de.darkatra: info
+
+update-builder-properties:
+  base-url: https://darkatra.de
+  version: @version@
 ---
-logging:
-  level.de.darkatra: debug
 spring:
   profiles: dev
-patcher-config:
-  server-url: http://localhost
+
+logging:
+  level:
+    de.darkatra: debug

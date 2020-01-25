@@ -1,6 +1,7 @@
 package de.darkatra.patcher.updatebuilder;
 
 import org.bouncycastle.jcajce.provider.digest.SHA3;
+import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -9,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Optional;
 
+@Service
 public class HashingService {
 	/**
 	 * Create a base64 encoded sha3-checksum for the given file.

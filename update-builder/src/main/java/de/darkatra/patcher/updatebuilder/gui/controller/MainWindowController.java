@@ -1,10 +1,11 @@
 package de.darkatra.patcher.updatebuilder.gui.controller;
 
 import de.darkatra.patcher.updatebuilder.HashingService;
-import de.darkatra.patcher.updatebuilder.gui.GUIApplication;
-import de.darkatra.patcher.updatebuilder.model.Context;
-import de.darkatra.patcher.updatebuilder.model.Packet;
-import de.darkatra.patcher.updatebuilder.model.Patch;
+import de.darkatra.patcher.updatebuilder.UpdateBuilderApplication;
+import de.darkatra.patcher.updatebuilder.service.model.Context;
+import de.darkatra.patcher.updatebuilder.service.model.Packet;
+import de.darkatra.patcher.updatebuilder.service.model.Patch;
+import de.darkatra.patcher.updatebuilder.util.UIUtils;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -15,9 +16,11 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Component;
 import org.springframework.util.FileCopyUtils;
 
 import java.io.File;
@@ -35,16 +38,24 @@ import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 
 @Slf4j
+@Component
+@RequiredArgsConstructor
 public class MainWindowController {
 
-	private final HashingService hashingService = new HashingService();
+	private final UpdateBuilderApplication updateBuilderApplication;
+	private final HashingService hashingService;
+	private final Context context;
 
 	@FXML
-	private Button addFilesButton, addDirectoryButton, removeFilesButton, createPatchlistButton, printPatchlistButton, gzipButton;
+	private Button addFilesButton;
+	@FXML
+	private Button addDirectoryButton;
+	@FXML
+	private Button removeFilesButton;
+	@FXML
+	private Button createPatchButton;
 	@FXML
 	private ListView<File> listView;
-
-	private GUIApplication guiApplication;
 
 	@FXML
 	public void initialize() {
@@ -53,7 +64,7 @@ public class MainWindowController {
 			final FileChooser fc = new FileChooser();
 			fc.setInitialDirectory(new File("."));
 			fc.setTitle("Select a File");
-			final List<File> files = fc.showOpenMultipleDialog(guiApplication.getStage());
+			final List<File> files = fc.showOpenMultipleDialog(updateBuilderApplication.getMainStage());
 			if (files != null) {
 				listView.getItems().addAll(files);
 			}
@@ -63,7 +74,7 @@ public class MainWindowController {
 			final DirectoryChooser dc = new DirectoryChooser();
 			dc.setInitialDirectory(new File((".")));
 			dc.setTitle("Select a directory");
-			final File directory = dc.showDialog(guiApplication.getStage());
+			final File directory = dc.showDialog(updateBuilderApplication.getMainStage());
 			if (directory != null) {
 				final Collection<File> files = FileUtils.listFiles(directory, null, true);
 				listView.getItems().addAll(files);
@@ -78,29 +89,9 @@ public class MainWindowController {
 			}
 		});
 
-		createPatchlistButton.setOnMouseClicked(event -> {
-			// TODO: generate patchlist and upload file to ftp
+		createPatchButton.setOnMouseClicked(event -> {
+			// TODO: show patchlist, generate patchlist and upload file to ftp
 		});
-
-		printPatchlistButton.setOnMouseClicked(event -> {
-			try {
-				final PrintedPatchWindowController printedPatchWindowController = guiApplication.showPrintedPatch();
-				printedPatchWindowController.setPrintedPatchWindowArea(buildPatchFromList());
-			} catch (IOException e) {
-				log.error("Could not create Patchwindow", e);
-				GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Application Error", "Could not create Patchwindow");
-			}
-		});
-
-		gzipButton.setOnMouseClicked(event -> listView.getItems()
-			.forEach(file -> {
-				try (final GZIPOutputStream out = new GZIPOutputStream(new FileOutputStream(file.getAbsolutePath() + ".gz"));
-					 final FileInputStream in = new FileInputStream(file)) {
-					FileCopyUtils.copy(in, out);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}));
 
 		listView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 		listView.setItems(FXCollections.observableArrayList());
@@ -136,14 +127,14 @@ public class MainWindowController {
 							.setBackupExisting(false);
 					}
 				} catch (IOException e) {
-					GUIApplication.alert(Alert.AlertType.ERROR, "Error", "Application Error", "Could not build Patchlist.").showAndWait();
+					UIUtils.alert(Alert.AlertType.ERROR, "Error", "Application Error", "Could not build Patchlist.").showAndWait();
 				} catch (InterruptedException ignored) {
 				}
 				return null;
 			})
 			.filter(Objects::nonNull)
 			.collect(Collectors.toList()));
-		return generateContextForPatch(getDevContext(), patch);
+		return generateContextForPatch(context, patch);
 	}
 
 	/*
@@ -162,7 +153,7 @@ public class MainWindowController {
 	 *
 	 * All files in /test/rotwk/.patcher should be resolved via '${patcherDir}/...' instead of '${bfme2ep1}/.patcher/...'.
 	 */
-	public Patch generateContextForPatch(@NonNull final Context context, @NonNull final Patch patch) {
+	private Patch generateContextForPatch(@NonNull final Context context, @NonNull final Patch patch) {
 		final String prefix = "${";
 		final String suffix = "}";
 		final Patch returnPatch = new Patch();
@@ -200,19 +191,15 @@ public class MainWindowController {
 		return returnPatch;
 	}
 
-	private Context getDevContext() {
-
-		final Context applicationContext = new Context();
-		applicationContext.putIfAbsent("serverUrl", "https://darkatra.de");
-		applicationContext.putIfAbsent("bfme2HomeDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/bfme2/").normalize().toString());
-		applicationContext.putIfAbsent("bfme2UserDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/userDirBfme2/").normalize().toString());
-		applicationContext.putIfAbsent("rotwkHomeDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/rotwk/").normalize().toString());
-		applicationContext.putIfAbsent("patcherUserDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/rotwk/.patcher").normalize().toString());
-		applicationContext.putIfAbsent("rotwkUserDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/userDirRotwk/").normalize().toString());
-		return applicationContext;
-	}
-
-	public void setGuiApplication(GUIApplication guiApplication) {
-		this.guiApplication = guiApplication;
+	private void generateGzipFiles() {
+		listView.getItems()
+			.forEach(file -> {
+				try (final GZIPOutputStream out = new GZIPOutputStream(new FileOutputStream(file.getAbsolutePath() + ".gz"));
+					 final FileInputStream in = new FileInputStream(file)) {
+					FileCopyUtils.copy(in, out);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			});
 	}
 }

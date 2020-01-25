@@ -37,6 +37,16 @@
 			<artifactId>bcprov-jdk15on</artifactId>
 		</dependency>
 
+		<!-- JavaFX -->
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-controls</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-fxml</artifactId>
+		</dependency>
+
 		<!-- Windows Registry Reader/Writer -->
 		<dependency>
 			<groupId>net.java.dev.jna</groupId>
@@ -62,16 +72,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-configuration-processor</artifactId>
 			<optional>true</optional>
-		</dependency>
-
-		<!-- JavaFX -->
-		<dependency>
-			<groupId>org.openjfx</groupId>
-			<artifactId>javafx-controls</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.openjfx</groupId>
-			<artifactId>javafx-fxml</artifactId>
 		</dependency>
 
 		<!-- Testing -->

@@ -1,4 +1,4 @@
-package de.darkatra.patcher.updatebuilder.model;
+package de.darkatra.patcher.updatebuilder.service.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
