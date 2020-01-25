@@ -7,18 +7,13 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import java.util.Arrays;
-import java.util.stream.Collectors;
-
 @Slf4j
 @SpringBootApplication
-public class UpdaterApplication extends Application implements ApplicationRunner {
+public class UpdaterApplication extends Application {
 
 	private ConfigurableApplicationContext context;
 	private Parent mainWindow;
@@ -47,16 +42,6 @@ public class UpdaterApplication extends Application implements ApplicationRunner
 	@Override
 	public void stop() {
 		context.close();
-	}
-
-	@Override
-	public void run(final ApplicationArguments args) {
-
-		log.debug("CmdArguments: {}", Arrays.toString(args.getSourceArgs()));
-		log.debug("NonOptionArguments: {}", args.getNonOptionArgs());
-		log.debug("OptionArguments: {}", args.getOptionNames().stream()
-			.map(arg -> String.format("'%s': '%s'", arg, args.getOptionValues(arg)))
-			.collect(Collectors.toList()));
 	}
 
 	public static void main(final String[] args) {

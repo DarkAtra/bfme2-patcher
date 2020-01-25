@@ -90,7 +90,6 @@ public class PatchService {
 			return;
 		}
 
-		updateLink();
 		patchEventListener.onUpdaterNeedsUpdate(false);
 
 		checkIfIsInterrupted();
@@ -126,14 +125,13 @@ public class PatchService {
 		patchEventListener.onPatchDone();
 	}
 
-	private void updateLink() throws IOException, InterruptedException {
+	private void updateLink() throws IOException {
 
 		final Path installVbs = Paths.get(context.get("patcherUserDir"), "/install.vbs");
 		FileCopyUtils.copy(getClass().getResourceAsStream("/install.vbs"), new FileOutputStream(installVbs.toFile()));
+		log.debug("installFile location: {}", installVbs);
 
-		final int exitCode = ProcessUtils.run("wscript", new File(context.get("patcherUserDir")), installVbs.toString()).waitFor();
-		Files.delete(installVbs);
-		if (exitCode != 0) {
+		if (!ProcessUtils.run("wscript", new File(context.get("patcherUserDir")), installVbs.toString()).isAlive()) {
 			throw new IOException("Could not create or update the shortcut to the latest updater version.");
 		}
 	}
@@ -218,7 +216,7 @@ public class PatchService {
 
 	private boolean isUpdateForUpdaterRequired(final Patch patch) throws IOException, InterruptedException {
 
-		final Optional<String> fileChecksum = hashingService.getSHA3Checksum(Paths.get(patch.getLatestUpdater().getDest()).toFile());
+		final Optional<String> fileChecksum = hashingService.getSHA3Checksum(Paths.get(context.get("patcherUserDir"), "updater.jar").toFile());
 		return fileChecksum.isEmpty() || !fileChecksum.get().equals(patch.getLatestUpdater().getChecksum());
 	}
 
