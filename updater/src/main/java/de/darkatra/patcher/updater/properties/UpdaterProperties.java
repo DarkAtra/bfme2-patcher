@@ -24,9 +24,6 @@ public class UpdaterProperties {
 	private URL patchListUrl;
 
 	@NotBlank
-	private String updaterJarName;
-
-	@NotBlank
 	private String version;
 
 	@Valid

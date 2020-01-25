@@ -150,8 +150,9 @@ public class MainWindowController implements PatchEventListener {
 		if (requiresUpdate) {
 			Platform.runLater(() -> {
 				patchProgressBar.setProgress(0);
+				updateRestartLabel(5);
 				UIUtils.getCountdownTimeline(5, secondsLeft -> {
-					patchProgressLabel.setText(String.format("Patcher requires an update. Updating application in %d seconds.", secondsLeft));
+					updateRestartLabel(secondsLeft);
 					if (secondsLeft <= 0) {
 						Platform.exit();
 					}
@@ -243,8 +244,15 @@ public class MainWindowController implements PatchEventListener {
 		});
 	}
 
+	private void updateRestartLabel(final int secondsLeft) {
+		Platform.runLater(() -> patchProgressLabel.setText(
+			String.format("Patcher requires an update. Updating application in %d seconds.", secondsLeft)
+		));
+	}
+
 	private Alert getAlertForThrowable(final Throwable throwable) {
 		if (throwable instanceof IOException) {
+			log.warn("IOException during update.", throwable);
 			return UIUtils.alert(
 				Alert.AlertType.ERROR,
 				"Error",
@@ -252,6 +260,7 @@ public class MainWindowController implements PatchEventListener {
 				"There was an error downloading the update. Please try again later."
 			);
 		} else if (throwable instanceof URISyntaxException) {
+			log.error("URISyntaxException during update.", throwable);
 			return UIUtils.alert(
 				Alert.AlertType.ERROR,
 				"Error",
@@ -259,6 +268,7 @@ public class MainWindowController implements PatchEventListener {
 				"There was an unexpected error reading the application config. Please try again later."
 			);
 		} else if (throwable instanceof ValidationException) {
+			log.debug("ValidationException during update.", throwable);
 			return UIUtils.alert(
 				Alert.AlertType.ERROR,
 				"Error",

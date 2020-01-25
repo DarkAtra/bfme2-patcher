@@ -8,10 +8,6 @@ import java.util.stream.Stream;
 
 public class ProcessUtils {
 
-	public static Process run(final String command, final String... args) {
-		return run(command, args);
-	}
-
 	public static Process run(final Path executable, final String... args) throws IOException {
 		return run(executable.toFile(), args);
 	}

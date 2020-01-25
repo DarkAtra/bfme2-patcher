@@ -5,28 +5,28 @@ import de.darkatra.patcher.updater.listener.PatchEventListener;
 import de.darkatra.patcher.updater.properties.UpdaterProperties;
 import de.darkatra.patcher.updater.service.model.Compression;
 import de.darkatra.patcher.updater.service.model.Context;
-import de.darkatra.patcher.updater.service.model.LatestUpdater;
+import de.darkatra.patcher.updater.service.model.ObsoleteFile;
 import de.darkatra.patcher.updater.service.model.Packet;
 import de.darkatra.patcher.updater.service.model.Patch;
+import de.darkatra.patcher.updater.util.ProcessUtils;
 import javafx.beans.property.LongProperty;
 import javafx.beans.property.SimpleLongProperty;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.FileCopyUtils;
 
 import javax.validation.ValidationException;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -56,43 +56,42 @@ public class PatchService {
 
 		// parse patchlist
 		patchEventListener.preReadPatchlist();
-		final Optional<Patch> patchOptional = patchOf(patchListContent.get())
-			.map(patch -> applyContextToPatch(context, patch));
-
+		final Optional<Patch> patchOptional = patchOf(patchListContent.get());
 		if (patchOptional.isEmpty()) {
 			throw new ValidationException("Could not parse the patch data.");
 		}
 
 		final Patch patch = patchOptional.get();
+		patch.applyContext(context);
 		patchEventListener.postReadPatchlist();
 
 		checkIfIsInterrupted();
 
 		// update updater
-		//		boolean isUpdateForUpdaterRequired = isUpdateForUpdaterRequired(patch);
-		//		patchEventListener.onUpdaterNeedsUpdate(isUpdateForUpdaterRequired);
-		//		if (isUpdateForUpdaterRequired) {
-		//			final LongProperty curProgress = new SimpleLongProperty(0);
-		//
-		//			downloadPacket(
-		//				patch.getLatestUpdater().getLocation(),
-		//				getCurrentPatcherJarPath().toString(),
-		//				Compression.NONE,
-		//				progress -> {
-		//					curProgress.setValue(curProgress.getValue() + progress);
-		//					patchEventListener.onPatchProgressChange(curProgress.getValue(), patch.getLatestUpdater().getPacketSize());
-		//				}
-		//			);
-		//
-		//			patchEventListener.onValidatingPacket();
-		//
-		//			validateDownloadedPacket(patch.getLatestUpdater().getLocation(), getCurrentPatcherJarPath().toString());
-		//
-		//			// exit
-		//			ProcessUtils.run("move", patch.getLatestUpdater().getLocation(), getCurrentPatcherJarPath().toString());
-		//			Platform.exit();
-		//			return;
-		//		}
+		if (isUpdateForUpdaterRequired(patch)) {
+			final LongProperty curProgress = new SimpleLongProperty(0);
+
+			downloadPacket(
+				patch.getLatestUpdater().getSrc(),
+				patch.getLatestUpdater().getDest(),
+				Compression.NONE,
+				progress -> {
+					curProgress.setValue(curProgress.getValue() + progress);
+					patchEventListener.onPatchProgressChange(curProgress.getValue(), patch.getLatestUpdater().getPacketSize());
+				}
+			);
+
+			patchEventListener.onValidatingPacket();
+			validateDownloadedPacket(patch.getLatestUpdater().getDest(), patch.getLatestUpdater().getChecksum());
+
+			updateLink();
+
+			patchEventListener.onUpdaterNeedsUpdate(true);
+			return;
+		}
+
+		updateLink();
+		patchEventListener.onUpdaterNeedsUpdate(false);
 
 		checkIfIsInterrupted();
 
@@ -125,6 +124,18 @@ public class PatchService {
 		patchEventListener.postPacketsDownload();
 
 		patchEventListener.onPatchDone();
+	}
+
+	private void updateLink() throws IOException, InterruptedException {
+
+		final Path installVbs = Paths.get(context.get("patcherUserDir"), "/install.vbs");
+		FileCopyUtils.copy(getClass().getResourceAsStream("/install.vbs"), new FileOutputStream(installVbs.toFile()));
+
+		final int exitCode = ProcessUtils.run("wscript", new File(context.get("patcherUserDir")), installVbs.toString()).waitFor();
+		Files.delete(installVbs);
+		if (exitCode != 0) {
+			throw new IOException("Could not create or update the shortcut to the latest updater version.");
+		}
 	}
 
 	private void downloadPacket(final Packet packet, final Consumer<Integer> listener) throws InterruptedException, IOException {
@@ -162,66 +173,11 @@ public class PatchService {
 
 		try {
 			final Patch patch = objectMapper.readValue(json, Patch.class);
-			patch.getPackets().stream().map(Packet::getDest).forEach(dest -> patch.getFileIndex().add(dest));
 			return Optional.of(patch);
 		} catch (final Exception e) {
 			log.error("Failed to parse patch from json.", e);
 			return Optional.empty();
 		}
-	}
-
-	private Patch applyContextToPatch(final Context context, final Patch patch) {
-
-		final Patch returnPatch = new Patch();
-		final String prefix = "${";
-		final String suffix = "}";
-
-		String latestUpdaterLocation = patch.getLatestUpdater().getLocation();
-		for (final Map.Entry<String, String> entry : context.entrySet()) {
-			final String key = entry.getKey();
-			final String value = entry.getValue();
-			latestUpdaterLocation = latestUpdaterLocation.replace(prefix + key + suffix, value);
-		}
-		returnPatch.setLatestUpdater(new LatestUpdater(patch.getLatestUpdater()).setLocation(latestUpdaterLocation));
-
-		for (final Packet packet : patch.getPackets()) {
-
-			String src = packet.getSrc();
-			String dest = packet.getDest();
-
-			for (final Map.Entry<String, String> entry : context.entrySet()) {
-				final String key = entry.getKey();
-				final String value = entry.getValue();
-				src = src.replace(prefix + key + suffix, value);
-				dest = dest.replace(prefix + key + suffix, value);
-			}
-
-			dest = Paths.get(dest).normalize().toString();
-
-			returnPatch.getPackets().add(
-				new Packet()
-					.setSrc(src)
-					.setDest(dest)
-					.setPacketSize(packet.getPacketSize())
-					.setDateTime(packet.getDateTime())
-					.setChecksum(packet.getChecksum())
-					.setBackupExisting(packet.isBackupExisting())
-					.setCompression(packet.getCompression())
-			);
-		}
-
-		for (String destToRemove : patch.getFileIndex()) {
-
-			for (final Map.Entry<String, String> entry : context.entrySet()) {
-				final String key = entry.getKey();
-				final String value = entry.getValue();
-				destToRemove = destToRemove.replace(prefix + key + suffix, value);
-			}
-
-			returnPatch.getFileIndex().add(Paths.get(destToRemove).normalize().toString());
-		}
-
-		return returnPatch;
 	}
 
 	private void checkIfIsInterrupted() throws InterruptedException {
@@ -262,24 +218,16 @@ public class PatchService {
 
 	private boolean isUpdateForUpdaterRequired(final Patch patch) throws IOException, InterruptedException {
 
-		final Optional<String> fileChecksum = hashingService.getSHA3Checksum(getCurrentPatcherJarPath().toFile());
+		final Optional<String> fileChecksum = hashingService.getSHA3Checksum(Paths.get(patch.getLatestUpdater().getDest()).toFile());
 		return fileChecksum.isEmpty() || !fileChecksum.get().equals(patch.getLatestUpdater().getChecksum());
-	}
-
-	private Path getCurrentPatcherJarPath() {
-		return Paths.get(context.get("patcherUserDir"), updaterProperties.getUpdaterJarName()).normalize();
 	}
 
 	private void deleteFiles(final Patch patch) throws InterruptedException, IOException {
 
-		final List<String> filesToDelete = patch.getFileIndex().stream()
-			.filter(p -> patch.getPackets().stream().noneMatch(p2 -> p.equals(p2.getDest())))
-			.collect(Collectors.toList());
-
-		for (final String file : filesToDelete) {
+		for (final ObsoleteFile file : patch.getObsoleteFiles()) {
 			checkIfIsInterrupted();
 
-			final File f = new File(file);
+			final File f = new File(file.getDest());
 			if (f.exists()) {
 				if (!f.delete()) {
 					throw new IOException(String.format("Could not delete the file: '%s'.", f.getAbsolutePath()));

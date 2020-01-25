@@ -1,6 +1,7 @@
 package de.darkatra.patcher.updatebuilder.gui.controller;
 
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.darkatra.patcher.updatebuilder.model.Patch;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -9,6 +10,8 @@ import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 
 public class PrintedPatchWindowController {
+
+	private final ObjectMapper objectMapper = new ObjectMapper();
 	private Stage stage;
 
 	@FXML
@@ -22,7 +25,13 @@ public class PrintedPatchWindowController {
 	}
 
 	public void setPrintedPatchWindowArea(Patch patch) {
-		Platform.runLater(() -> this.printedPatchWindowTextArea.setText(new GsonBuilder().serializeNulls().setPrettyPrinting().create().toJson(patch)));
+		Platform.runLater(() -> {
+			try {
+				this.printedPatchWindowTextArea.setText(objectMapper.writeValueAsString(patch));
+			} catch (final JsonProcessingException e) {
+				e.printStackTrace();
+			}
+		});
 	}
 
 	public void setStage(Stage stage) {

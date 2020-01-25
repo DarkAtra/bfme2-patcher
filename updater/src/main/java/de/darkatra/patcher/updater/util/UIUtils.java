@@ -13,11 +13,12 @@ import java.util.function.Consumer;
 public class UIUtils {
 	public static Timeline getCountdownTimeline(final int duration, final Consumer<Integer> action) {
 		final IntegerProperty secondsLeft = new SimpleIntegerProperty(duration);
-		final Timeline timeline = new Timeline(Timeline.INDEFINITE);
+		final Timeline timeline = new Timeline();
+		timeline.setCycleCount(Timeline.INDEFINITE);
 		timeline.getKeyFrames().add(new KeyFrame(Duration.seconds(1), event -> {
 			secondsLeft.setValue(secondsLeft.getValue() - 1);
 			action.accept(secondsLeft.get());
-			if (secondsLeft.getValue() <= 0) {
+			if (secondsLeft.get() <= 0) {
 				timeline.stop();
 			}
 		}));
