@@ -8,17 +8,14 @@ import de.darkatra.patcher.updater.service.model.Context;
 import de.darkatra.patcher.updater.service.model.ObsoleteFile;
 import de.darkatra.patcher.updater.service.model.Packet;
 import de.darkatra.patcher.updater.service.model.Patch;
-import de.darkatra.patcher.updater.util.ProcessUtils;
 import javafx.beans.property.LongProperty;
 import javafx.beans.property.SimpleLongProperty;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.util.FileCopyUtils;
 
 import javax.validation.ValidationException;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -67,28 +64,7 @@ public class PatchService {
 
 		checkIfIsInterrupted();
 
-		// update updater
-		if (isUpdateForUpdaterRequired(patch)) {
-			final LongProperty curProgress = new SimpleLongProperty(0);
-
-			downloadPacket(
-				patch.getLatestUpdater().getSrc(),
-				patch.getLatestUpdater().getDest(),
-				Compression.NONE,
-				progress -> {
-					curProgress.setValue(curProgress.getValue() + progress);
-					patchEventListener.onPatchProgressChange(curProgress.getValue(), patch.getLatestUpdater().getPacketSize());
-				}
-			);
-
-			patchEventListener.onValidatingPacket();
-			validateDownloadedPacket(patch.getLatestUpdater().getDest(), patch.getLatestUpdater().getChecksum());
-
-			updateLink();
-
-			patchEventListener.onUpdaterNeedsUpdate(true);
-			return;
-		}
+		// TODO: auto update updater
 
 		patchEventListener.onUpdaterNeedsUpdate(false);
 
@@ -123,17 +99,6 @@ public class PatchService {
 		patchEventListener.postPacketsDownload();
 
 		patchEventListener.onPatchDone();
-	}
-
-	private void updateLink() throws IOException {
-
-		final Path installVbs = Paths.get(context.get("patcherUserDir"), "/install.vbs");
-		FileCopyUtils.copy(getClass().getResourceAsStream("/install.vbs"), new FileOutputStream(installVbs.toFile()));
-		log.debug("installFile location: {}", installVbs);
-
-		if (!ProcessUtils.run("wscript", new File(context.get("patcherUserDir")), installVbs.toString()).isAlive()) {
-			throw new IOException("Could not create or update the shortcut to the latest updater version.");
-		}
 	}
 
 	private void downloadPacket(final Packet packet, final Consumer<Integer> listener) throws InterruptedException, IOException {
@@ -212,12 +177,6 @@ public class PatchService {
 		if (Paths.get(packet.getDest()).toFile().exists() && packet.isBackupExisting()) {
 			Files.move(pathToFile, Paths.get((String.format("%s%s.bak", pathToFile.getFileName().toString(), Instant.now().toString()))));
 		}
-	}
-
-	private boolean isUpdateForUpdaterRequired(final Patch patch) throws IOException, InterruptedException {
-
-		final Optional<String> fileChecksum = hashingService.getSHA3Checksum(Paths.get(context.get("patcherUserDir"), "updater.jar").toFile());
-		return fileChecksum.isEmpty() || !fileChecksum.get().equals(patch.getLatestUpdater().getChecksum());
 	}
 
 	private void deleteFiles(final Patch patch) throws InterruptedException, IOException {

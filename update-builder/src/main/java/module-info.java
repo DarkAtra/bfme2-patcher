@@ -16,6 +16,7 @@ module de.darkatra.patcher.updater {
 	requires com.sun.jna.platform;
 	requires org.bouncycastle.provider;
 	requires commons.io;
+	requires com.fasterxml.jackson.datatype.jsr310;
 
 	exports de.darkatra.patcher.updatebuilder;
 	exports de.darkatra.patcher.updatebuilder.config to spring.beans, spring.context;

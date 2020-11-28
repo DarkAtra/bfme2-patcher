@@ -91,6 +91,7 @@ public class MainWindowController {
 
 		createPatchButton.setOnMouseClicked(event -> {
 			// TODO: show patchlist, generate patchlist and upload file to ftp
+			final Patch patch = buildPatchFromList();
 		});
 
 		listView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -113,7 +114,7 @@ public class MainWindowController {
 
 	private Patch buildPatchFromList() {
 		final Patch patch = new Patch();
-		patch.getPackets().addAll(listView.getItems().stream()
+		patch.setPackets(listView.getItems().stream()
 			.map(file -> {
 				try {
 					final Optional<String> sha3Checksum = hashingService.getSHA3Checksum(file);
@@ -133,7 +134,7 @@ public class MainWindowController {
 				return null;
 			})
 			.filter(Objects::nonNull)
-			.collect(Collectors.toList()));
+			.collect(Collectors.toSet()));
 		return generateContextForPatch(context, patch);
 	}
 

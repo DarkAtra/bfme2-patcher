@@ -9,7 +9,6 @@ import java.util.Set;
 @Data
 @Accessors(chain = true)
 public class Patch {
-	private LatestUpdater latestUpdater;
-	private Set<String> fileIndex = new HashSet<>();
+	private Set<ObsoleteFile> obsoleteFiles = new HashSet<>();
 	private Set<Packet> packets = new HashSet<>();
 }
