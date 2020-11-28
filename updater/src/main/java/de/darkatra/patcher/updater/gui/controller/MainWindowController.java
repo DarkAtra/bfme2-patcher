@@ -208,7 +208,7 @@ public class MainWindowController implements PatchEventListener {
 				final Optional<Path> rotWKHomeDirectory = registryService.findBfME2RotWKHomeDirectory();
 				if (rotWKHomeDirectory.isPresent()) {
 					try {
-						ProcessUtils.run(rotWKHomeDirectory.get().resolve("/lotrbfme2ep1.exe")).waitFor();
+						ProcessUtils.run(rotWKHomeDirectory.get().resolve("./lotrbfme2ep1.exe")).waitFor();
 					} catch (final IOException e) {
 						Platform.runLater(() -> UIUtils.alert(
 							Alert.AlertType.ERROR,
