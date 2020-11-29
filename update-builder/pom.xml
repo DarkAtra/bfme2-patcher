@@ -96,7 +96,7 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
 					<executable>true</executable>
-					<mainClass>de.darkatra.patcher.updatebuilder.UpdateBuilderApplication</mainClass>
+					<mainClass>de.darkatra.patcher.updatebuilder.UpdateBuilderNoUI</mainClass>
 				</configuration>
 			</plugin>
 		</plugins>

@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -59,7 +60,13 @@ public class UpdateBuilderNoUI {
 			}
 		}
 
-		System.out.println(new ObjectMapper().registerModule(new JavaTimeModule()).writeValueAsString(patch));
+		Files.writeString(
+			Path.of("./output/version.json"),
+			new ObjectMapper().registerModule(new JavaTimeModule()).writerWithDefaultPrettyPrinter().writeValueAsString(patch),
+			StandardOpenOption.WRITE,
+			StandardOpenOption.TRUNCATE_EXISTING,
+			StandardOpenOption.CREATE
+		);
 	}
 
 	private static void addFilesToPatch(final Patch patch, final Directory directory, final Path filePath) throws IOException, InterruptedException {
