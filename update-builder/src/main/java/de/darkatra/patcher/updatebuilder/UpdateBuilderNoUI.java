@@ -17,7 +17,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.List;
@@ -47,14 +46,15 @@ public class UpdateBuilderNoUI {
 		private final String contextVariable;
 	}
 
-	private static final HashingService hashingService = new HashingService();
+	private static final Set<String> FILES_REQUIRING_BACKUP = Set.of("asset.dat", "game.dat");
+	private static final HashingService HASHING_SERVICE = new HashingService();
 
 	public static void main(final String[] args) throws IOException, InterruptedException {
 
 		final Patch patch = new Patch();
 
 		for (final Directory directory : List.of(APPDATA_DIR_NAME, BMFE2_DIR_NAME, ROTWK_DIR_NAME)) {
-			final Path basePath = Paths.get("./" + directory.name);
+			final Path basePath = Path.of("./" + directory.name);
 			for (final Path filePath : readFilesInDirectory(basePath)) {
 				addFilesToPatch(patch, directory, filePath);
 			}
@@ -83,16 +83,16 @@ public class UpdateBuilderNoUI {
 				).normalize().toString().replace("\\", "/"))
 				.setPacketSize(gzipFile.length())
 				.setDateTime(Instant.now())
-				.setChecksum(hashingService.getSHA3Checksum(filePath.toFile()).get())
-				.setBackupExisting(false)
+				.setChecksum(HASHING_SERVICE.getSHA3Checksum(filePath.toFile())
+					.orElseThrow(() -> new IllegalStateException("Could not calculate the hash for: " + filePath.toFile())))
+				.setBackupExisting(FILES_REQUIRING_BACKUP.contains(filePath.toFile().getName()))
 				.setCompression(Compression.ZIP)
 		);
 	}
 
 	private static File createGzipArchive(final Directory directory, final Path input) throws IOException {
 
-		final File outputFile =
-			new File(Paths.get("./output/", Path.of(directory.name).relativize(input).normalize().toString()).normalize().toString() + ".gz");
+		final File outputFile = new File(Path.of("./output/", Path.of(directory.name).relativize(input).toString()).normalize().toString() + ".gz");
 		outputFile.getParentFile().mkdirs();
 		try (final FileInputStream inputStream = new FileInputStream(input.toFile());
 			 final GZIPOutputStream outputStream = new GZIPOutputStream(new FileOutputStream(outputFile))) {
