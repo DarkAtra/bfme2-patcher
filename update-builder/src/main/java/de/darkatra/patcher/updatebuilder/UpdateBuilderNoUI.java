@@ -6,6 +6,7 @@ import static de.darkatra.patcher.updatebuilder.UpdateBuilderNoUI.Directory.ROTW
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.darkatra.patcher.updatebuilder.service.model.Compression;
+import de.darkatra.patcher.updatebuilder.service.model.ObsoleteFile;
 import de.darkatra.patcher.updatebuilder.service.model.Packet;
 import de.darkatra.patcher.updatebuilder.service.model.Patch;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -46,12 +48,17 @@ public class UpdateBuilderNoUI {
 		private final String contextVariable;
 	}
 
+	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+	private static final Path OBSOLETE_FILES_PATH = Path.of("./obsolete-files.json");
 	private static final Set<String> FILES_REQUIRING_BACKUP = Set.of("asset.dat", "game.dat");
 	private static final HashingService HASHING_SERVICE = new HashingService();
 
 	public static void main(final String[] args) throws IOException, InterruptedException {
 
 		final Patch patch = new Patch();
+
+		final ObsoleteFile[] obsoleteFiles = OBJECT_MAPPER.readValue(OBSOLETE_FILES_PATH.toFile(), ObsoleteFile[].class);
+		patch.setObsoleteFiles(Arrays.stream(obsoleteFiles).collect(Collectors.toSet()));
 
 		for (final Directory directory : List.of(APPDATA_DIR_NAME, BMFE2_DIR_NAME, ROTWK_DIR_NAME)) {
 			final Path basePath = Path.of("./" + directory.name);
@@ -62,7 +69,7 @@ public class UpdateBuilderNoUI {
 
 		Files.writeString(
 			Path.of("./output/version.json"),
-			new ObjectMapper().registerModule(new JavaTimeModule()).writerWithDefaultPrettyPrinter().writeValueAsString(patch),
+			OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(patch),
 			StandardOpenOption.WRITE,
 			StandardOpenOption.TRUNCATE_EXISTING,
 			StandardOpenOption.CREATE
