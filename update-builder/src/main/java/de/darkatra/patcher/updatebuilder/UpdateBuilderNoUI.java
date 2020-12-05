@@ -4,7 +4,7 @@ import static de.darkatra.patcher.updatebuilder.UpdateBuilderNoUI.Directory.APPD
 import static de.darkatra.patcher.updatebuilder.UpdateBuilderNoUI.Directory.BMFE2_DIR_NAME;
 import static de.darkatra.patcher.updatebuilder.UpdateBuilderNoUI.Directory.ROTWK_DIR_NAME;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import de.darkatra.patcher.updatebuilder.service.model.Compression;
 import de.darkatra.patcher.updatebuilder.service.model.ObsoleteFile;
 import de.darkatra.patcher.updatebuilder.service.model.Packet;
@@ -48,7 +48,9 @@ public class UpdateBuilderNoUI {
 		private final String contextVariable;
 	}
 
-	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+		.findAndRegisterModules()
+		.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 	private static final Path OBSOLETE_FILES_PATH = Path.of("./obsolete-files.json");
 	private static final Set<String> FILES_REQUIRING_BACKUP = Set.of("asset.dat", "game.dat");
 	private static final HashingService HASHING_SERVICE = new HashingService();

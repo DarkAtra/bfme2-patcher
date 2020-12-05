@@ -175,7 +175,10 @@ public class PatchService {
 
 		final Path pathToFile = Paths.get(packet.getDest());
 		if (Paths.get(packet.getDest()).toFile().exists() && packet.isBackupExisting()) {
-			Files.move(pathToFile, Paths.get((String.format("%s%s.bak", pathToFile.getFileName().toString(), Instant.now().toString()))));
+			Files.move(
+				pathToFile,
+				Paths.get((String.format("%s-%s.bak", pathToFile.getFileName().toString(), Instant.now().toString().replace(":", "-"))))
+			);
 		}
 	}
 
