@@ -8,6 +8,7 @@ import de.darkatra.patcher.updater.service.RegistryService;
 import de.darkatra.patcher.updater.util.ProcessUtils;
 import de.darkatra.patcher.updater.util.UIUtils;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -17,7 +18,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.task.AsyncListenableTaskExecutor;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.stereotype.Component;
 
@@ -53,10 +53,12 @@ public class MainWindowController implements PatchEventListener {
 	@FXML
 	private MenuItem fixBfME2EP1MenuItem;
 
-	private final AsyncListenableTaskExecutor taskExecutor = new SimpleAsyncTaskExecutor();
+	private final SimpleAsyncTaskExecutor taskExecutor = new SimpleAsyncTaskExecutor();
 
 	@FXML
 	public void initialize() {
+
+		taskExecutor.setDaemon(true);
 
 		versionMenuItem.setText(updaterProperties.getVersion());
 
@@ -207,18 +209,29 @@ public class MainWindowController implements PatchEventListener {
 				updateButton.setDisable(true);
 				final Optional<Path> rotWKHomeDirectory = registryService.findBfME2RotWKHomeDirectory();
 				if (rotWKHomeDirectory.isPresent()) {
-					try {
-						ProcessUtils.run(rotWKHomeDirectory.get().resolve("./lotrbfme2ep1.exe")).waitFor();
-					} catch (final IOException e) {
-						Platform.runLater(() -> UIUtils.alert(
-							Alert.AlertType.ERROR,
-							"Error",
-							"Game Error",
-							"Could not start the Game. Please try again."
-						).showAndWait());
-					} catch (InterruptedException e) {
-						log.debug("InterruptedException:", e);
-					}
+					updateButton.setDisable(true);
+
+					final Task<Integer> launchGameTask = new Task<>() {
+						@Override
+						protected Integer call() throws Exception {
+							return ProcessUtils.run(rotWKHomeDirectory.get().resolve("./lotrbfme2ep1.exe")).waitFor();
+						}
+					};
+					launchGameTask.setOnSucceeded((e) -> updateButton.setDisable(false));
+					launchGameTask.setOnFailed((e) -> {
+						if (e.getSource().getException() instanceof IOException) {
+							Platform.runLater(() -> UIUtils.alert(
+								Alert.AlertType.ERROR,
+								"Error",
+								"Game Error",
+								"Could not start the Game. Please try again."
+							).showAndWait());
+						}
+						updateButton.setDisable(false);
+					});
+					launchGameTask.setOnCancelled((e) -> updateButton.setDisable(false));
+
+					taskExecutor.submitListenable(launchGameTask);
 				} else {
 					Platform.runLater(() -> UIUtils.alert(
 						Alert.AlertType.ERROR,
