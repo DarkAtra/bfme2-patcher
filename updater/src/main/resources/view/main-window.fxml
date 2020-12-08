@@ -3,6 +3,7 @@
 <?import de.darkatra.patcher.updater.gui.element.FadingBackground?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckMenuItem?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
@@ -54,6 +55,10 @@
 				<Menu mnemonicParsing="false" text="Startup Fix">
 					<MenuItem fx:id="fixBfME2MenuItem" mnemonicParsing="false" text="Fix BfME 2"/>
 					<MenuItem fx:id="fixBfME2EP1MenuItem" mnemonicParsing="false" text="Fix BfME 2 RotWK"/>
+				</Menu>
+				<Menu mnemonicParsing="false" text="Game Settings">
+					<CheckMenuItem fx:id="toggleHdEdition" mnemonicParsing="false" text="Enable HD Edition"/>
+					<!-- <MenuItem fx:id="changeResolution" mnemonicParsing="false" text="Game Resolution"/> -->
 				</Menu>
 				<Menu mnemonicParsing="false" text="Version">
 					<MenuItem fx:id="versionMenuItem" mnemonicParsing="false" text="unknown"/>

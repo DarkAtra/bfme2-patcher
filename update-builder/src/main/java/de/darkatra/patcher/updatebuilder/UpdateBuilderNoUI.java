@@ -1,8 +1,5 @@
 package de.darkatra.patcher.updatebuilder;
 
-import static de.darkatra.patcher.updatebuilder.UpdateBuilderNoUI.Directory.APPDATA_DIR_NAME;
-import static de.darkatra.patcher.updatebuilder.UpdateBuilderNoUI.Directory.BMFE2_DIR_NAME;
-import static de.darkatra.patcher.updatebuilder.UpdateBuilderNoUI.Directory.ROTWK_DIR_NAME;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import de.darkatra.patcher.updatebuilder.service.model.Compression;
@@ -21,7 +18,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -42,7 +38,11 @@ public class UpdateBuilderNoUI {
 		/**
 		 * B:\Electronic Arts\Aufstieg des Hexenkönigs\
 		 */
-		ROTWK_DIR_NAME("rotwk", "${rotwkHomeDir}");
+		ROTWK_DIR_NAME("rotwk", "${rotwkHomeDir}"),
+		/**
+		 * C:\Users\<User>\AppData\Roaming\.patcher\
+		 */
+		PATCH_DIR_NAME("patcher", "${patcherUserDir}");
 
 		private final String name;
 		private final String contextVariable;
@@ -62,7 +62,7 @@ public class UpdateBuilderNoUI {
 		final ObsoleteFile[] obsoleteFiles = OBJECT_MAPPER.readValue(OBSOLETE_FILES_PATH.toFile(), ObsoleteFile[].class);
 		patch.setObsoleteFiles(Arrays.stream(obsoleteFiles).collect(Collectors.toSet()));
 
-		for (final Directory directory : List.of(APPDATA_DIR_NAME, BMFE2_DIR_NAME, ROTWK_DIR_NAME)) {
+		for (final Directory directory : Directory.values()) {
 			final Path basePath = Path.of("./" + directory.name);
 			for (final Path filePath : readFilesInDirectory(basePath)) {
 				addFilesToPatch(patch, directory, filePath);

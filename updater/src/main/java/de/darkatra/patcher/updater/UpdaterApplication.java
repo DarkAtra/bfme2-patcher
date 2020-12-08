@@ -1,10 +1,14 @@
 package de.darkatra.patcher.updater;
 
 import de.darkatra.patcher.updater.properties.UpdaterProperties;
+import de.darkatra.patcher.updater.service.model.Context;
+import de.darkatra.patcher.updater.util.UIUtils;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -31,6 +35,25 @@ public class UpdaterApplication extends Application {
 
 	@Override
 	public void start(final Stage primaryStage) {
+
+		// make sure that all folders are available
+		final Context patcherContext = context.getBean(Context.class);
+		if (!(patcherContext.containsKey("serverUrl")
+			  && patcherContext.containsKey("patcherUserDir")
+			  && patcherContext.containsKey("bfme2UserDir")
+			  && patcherContext.containsKey("bfme2HomeDir")
+			  && patcherContext.containsKey("rotwkUserDir")
+			  && patcherContext.containsKey("rotwkHomeDir"))) {
+
+			UIUtils.alert(
+				Alert.AlertType.ERROR,
+				"Error",
+				"Game Error",
+				"Could not find the game. Is it installed?"
+			).showAndWait();
+			Platform.exit();
+			return;
+		}
 
 		final UpdaterProperties updaterProperties = context.getBean(UpdaterProperties.class);
 		primaryStage.setScene(new Scene(mainWindow, updaterProperties.getUpdaterResolution().getWidth(), updaterProperties.getUpdaterResolution().getHeight()));

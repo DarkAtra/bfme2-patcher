@@ -4,7 +4,9 @@ import de.darkatra.patcher.updater.listener.PatchEventListener;
 import de.darkatra.patcher.updater.properties.UpdaterProperties;
 import de.darkatra.patcher.updater.service.OptionFileService;
 import de.darkatra.patcher.updater.service.PatchService;
-import de.darkatra.patcher.updater.service.RegistryService;
+import de.darkatra.patcher.updater.service.PatcherStateService;
+import de.darkatra.patcher.updater.service.model.Context;
+import de.darkatra.patcher.updater.service.model.PatcherState;
 import de.darkatra.patcher.updater.util.ProcessUtils;
 import de.darkatra.patcher.updater.util.UIUtils;
 import javafx.application.Platform;
@@ -13,11 +15,13 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.stereotype.Component;
 
@@ -31,12 +35,19 @@ import java.util.Optional;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class MainWindowController implements PatchEventListener {
+public class MainWindowController implements PatchEventListener, InitializingBean {
 
+	private final Context context;
 	private final UpdaterProperties updaterProperties;
 	private final PatchService patchService;
 	private final OptionFileService optionFileService;
-	private final RegistryService registryService;
+	private final PatcherStateService patcherStateService;
+
+	private PatcherState patcherState;
+	private Path patcherUserDir;
+	private Path bfme2UserDir;
+	private Path rotwkUserDir;
+	private Path rotwkHomeDir;
 
 	@FXML
 	private ProgressBar patchProgressBar;
@@ -52,13 +63,27 @@ public class MainWindowController implements PatchEventListener {
 	private MenuItem fixBfME2MenuItem;
 	@FXML
 	private MenuItem fixBfME2EP1MenuItem;
+	@FXML
+	private CheckMenuItem toggleHdEdition;
+	@FXML
+	private MenuItem changeResolution;
 
 	private final SimpleAsyncTaskExecutor taskExecutor = new SimpleAsyncTaskExecutor();
 
+	@Override
+	public void afterPropertiesSet() {
+		taskExecutor.setDaemon(true);
+
+		patcherState = patcherStateService.loadPatcherState();
+
+		patcherUserDir = Path.of(context.get("patcherUserDir"));
+		bfme2UserDir = Path.of(context.get("bfme2UserDir"));
+		rotwkUserDir = Path.of(context.get("rotwkUserDir"));
+		rotwkHomeDir = Path.of(context.get("rotwkHomeDir"));
+	}
+
 	@FXML
 	public void initialize() {
-
-		taskExecutor.setDaemon(true);
 
 		versionMenuItem.setText(updaterProperties.getVersion());
 
@@ -91,8 +116,8 @@ public class MainWindowController implements PatchEventListener {
 			// TODO: toggle mod (enable/disable)
 		});
 
-		fixBfME2MenuItem.setOnAction(event -> registryService.findBfME2UserDirectory().ifPresent(rotWKUserDirectory -> writeDefaultOptions(
-			rotWKUserDirectory.toFile(),
+		fixBfME2MenuItem.setOnAction(event -> Platform.runLater(() -> writeDefaultOptions(
+			bfme2UserDir.toFile(),
 			UIUtils.alert(
 				Alert.AlertType.INFORMATION,
 				"Success",
@@ -107,8 +132,8 @@ public class MainWindowController implements PatchEventListener {
 			)
 		)));
 
-		fixBfME2EP1MenuItem.setOnAction(event -> registryService.findBfME2RotWKUserDirectory().ifPresent(rotWKUserDirectory -> writeDefaultOptions(
-			rotWKUserDirectory.toFile(),
+		fixBfME2EP1MenuItem.setOnAction(event -> Platform.runLater(() -> writeDefaultOptions(
+			rotwkUserDir.toFile(),
 			UIUtils.alert(
 				Alert.AlertType.INFORMATION,
 				"Success",
@@ -122,6 +147,22 @@ public class MainWindowController implements PatchEventListener {
 				"There was an error writing the default options.ini"
 			)
 		)));
+
+		toggleHdEdition.setSelected(patcherState.isHdEditionEnabled());
+		toggleHdEdition.setOnAction(event -> {
+			patcherState.setHdEditionEnabled(toggleHdEdition.isSelected());
+			try {
+				patcherStateService.persistPatcherState(patcherState);
+			} catch (final IOException e) {
+				log.error("Could not persist the Patcher Settings.", e);
+				Platform.runLater(() -> UIUtils.alert(
+					Alert.AlertType.ERROR,
+					"Application error",
+					"Could not persist the Patcher Settings.",
+					"Unable to write Patcher Settings - you could try to restart the patcher with admin privileges."
+				).showAndWait());
+			}
+		});
 	}
 
 	@Override
@@ -205,42 +246,7 @@ public class MainWindowController implements PatchEventListener {
 			updateButton.setDisable(false);
 			patchProgressLabel.setText("Ready to start the game.");
 			updateButton.setText("Start Game");
-			updateButton.setOnMouseClicked(event -> {
-				updateButton.setDisable(true);
-				final Optional<Path> rotWKHomeDirectory = registryService.findBfME2RotWKHomeDirectory();
-				if (rotWKHomeDirectory.isPresent()) {
-					updateButton.setDisable(true);
-
-					final Task<Integer> launchGameTask = new Task<>() {
-						@Override
-						protected Integer call() throws Exception {
-							return ProcessUtils.run(rotWKHomeDirectory.get().resolve("./lotrbfme2ep1.exe")).waitFor();
-						}
-					};
-					launchGameTask.setOnSucceeded((e) -> updateButton.setDisable(false));
-					launchGameTask.setOnFailed((e) -> {
-						if (e.getSource().getException() instanceof IOException) {
-							Platform.runLater(() -> UIUtils.alert(
-								Alert.AlertType.ERROR,
-								"Error",
-								"Game Error",
-								"Could not start the Game. Please try again."
-							).showAndWait());
-						}
-						updateButton.setDisable(false);
-					});
-					launchGameTask.setOnCancelled((e) -> updateButton.setDisable(false));
-
-					taskExecutor.submitListenable(launchGameTask);
-				} else {
-					Platform.runLater(() -> UIUtils.alert(
-						Alert.AlertType.ERROR,
-						"Error",
-						"Game Error",
-						"Could not find the game. Is it installed?"
-					).showAndWait());
-				}
-			});
+			updateButton.setOnMouseClicked(event -> launchGame(patcherState.isHdEditionEnabled()));
 		});
 	}
 
@@ -261,6 +267,36 @@ public class MainWindowController implements PatchEventListener {
 		Platform.runLater(() -> patchProgressLabel.setText(
 			String.format("Patcher requires an update. Updating application in %d seconds.", secondsLeft)
 		));
+	}
+
+	private void launchGame(final boolean withHdEdition) {
+
+		updateButton.setDisable(true);
+
+		final Task<Integer> launchGameTask = new Task<>() {
+			@Override
+			protected Integer call() throws Exception {
+				return ProcessUtils.run(
+					rotwkHomeDir.resolve("./lotrbfme2ep1.exe"),
+					withHdEdition ? new String[]{"-mod", patcherUserDir.resolve("HDEdition.big").normalize().toString()} : new String[0]
+				).waitFor();
+			}
+		};
+		launchGameTask.setOnSucceeded((e) -> updateButton.setDisable(false));
+		launchGameTask.setOnFailed((e) -> {
+			if (e.getSource().getException() instanceof IOException) {
+				Platform.runLater(() -> UIUtils.alert(
+					Alert.AlertType.ERROR,
+					"Error",
+					"Game Error",
+					"Could not start the Game. Please try again."
+				).showAndWait());
+			}
+			updateButton.setDisable(false);
+		});
+		launchGameTask.setOnCancelled((e) -> updateButton.setDisable(false));
+
+		taskExecutor.submitListenable(launchGameTask);
 	}
 
 	private Alert getAlertForThrowable(final Throwable throwable) {
