@@ -41,7 +41,7 @@ public class PatcherStateService implements InitializingBean {
 
 	public void persistPatcherState(final PatcherState patcherState) throws IOException {
 		if (!patcherUserDir.toFile().exists()) {
-			patcherUserDir.toFile().mkdir();
+			patcherUserDir.toFile().mkdirs();
 		}
 		objectMapper.writeValue(new FileOutputStream(patcherUserDir.resolve(PATCHER_STATE_FILE_NAME).normalize().toFile()), patcherState);
 	}

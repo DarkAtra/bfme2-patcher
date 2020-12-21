@@ -24,6 +24,7 @@ module de.darkatra.patcher.updater {
 	exports de.darkatra.patcher.updater.properties to spring.beans, spring.boot;
 	exports de.darkatra.patcher.updater.gui.controller to spring.beans;
 	exports de.darkatra.patcher.updater.service to spring.beans;
+	exports de.darkatra.patcher.updater.util to spring.beans;
 
 	opens de.darkatra.patcher.updater to spring.core;
 	opens de.darkatra.patcher.updater.config to spring.core;

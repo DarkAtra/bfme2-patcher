@@ -22,6 +22,8 @@ import java.util.zip.GZIPInputStream;
 @Service
 public class DownloadService {
 
+	private static final int BUFFER_SIZE = 1024;
+
 	public Optional<String> getURLContent(final URL src) {
 		try {
 			log.debug("URL: " + src.toString());
@@ -44,14 +46,14 @@ public class DownloadService {
 		}
 
 		try {
-			log.debug("Downloading: " + srcFile);
-			log.debug("To: " + destFile);
 			URL url = new URL(srcFile);
 			{
 				URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
 				url = uri.toURL();
 			}
-			log.debug("URL: " + url.toString());
+			log.debug("--- Downloading ---");
+			log.debug("From: " + url.toString());
+			log.debug("To: " + destFile);
 			final File dest = new File(destFile);
 			if (!dest.getParentFile().exists()) {
 				if (!dest.getParentFile().mkdirs()) {
@@ -66,7 +68,7 @@ public class DownloadService {
 			try (final InputStream downloadStream = new BufferedInputStream(getConnectionStream(url, isCompressed));
 				 final FileOutputStream fileOut = new FileOutputStream(dest)) {
 
-				final byte[] buffer = new byte[1024];
+				final byte[] buffer = new byte[BUFFER_SIZE];
 				int count;
 				while ((count = downloadStream.read(buffer, 0, buffer.length)) != -1) {
 					fileOut.write(buffer, 0, count);

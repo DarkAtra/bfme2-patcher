@@ -58,7 +58,11 @@
 				</Menu>
 				<Menu mnemonicParsing="false" text="Game Settings">
 					<CheckMenuItem fx:id="toggleHdEdition" mnemonicParsing="false" text="Enable HD Edition"/>
-					<!-- <MenuItem fx:id="changeResolution" mnemonicParsing="false" text="Game Resolution"/> -->
+					<!--<MenuItem fx:id="changeResolution" mnemonicParsing="false" text="Game Resolution"/>-->
+				</Menu>
+				<Menu mnemonicParsing="false" text="Patcher Settings">
+					<CheckMenuItem fx:id="patchOnStartup" mnemonicParsing="false" text="Auto patch on startup"/>
+					<CheckMenuItem fx:id="launchAfterPatch" mnemonicParsing="false" text="Auto launch after patching"/>
 				</Menu>
 				<Menu mnemonicParsing="false" text="Version">
 					<MenuItem fx:id="versionMenuItem" mnemonicParsing="false" text="unknown"/>

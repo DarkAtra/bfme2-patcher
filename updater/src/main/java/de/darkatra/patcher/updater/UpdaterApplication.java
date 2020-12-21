@@ -55,6 +55,8 @@ public class UpdaterApplication extends Application {
 			return;
 		}
 
+		context.getBeanFactory().registerSingleton("primaryStage", primaryStage);
+
 		final UpdaterProperties updaterProperties = context.getBean(UpdaterProperties.class);
 		primaryStage.setScene(new Scene(mainWindow, updaterProperties.getUpdaterResolution().getWidth(), updaterProperties.getUpdaterResolution().getHeight()));
 		primaryStage.centerOnScreen();

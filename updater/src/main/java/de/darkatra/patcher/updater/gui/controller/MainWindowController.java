@@ -30,6 +30,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
 import java.util.Optional;
 
 @Slf4j
@@ -38,6 +40,7 @@ import java.util.Optional;
 public class MainWindowController implements PatchEventListener, InitializingBean {
 
 	private final Context context;
+	private final UIUtils uiUtils;
 	private final UpdaterProperties updaterProperties;
 	private final PatchService patchService;
 	private final OptionFileService optionFileService;
@@ -66,7 +69,11 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 	@FXML
 	private CheckMenuItem toggleHdEdition;
 	@FXML
-	private MenuItem changeResolution;
+	private CheckMenuItem patchOnStartup;
+	@FXML
+	private CheckMenuItem launchAfterPatch;
+	//	@FXML
+	//	private MenuItem changeResolution;
 
 	private final SimpleAsyncTaskExecutor taskExecutor = new SimpleAsyncTaskExecutor();
 
@@ -90,7 +97,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 		patchProgressBar.setProgress(0);
 		patchProgressLabel.setText("Waiting for user input.");
 
-		updateButton.setOnMouseClicked(event -> {
+		updateButton.setOnAction(event -> {
 			if (updateButton.isDisabled()) {
 				return;
 			}
@@ -112,7 +119,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 		});
 
 		toggleModButton.setDisable(true);
-		toggleModButton.setOnMouseClicked(event -> {
+		toggleModButton.setOnAction(event -> {
 			// TODO: toggle mod (enable/disable)
 		});
 
@@ -151,18 +158,26 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 		toggleHdEdition.setSelected(patcherState.isHdEditionEnabled());
 		toggleHdEdition.setOnAction(event -> {
 			patcherState.setHdEditionEnabled(toggleHdEdition.isSelected());
-			try {
-				patcherStateService.persistPatcherState(patcherState);
-			} catch (final IOException e) {
-				log.error("Could not persist the Patcher Settings.", e);
-				Platform.runLater(() -> UIUtils.alert(
-					Alert.AlertType.ERROR,
-					"Application error",
-					"Could not persist the Patcher Settings.",
-					"Unable to write Patcher Settings - you could try to restart the patcher with admin privileges."
-				).showAndWait());
-			}
+			persistsPatcherState(patcherState);
 		});
+
+		patchOnStartup.setSelected(patcherState.isPatchOnStartup());
+		patchOnStartup.setOnAction(event -> {
+			patcherState.setPatchOnStartup(patchOnStartup.isSelected());
+			persistsPatcherState(patcherState);
+		});
+
+		launchAfterPatch.setSelected(patcherState.isLaunchAfterPatch());
+		launchAfterPatch.setOnAction(event -> {
+			patcherState.setLaunchAfterPatch(launchAfterPatch.isSelected());
+			persistsPatcherState(patcherState);
+		});
+
+		//		changeResolution.setOnAction(event -> uiUtils.dialog("/view/game-settings-window.fxml").show());
+
+		if (patcherState.isPatchOnStartup()) {
+			updateButton.fire();
+		}
 	}
 
 	@Override
@@ -246,7 +261,10 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 			updateButton.setDisable(false);
 			patchProgressLabel.setText("Ready to start the game.");
 			updateButton.setText("Start Game");
-			updateButton.setOnMouseClicked(event -> launchGame(patcherState.isHdEditionEnabled()));
+			updateButton.setOnAction(event -> launchGame(patcherState.isHdEditionEnabled()));
+			if (patcherState.isLaunchAfterPatch()) {
+				updateButton.fire();
+			}
 		});
 	}
 
@@ -259,8 +277,37 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 	public void onPatchProgressChange(final long current, final long target) {
 		Platform.runLater(() -> {
 			patchProgressBar.setProgress((double) current / target);
-			patchProgressLabel.setText(current + "/" + target);
+			patchProgressLabel.setText(humanReadableByteCountBin(current) + "/" + humanReadableByteCountBin(target));
 		});
+	}
+
+	public static String humanReadableByteCountBin(long bytes) {
+		final long absB = bytes == Long.MIN_VALUE ? Long.MAX_VALUE : Math.abs(bytes);
+		if (absB < 1024) {
+			return bytes + " B";
+		}
+		long value = absB;
+		final CharacterIterator ci = new StringCharacterIterator("KMGTPE");
+		for (int i = 40; i >= 0 && absB > 0xfffccccccccccccL >> i; i -= 10) {
+			value >>= 10;
+			ci.next();
+		}
+		value *= Long.signum(bytes);
+		return String.format("%.1f %ciB", value / 1024.0, ci.current());
+	}
+
+	private void persistsPatcherState(final PatcherState patcherState) {
+		try {
+			patcherStateService.persistPatcherState(patcherState);
+		} catch (final IOException e) {
+			log.error("Could not persist the Patcher Settings.", e);
+			Platform.runLater(() -> UIUtils.alert(
+				Alert.AlertType.ERROR,
+				"Application error",
+				"Could not persist the Patcher Settings.",
+				"Unable to write Patcher Settings - you could try to restart the patcher with admin privileges."
+			).showAndWait());
+		}
 	}
 
 	private void updateRestartLabel(final int secondsLeft) {

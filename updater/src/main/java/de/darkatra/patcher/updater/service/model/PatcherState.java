@@ -7,4 +7,6 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class PatcherState {
 	private boolean hdEditionEnabled = false;
+	private boolean patchOnStartup = false;
+	private boolean launchAfterPatch = false;
 }

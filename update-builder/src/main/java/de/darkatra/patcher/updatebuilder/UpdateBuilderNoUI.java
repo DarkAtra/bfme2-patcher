@@ -90,7 +90,7 @@ public class UpdateBuilderNoUI {
 				.setDest(Path.of(directory.contextVariable).resolve(
 					Path.of(directory.name).relativize(filePath)
 				).normalize().toString().replace("\\", "/"))
-				.setPacketSize(gzipFile.length())
+				.setPacketSize(filePath.toFile().length())
 				.setDateTime(Instant.now())
 				.setChecksum(HASHING_SERVICE.getSHA3Checksum(filePath.toFile())
 					.orElseThrow(() -> new IllegalStateException("Could not calculate the hash for: " + filePath.toFile())))
