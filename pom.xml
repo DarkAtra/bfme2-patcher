@@ -21,6 +21,7 @@
 	<modules>
 		<module>updater</module>
 		<module>update-builder</module>
+		<module>mod-builder</module>
 	</modules>
 
 	<properties>

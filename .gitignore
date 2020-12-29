@@ -147,6 +147,6 @@ buildNumber.properties
 .idea/
 patcher.iml
 base/base.iml
-launcher/launcher.iml
 updater/updater.iml
 update-builder/update-builder.iml
+mod-builder/mod-builder.iml

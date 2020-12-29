@@ -8,6 +8,7 @@ import de.darkatra.patcher.updatebuilder.service.model.Packet;
 import de.darkatra.patcher.updatebuilder.service.model.Patch;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.IOUtils;
+import org.springframework.util.FileSystemUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -57,6 +58,8 @@ public class UpdateBuilderNoUI {
 
 	public static void main(final String[] args) throws IOException, InterruptedException {
 
+		FileSystemUtils.deleteRecursively(Path.of("./output/").toFile());
+
 		final Patch patch = new Patch();
 
 		final ObsoleteFile[] obsoleteFiles = OBJECT_MAPPER.readValue(OBSOLETE_FILES_PATH.toFile(), ObsoleteFile[].class);
@@ -80,7 +83,7 @@ public class UpdateBuilderNoUI {
 
 	private static void addFilesToPatch(final Patch patch, final Directory directory, final Path filePath) throws IOException, InterruptedException {
 
-		final File gzipFile = createGzipArchive(directory, filePath);
+		createGzipArchive(directory, filePath);
 
 		patch.getPackets().add(
 			new Packet()
@@ -99,7 +102,7 @@ public class UpdateBuilderNoUI {
 		);
 	}
 
-	private static File createGzipArchive(final Directory directory, final Path input) throws IOException {
+	private static void createGzipArchive(final Directory directory, final Path input) throws IOException {
 
 		final File outputFile = new File(Path.of("./output/", Path.of(directory.name).relativize(input).toString()).normalize().toString() + ".gz");
 		outputFile.getParentFile().mkdirs();
@@ -107,7 +110,6 @@ public class UpdateBuilderNoUI {
 			 final GZIPOutputStream outputStream = new GZIPOutputStream(new FileOutputStream(outputFile))) {
 			IOUtils.copy(inputStream, outputStream);
 		}
-		return outputFile;
 	}
 
 	private static Set<Path> readFilesInDirectory(final Path directory) throws IOException {
