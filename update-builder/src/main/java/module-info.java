@@ -15,7 +15,7 @@ module de.darkatra.patcher.updater {
 	requires org.slf4j;
 	requires com.sun.jna.platform;
 	requires org.bouncycastle.provider;
-	requires commons.io;
+	requires org.apache.commons.io;
 	requires com.fasterxml.jackson.datatype.jsr310;
 
 	exports de.darkatra.patcher.updatebuilder;

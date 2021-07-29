@@ -58,20 +58,24 @@ public class UpdateBuilderNoUI {
 
 	public static void main(final String[] args) throws IOException, InterruptedException {
 
+		System.out.println("Clearing the output folder...");
 		FileSystemUtils.deleteRecursively(Path.of("./output/").toFile());
 
 		final Patch patch = new Patch();
 
+		System.out.println("Applying obsolete files from: " + OBSOLETE_FILES_PATH.toFile().getPath());
 		final ObsoleteFile[] obsoleteFiles = OBJECT_MAPPER.readValue(OBSOLETE_FILES_PATH.toFile(), ObsoleteFile[].class);
 		patch.setObsoleteFiles(Arrays.stream(obsoleteFiles).collect(Collectors.toSet()));
 
 		for (final Directory directory : Directory.values()) {
 			final Path basePath = Path.of("./" + directory.name);
 			for (final Path filePath : readFilesInDirectory(basePath)) {
+				System.out.println("* Adding file: " + filePath.toFile().getPath());
 				addFilesToPatch(patch, directory, filePath);
 			}
 		}
 
+		System.out.println("Writing version.json...");
 		Files.writeString(
 			Path.of("./output/version.json"),
 			OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(patch),
@@ -79,6 +83,7 @@ public class UpdateBuilderNoUI {
 			StandardOpenOption.TRUNCATE_EXISTING,
 			StandardOpenOption.CREATE
 		);
+		System.out.println("Success!");
 	}
 
 	private static void addFilesToPatch(final Patch patch, final Directory directory, final Path filePath) throws IOException, InterruptedException {
