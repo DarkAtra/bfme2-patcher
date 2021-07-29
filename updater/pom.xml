@@ -17,7 +17,7 @@
 	</parent>
 
 	<properties>
-		<start-class>de.darkatra.patcher.updater.UpdaterApplication</start-class>
+		<main-class>de.darkatra.patcher.updater.UpdaterApplication</main-class>
 	</properties>
 
 	<dependencies>
@@ -94,67 +94,9 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
 					<executable>true</executable>
-					<mainClass>${start-class}</mainClass>
+					<mainClass>${main-class}</mainClass>
 				</configuration>
 			</plugin>
 		</plugins>
 	</build>
-
-	<profiles>
-		<profile>
-			<id>native</id>
-			<dependencies>
-				<dependency>
-					<groupId>org.springframework.experimental</groupId>
-					<artifactId>spring-graalvm-native</artifactId>
-					<version>0.7.1</version>
-				</dependency>
-				<dependency>
-					<groupId>org.springframework</groupId>
-					<artifactId>spring-context-indexer</artifactId>
-				</dependency>
-			</dependencies>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.graalvm.nativeimage</groupId>
-						<artifactId>native-image-maven-plugin</artifactId>
-						<version>20.2.0</version>
-						<configuration>
-							<buildArgs>
-								--no-fallback --enable-all-security-services -Dspring.graal.remove-unused-autoconfig=true
-							</buildArgs>
-						</configuration>
-						<executions>
-							<execution>
-								<goals>
-									<goal>native-image</goal>
-								</goals>
-								<phase>package</phase>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<groupId>org.springframework.boot</groupId>
-						<artifactId>spring-boot-maven-plugin</artifactId>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
-
-	<repositories>
-		<repository>
-			<id>spring-milestones</id>
-			<name>Spring Milestones</name>
-			<url>https://repo.spring.io/milestone</url>
-		</repository>
-	</repositories>
-	<pluginRepositories>
-		<pluginRepository>
-			<id>spring-milestones</id>
-			<name>Spring Milestones</name>
-			<url>https://repo.spring.io/milestone</url>
-		</pluginRepository>
-	</pluginRepositories>
 </project>
