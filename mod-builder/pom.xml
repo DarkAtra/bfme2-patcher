@@ -28,11 +28,6 @@
 		<!-- Bfme2 Modding Utils -->
 		<dependency>
 			<groupId>de.darkatra.bfme2</groupId>
-			<artifactId>map</artifactId>
-			<version>${bfme2-modding-utils.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>de.darkatra.bfme2</groupId>
 			<artifactId>big</artifactId>
 			<version>${bfme2-modding-utils.version}</version>
 		</dependency>
@@ -46,7 +41,9 @@
 	</dependencies>
 
 	<build>
-		<finalName>${pom.artifactId}</finalName>
+		<finalName>${project.artifactId}</finalName>
+		<sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
+		<testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
 		<plugins>
 			<plugin>
 				<groupId>org.jetbrains.kotlin</groupId>
@@ -62,7 +59,7 @@
 						<configuration>
 							<sourceDirs>
 								<source>target/generated-sources/annotations</source>
-								<source>src/main/java</source>
+								<source>src/main/kotlin</source>
 							</sourceDirs>
 						</configuration>
 					</execution>
@@ -94,6 +91,9 @@
 			<id>github</id>
 			<name>GitHub Packages</name>
 			<url>https://maven.pkg.github.com/DarkAtra/bfme2-modding-utils</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
 		</repository>
 	</repositories>
 </project>
