@@ -14,7 +14,8 @@
 	<version>0.0.1-SNAPSHOT</version>
 
 	<properties>
-		<kotlin.version>1.4.30-M1</kotlin.version>
+		<kotlin.version>1.5.21</kotlin.version>
+		<bfme2-modding-utils.version>0.1.3</bfme2-modding-utils.version>
 	</properties>
 
 	<dependencies>
@@ -23,6 +24,19 @@
 			<artifactId>kotlin-stdlib-jdk8</artifactId>
 			<version>${kotlin.version}</version>
 		</dependency>
+
+		<!-- Bfme2 Modding Utils -->
+		<dependency>
+			<groupId>de.darkatra.bfme2</groupId>
+			<artifactId>map</artifactId>
+			<version>${bfme2-modding-utils.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>de.darkatra.bfme2</groupId>
+			<artifactId>big</artifactId>
+			<version>${bfme2-modding-utils.version}</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.jetbrains.kotlin</groupId>
 			<artifactId>kotlin-test</artifactId>
@@ -30,34 +44,6 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
-	<repositories>
-		<repository>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-			<id>bintray.kotlin.eap</id>
-			<name>Bintray Kotlin EAP Repository</name>
-			<url>https://dl.bintray.com/kotlin/kotlin-eap</url>
-		</repository>
-	</repositories>
-
-	<pluginRepositories>
-		<pluginRepository>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-			<id>bintray.kotlin.eap</id>
-			<name>Bintray Kotlin EAP Repository</name>
-			<url>https://dl.bintray.com/kotlin/kotlin-eap</url>
-		</pluginRepository>
-	</pluginRepositories>
 
 	<build>
 		<finalName>${pom.artifactId}</finalName>
@@ -102,4 +88,12 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<repositories>
+		<repository>
+			<id>github</id>
+			<name>GitHub Packages</name>
+			<url>https://maven.pkg.github.com/DarkAtra/bfme2-modding-utils</url>
+		</repository>
+	</repositories>
 </project>
