@@ -15,7 +15,7 @@ The Patcher consists of 3 applications:
 ## Build
 Clone the project:
 ```
-git clone https://git.darkatra.de/DarkAtra/Patcher.git
+git clone git@github.com:DarkAtra/bfme2-patcher.git
 ```
 Build the project using the following command:
 ```
@@ -26,7 +26,7 @@ The jar files are located in the target folders of the respective applications. 
 ## Develop
 Clone the project:
 ```
-git clone https://git.darkatra.de/DarkAtra/Patcher.git
+git clone git@github.com:DarkAtra/bfme2-patcher.git
 ```
 Afterwards, you can start any IDE (e.g., Eclipse, IntelliJ) and import the Maven project. Use the import dialog of the IDE to do this.
 Note: This project requires at least JDK 9 because it already uses the module system of Java (Jigsaw).
