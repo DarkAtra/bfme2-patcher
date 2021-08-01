@@ -28,7 +28,7 @@ module de.darkatra.patcher.updater {
 
 	opens de.darkatra.patcher.updater to spring.core;
 	opens de.darkatra.patcher.updater.config to spring.core;
-	opens de.darkatra.patcher.updater.properties to org.hibernate.validator, spring.core;
+	opens de.darkatra.patcher.updater.properties to spring.core;
 	opens de.darkatra.patcher.updater.gui.controller to javafx.fxml;
 	opens de.darkatra.patcher.updater.gui.element to spring.core;
 	opens de.darkatra.patcher.updater.service to spring.core;

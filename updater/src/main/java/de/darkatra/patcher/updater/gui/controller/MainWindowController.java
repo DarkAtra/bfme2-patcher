@@ -5,6 +5,7 @@ import de.darkatra.patcher.updater.properties.UpdaterProperties;
 import de.darkatra.patcher.updater.service.OptionFileService;
 import de.darkatra.patcher.updater.service.PatchService;
 import de.darkatra.patcher.updater.service.PatcherStateService;
+import de.darkatra.patcher.updater.service.UpdateService;
 import de.darkatra.patcher.updater.service.model.Context;
 import de.darkatra.patcher.updater.service.model.PatcherState;
 import de.darkatra.patcher.updater.util.ProcessUtils;
@@ -40,11 +41,11 @@ import java.util.Optional;
 public class MainWindowController implements PatchEventListener, InitializingBean {
 
 	private final Context context;
-	private final UIUtils uiUtils;
 	private final UpdaterProperties updaterProperties;
 	private final PatchService patchService;
 	private final OptionFileService optionFileService;
 	private final PatcherStateService patcherStateService;
+	private final UpdateService updateService;
 
 	private PatcherState patcherState;
 	private Path patcherUserDir;
@@ -62,6 +63,8 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 	private Button toggleModButton;
 	@FXML
 	private MenuItem versionMenuItem;
+	@FXML
+	private MenuItem checkUpdates;
 	@FXML
 	private MenuItem fixBfME2MenuItem;
 	@FXML
@@ -123,6 +126,8 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 			// TODO: toggle mod (enable/disable)
 		});
 
+		checkUpdates.setOnAction(event -> checkForUpdates());
+
 		fixBfME2MenuItem.setOnAction(event -> Platform.runLater(() -> writeDefaultOptions(
 			bfme2UserDir.toFile(),
 			UIUtils.alert(
@@ -173,7 +178,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 			persistsPatcherState(patcherState);
 		});
 
-		//		changeResolution.setOnAction(event -> uiUtils.dialog("/view/game-settings-window.fxml").show());
+		// changeResolution.setOnAction(event -> uiUtils.dialog("/view/game-settings-window.fxml").show());
 
 		if (patcherState.isPatchOnStartup()) {
 			updateButton.fire();
@@ -409,5 +414,96 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 				errorAlert.show();
 			}
 		}
+	}
+
+	private void checkForUpdates() {
+		checkUpdates.setDisable(true);
+		updateButton.setDisable(true);
+		patchProgressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
+		patchProgressLabel.setText("Checking for updates...");
+
+		taskExecutor.submitListenable(updateService::isNewVersionAvailable)
+			.completable().whenComplete((newVersionAvailable, e) -> {
+				if (newVersionAvailable) {
+					Platform.runLater(() -> UIUtils.alert(
+							Alert.AlertType.CONFIRMATION,
+							"Update available",
+							"A new update is available.",
+							"Do you want to proceed and update to the latest version?"
+						).showAndWait()
+						.ifPresent(response -> {
+							if (response == ButtonType.OK) {
+								performUpdate();
+							} else {
+								resetProgressUI();
+							}
+						}));
+				} else {
+					Platform.runLater(() -> {
+						resetProgressUI();
+						UIUtils.alert(
+							Alert.AlertType.INFORMATION,
+							"Up to Date",
+							"No new update is available.",
+							"You're already using the latest version of the updater. Good Job!"
+						).showAndWait();
+					});
+				}
+			});
+	}
+
+	private void performUpdate() {
+
+		Platform.runLater(() -> patchProgressLabel.setText("Updating..."));
+
+		taskExecutor.submitListenable(updateService::downloadLatestUpdaterVersion)
+			.completable().whenComplete((downloadSucceeded, e) -> {
+
+				if (!downloadSucceeded || e != null) {
+					resetProgressUI();
+					Platform.runLater(() -> UIUtils.alert(
+						Alert.AlertType.ERROR,
+						"Error",
+						"Update error",
+						"Could not download the latest version of the updater. Please try again later."
+					).showAndWait());
+					return;
+				}
+
+				Platform.runLater(() -> UIUtils.alert(
+						Alert.AlertType.CONFIRMATION,
+						"Application restart required",
+						"The application requires a restart to complete the update to the latest version.",
+						"Do you want to proceed and update to the latest version?"
+					).showAndWait()
+					.ifPresent(response -> {
+						if (response == ButtonType.OK) {
+							try {
+								updateService.installUpdate();
+								Platform.exit();
+							} catch (final IOException ex) {
+								log.error("Error installing the update.", ex);
+								resetProgressUI();
+								Platform.runLater(() -> UIUtils.alert(
+									Alert.AlertType.ERROR,
+									"Error",
+									"Update error",
+									"Could not install the latest version of the updater. Please try again later."
+								).showAndWait());
+							}
+						} else {
+							resetProgressUI();
+						}
+					}));
+			});
+	}
+
+	private void resetProgressUI() {
+		Platform.runLater(() -> {
+			patchProgressBar.setProgress(0);
+			patchProgressLabel.setText("Waiting for user input.");
+			checkUpdates.setDisable(false);
+			updateButton.setDisable(false);
+		});
 	}
 }

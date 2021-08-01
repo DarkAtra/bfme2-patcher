@@ -1,8 +1,9 @@
 package de.darkatra.patcher.updater.properties;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.validation.annotation.Validated;
+import org.springframework.boot.context.properties.ConstructorBinding;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
@@ -12,34 +13,45 @@ import javax.validation.constraints.Positive;
 import java.net.URL;
 import java.util.Set;
 
-@Data
-@Validated
+@Getter
+//@Validated // FIXME: currently does not work with the latest spring boot version and jigsaw modules
+@ConstructorBinding
+@RequiredArgsConstructor
 @ConfigurationProperties(prefix = "updater-properties")
 public class UpdaterProperties {
 
-	@NotNull
-	private URL baseUrl;
+	public static final String UPDATER_NAME = "updater.jar";
+	public static final String UPDATER_TEMP_NAME = "_updater.jar";
+	public static final String UPDATER_OLD_NAME = "updater.old.jar";
 
 	@NotNull
-	private URL patchListUrl;
+	private final URL baseUrl;
+
+	@NotNull
+	private final URL updaterUrl;
+
+	@NotNull
+	private final URL patchListUrl;
 
 	@NotBlank
-	private String version;
+	private final String version;
 
 	@Valid
 	@NotNull
-	private Resolution updaterResolution;
+	private final Resolution updaterResolution;
 
 	@NotEmpty
-	private Set<@Valid @NotNull Resolution> gameResolutions;
+	private final Set<@Valid @NotNull Resolution> gameResolutions;
 
-	@Data
+	@Getter
+	@ConstructorBinding
+	@RequiredArgsConstructor
 	public static class Resolution {
 
 		@Positive
-		private int width;
+		private final int width;
 
 		@Positive
-		private int height;
+		private final int height;
 	}
 }

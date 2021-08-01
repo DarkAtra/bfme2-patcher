@@ -52,7 +52,7 @@ public class DownloadService {
 				url = uri.toURL();
 			}
 			log.debug("--- Downloading ---");
-			log.debug("From: " + url.toString());
+			log.debug("From: " + url);
 			log.debug("To: " + destFile);
 			final File dest = new File(destFile);
 			if (!dest.getParentFile().exists()) {

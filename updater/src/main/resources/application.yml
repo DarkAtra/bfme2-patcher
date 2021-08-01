@@ -11,6 +11,7 @@ logging:
 
 updater-properties:
   base-url: https://darkatra.de
+  updater-url: ${updater-properties.base-url}/bfmemod2/updater.jar
   patch-list-url: ${updater-properties.base-url}/bfmemod2/version.json
   updater-resolution:
     width: 800
@@ -21,7 +22,9 @@ updater-properties:
   version: @version@
 ---
 spring:
-  profiles: dev
+  config:
+    activate:
+      on-profile: dev
 
 logging:
   level:

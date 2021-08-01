@@ -12,6 +12,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class RegistryService {
+
 	private final String BFME2_REGISTRY_KEY = "SOFTWARE\\Wow6432Node\\Electronic Arts\\Electronic Arts\\The Battle for Middle-earth II";
 	private final String BFME2EP1_REGISTRY_KEY = "SOFTWARE\\Wow6432Node\\Electronic Arts\\Electronic Arts\\The Lord of the Rings, The Rise of the Witch-king";
 

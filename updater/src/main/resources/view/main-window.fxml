@@ -66,6 +66,7 @@
 				</Menu>
 				<Menu mnemonicParsing="false" text="Version">
 					<MenuItem fx:id="versionMenuItem" mnemonicParsing="false" text="unknown"/>
+					<MenuItem fx:id="checkUpdates" mnemonicParsing="false" text="Check Updates"/>
 				</Menu>
 			</MenuBar>
 		</top>

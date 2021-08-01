@@ -66,6 +66,7 @@ public class PatchService {
 
 		// TODO: auto update updater
 
+
 		patchEventListener.onUpdaterNeedsUpdate(false);
 
 		checkIfIsInterrupted();
