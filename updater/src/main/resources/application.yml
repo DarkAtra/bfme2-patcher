@@ -12,6 +12,7 @@ logging:
 updater-properties:
   base-url: https://darkatra.de
   updater-url: ${updater-properties.base-url}/bfmemod2/updater.jar
+  updater-icon-url: ${updater-properties.base-url}/bfmemod2/icon.ico
   patch-list-url: ${updater-properties.base-url}/bfmemod2/version.json
   updater-resolution:
     width: 800

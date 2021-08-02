@@ -31,6 +31,9 @@ public class UpdaterProperties {
 	private final URL updaterUrl;
 
 	@NotNull
+	private final URL updaterIconUrl;
+
+	@NotNull
 	private final URL patchListUrl;
 
 	@NotBlank

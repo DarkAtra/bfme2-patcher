@@ -10,6 +10,7 @@ import de.darkatra.patcher.updater.service.model.Context;
 import de.darkatra.patcher.updater.service.model.PatcherState;
 import de.darkatra.patcher.updater.util.ProcessUtils;
 import de.darkatra.patcher.updater.util.UIUtils;
+import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -46,6 +47,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 	private final OptionFileService optionFileService;
 	private final PatcherStateService patcherStateService;
 	private final UpdateService updateService;
+	private final HostServices hostServices;
 
 	private PatcherState patcherState;
 	private Path patcherUserDir;
@@ -70,6 +72,8 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 	@FXML
 	private MenuItem fixBfME2EP1MenuItem;
 	@FXML
+	private MenuItem bfmeReforgedCredits;
+	@FXML
 	private CheckMenuItem toggleHdEdition;
 	@FXML
 	private CheckMenuItem patchOnStartup;
@@ -93,7 +97,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 	}
 
 	@FXML
-	public void initialize() {
+	public void initialize() throws URISyntaxException {
 
 		versionMenuItem.setText(updaterProperties.getVersion());
 
@@ -159,6 +163,8 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 				"There was an error writing the default options.ini"
 			)
 		)));
+
+		bfmeReforgedCredits.setOnAction(event -> hostServices.showDocument("https://bfmereforged.org/"));
 
 		toggleHdEdition.setSelected(patcherState.isHdEditionEnabled());
 		toggleHdEdition.setOnAction(event -> {

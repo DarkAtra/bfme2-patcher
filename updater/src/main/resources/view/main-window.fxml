@@ -68,6 +68,9 @@
 					<MenuItem fx:id="versionMenuItem" mnemonicParsing="false" text="unknown"/>
 					<MenuItem fx:id="checkUpdates" mnemonicParsing="false" text="Check Updates"/>
 				</Menu>
+				<Menu mnemonicParsing="false" text="Credits">
+					<MenuItem fx:id="bfmeReforgedCredits" mnemonicParsing="false" text="BFME: Reforged for providing the icon for this application."/>
+				</Menu>
 			</MenuBar>
 		</top>
 	</BorderPane>

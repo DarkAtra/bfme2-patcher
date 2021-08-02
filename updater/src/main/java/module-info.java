@@ -15,6 +15,7 @@ module de.darkatra.patcher.updater {
 	requires org.slf4j;
 	requires com.sun.jna.platform;
 	requires org.bouncycastle.provider;
+	requires mslinks;
 
 	exports de.darkatra.patcher.updater;
 	exports de.darkatra.patcher.updater.config to spring.beans, spring.context;

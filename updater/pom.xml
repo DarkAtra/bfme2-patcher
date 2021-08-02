@@ -61,6 +61,12 @@
 			<artifactId>jna-platform</artifactId>
 		</dependency>
 
+		<!-- Windows Shortcuts -->
+		<dependency>
+			<groupId>com.github.vatbub</groupId>
+			<artifactId>mslinks</artifactId>
+		</dependency>
+
 		<!-- Optional/Provided -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
