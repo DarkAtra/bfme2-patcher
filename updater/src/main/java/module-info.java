@@ -16,6 +16,7 @@ module de.darkatra.patcher.updater {
 	requires com.sun.jna.platform;
 	requires org.bouncycastle.provider;
 	requires mslinks;
+	requires io.reactivex.rxjava2;
 
 	exports de.darkatra.patcher.updater;
 	exports de.darkatra.patcher.updater.config to spring.beans, spring.context;

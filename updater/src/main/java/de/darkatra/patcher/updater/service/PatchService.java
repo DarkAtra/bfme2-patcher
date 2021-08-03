@@ -64,11 +64,6 @@ public class PatchService {
 
 		checkIfIsInterrupted();
 
-		// TODO: auto update updater
-
-
-		patchEventListener.onUpdaterNeedsUpdate(false);
-
 		checkIfIsInterrupted();
 
 		patchEventListener.preDeleteFiles();

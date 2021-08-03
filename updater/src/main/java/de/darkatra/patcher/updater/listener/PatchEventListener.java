@@ -9,8 +9,6 @@ public interface PatchEventListener {
 
 	void postReadPatchlist();
 
-	void onUpdaterNeedsUpdate(final boolean requiresUpdate);
-
 	void preDeleteFiles();
 
 	void postDeleteFiles();
@@ -25,7 +23,7 @@ public interface PatchEventListener {
 
 	void onPatchDone();
 
-	void onPatchProgressChange(final long current, final long target);
+	void onPatchProgressChange(final long current, final long total);
 
 	void onValidatingPacket();
 }

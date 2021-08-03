@@ -35,6 +35,12 @@
 			<artifactId>spring-boot-starter-json</artifactId>
 		</dependency>
 
+		<!-- Reactive -->
+		<dependency>
+			<groupId>io.reactivex.rxjava2</groupId>
+			<artifactId>rxjava</artifactId>
+		</dependency>
+
 		<!-- SHA-3 -->
 		<dependency>
 			<groupId>org.bouncycastle</groupId>

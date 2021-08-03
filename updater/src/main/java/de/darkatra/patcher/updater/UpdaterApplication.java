@@ -27,6 +27,8 @@ import java.io.IOException;
 @SpringBootApplication(proxyBeanMethods = false)
 public class UpdaterApplication extends Application {
 
+	public static final String APPLICATION_TITLE = "BFME Mod Launcher";
+
 	private ConfigurableApplicationContext context;
 	private Parent mainWindow;
 
@@ -93,7 +95,7 @@ public class UpdaterApplication extends Application {
 
 		final UpdaterProperties updaterProperties = context.getBean(UpdaterProperties.class);
 		primaryStage.setScene(new Scene(mainWindow, updaterProperties.getUpdaterResolution().getWidth(), updaterProperties.getUpdaterResolution().getHeight()));
-		primaryStage.setTitle("Bfme2 Mod Launcher");
+		primaryStage.setTitle(APPLICATION_TITLE);
 		primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("/images/icon.png")));
 		primaryStage.centerOnScreen();
 		primaryStage.setResizable(false);

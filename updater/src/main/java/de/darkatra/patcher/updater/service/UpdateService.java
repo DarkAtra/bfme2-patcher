@@ -1,5 +1,6 @@
 package de.darkatra.patcher.updater.service;
 
+import static de.darkatra.patcher.updater.UpdaterApplication.APPLICATION_TITLE;
 import static de.darkatra.patcher.updater.properties.UpdaterProperties.UPDATER_NAME;
 import static de.darkatra.patcher.updater.properties.UpdaterProperties.UPDATER_OLD_NAME;
 import static de.darkatra.patcher.updater.properties.UpdaterProperties.UPDATER_TEMP_NAME;
@@ -50,7 +51,7 @@ public class UpdateService implements InitializingBean {
 		updaterTempLocation = patcherUserDir.resolve(UPDATER_TEMP_NAME);
 		currentUpdaterLocation = patcherUserDir.resolve(UPDATER_NAME);
 		oldUpdaterLocation = patcherUserDir.resolve(UPDATER_OLD_NAME);
-		linkLocation = Path.of(System.getProperty("user.home"), "Desktop", "Bfme2 Mod Launcher.lnk");
+		linkLocation = Path.of(System.getProperty("user.home"), "Desktop", APPLICATION_TITLE + ".lnk");
 		linkIconLocation = patcherUserDir.resolve("icon.ico");
 	}
 

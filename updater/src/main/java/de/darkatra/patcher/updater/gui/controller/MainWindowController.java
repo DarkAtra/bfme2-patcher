@@ -8,8 +8,12 @@ import de.darkatra.patcher.updater.service.PatcherStateService;
 import de.darkatra.patcher.updater.service.UpdateService;
 import de.darkatra.patcher.updater.service.model.Context;
 import de.darkatra.patcher.updater.service.model.PatcherState;
+import de.darkatra.patcher.updater.service.model.UpdateProgress;
 import de.darkatra.patcher.updater.util.ProcessUtils;
 import de.darkatra.patcher.updater.util.UIUtils;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.subjects.BehaviorSubject;
+import io.reactivex.subjects.Subject;
 import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -23,6 +27,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.stereotype.Component;
@@ -35,11 +40,12 @@ import java.nio.file.Path;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class MainWindowController implements PatchEventListener, InitializingBean {
+public class MainWindowController implements PatchEventListener, InitializingBean, DisposableBean {
 
 	private final Context context;
 	private final UpdaterProperties updaterProperties;
@@ -83,6 +89,8 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 	//	private MenuItem changeResolution;
 
 	private final SimpleAsyncTaskExecutor taskExecutor = new SimpleAsyncTaskExecutor();
+	private final Subject<UpdateProgress> patchProgressPublisher = BehaviorSubject.create();
+	private Disposable subscription;
 
 	@Override
 	public void afterPropertiesSet() {
@@ -96,13 +104,25 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 		rotwkHomeDir = Path.of(context.get("rotwkHomeDir"));
 	}
 
+	@Override
+	public void destroy() {
+		subscription.dispose();
+	}
+
 	@FXML
-	public void initialize() throws URISyntaxException {
+	public void initialize() {
 
 		versionMenuItem.setText(updaterProperties.getVersion());
 
 		patchProgressBar.setProgress(0);
 		patchProgressLabel.setText("Waiting for user input.");
+
+		subscription = patchProgressPublisher
+			.throttleLast(100, TimeUnit.MILLISECONDS)
+			.subscribe(updateProgress -> Platform.runLater(() -> {
+				patchProgressBar.setProgress((double) updateProgress.getCurrent() / updateProgress.getTotal());
+				patchProgressLabel.setText(humanReadableByteCountBin(updateProgress.getCurrent()) + "/" + humanReadableByteCountBin(updateProgress.getTotal()));
+			}));
 
 		updateButton.setOnAction(event -> {
 			if (updateButton.isDisabled()) {
@@ -215,22 +235,6 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 	}
 
 	@Override
-	public void onUpdaterNeedsUpdate(final boolean requiresUpdate) {
-		if (requiresUpdate) {
-			Platform.runLater(() -> {
-				patchProgressBar.setProgress(0);
-				updateRestartLabel(5);
-				UIUtils.getCountdownTimeline(5, secondsLeft -> {
-					updateRestartLabel(secondsLeft);
-					if (secondsLeft <= 0) {
-						Platform.exit();
-					}
-				}).playFromStart();
-			});
-		}
-	}
-
-	@Override
 	public void preCalculateDifferences() {
 		Platform.runLater(() -> patchProgressLabel.setText("Calculating differences..."));
 	}
@@ -285,11 +289,8 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 	}
 
 	@Override
-	public void onPatchProgressChange(final long current, final long target) {
-		Platform.runLater(() -> {
-			patchProgressBar.setProgress((double) current / target);
-			patchProgressLabel.setText(humanReadableByteCountBin(current) + "/" + humanReadableByteCountBin(target));
-		});
+	public void onPatchProgressChange(final long current, final long total) {
+		patchProgressPublisher.onNext(new UpdateProgress(current, total));
 	}
 
 	public static String humanReadableByteCountBin(long bytes) {
@@ -319,12 +320,6 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 				"Unable to write Patcher Settings - you could try to restart the patcher with admin privileges."
 			).showAndWait());
 		}
-	}
-
-	private void updateRestartLabel(final int secondsLeft) {
-		Platform.runLater(() -> patchProgressLabel.setText(
-			String.format("Patcher requires an update. Updating application in %d seconds.", secondsLeft)
-		));
 	}
 
 	private void launchGame(final boolean withHdEdition) {
