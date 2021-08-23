@@ -10,7 +10,6 @@
 	</parent>
 
 	<artifactId>update-builder</artifactId>
-	<version>0.0.2</version>
 	<packaging>jar</packaging>
 
 	<name>Update-Builder</name>
@@ -54,10 +53,6 @@
 		</dependency>
 
 		<!-- Windows Registry Reader/Writer -->
-		<dependency>
-			<groupId>net.java.dev.jna</groupId>
-			<artifactId>jna</artifactId>
-		</dependency>
 		<dependency>
 			<groupId>net.java.dev.jna</groupId>
 			<artifactId>jna-platform</artifactId>
