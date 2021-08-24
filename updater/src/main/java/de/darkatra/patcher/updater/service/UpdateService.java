@@ -60,6 +60,11 @@ public class UpdateService implements InitializingBean {
 	}
 
 	public void moveToCorrectLocation() throws IOException, InterruptedException {
+		if (!patcherUserDir.toFile().exists()) {
+			if (!patcherUserDir.toFile().mkdirs()) {
+				throw new IllegalStateException("Could not create patcherUserDir.");
+			}
+		}
 		StreamUtils.copy(new FileInputStream(currentJar.getSource()), new FileOutputStream(currentUpdaterLocation.toFile()));
 		if (!linkLocation.toFile().exists()) {
 			downloadService.downloadFile(
