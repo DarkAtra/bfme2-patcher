@@ -13,7 +13,7 @@
 	<artifactId>mod-builder</artifactId>
 
 	<properties>
-		<kotlin.version>1.5.21</kotlin.version>
+		<kotlin.version>1.5.30</kotlin.version>
 		<bfme2-modding-utils.version>0.1.3</bfme2-modding-utils.version>
 	</properties>
 
