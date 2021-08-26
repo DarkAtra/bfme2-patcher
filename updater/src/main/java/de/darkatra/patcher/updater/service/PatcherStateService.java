@@ -33,7 +33,7 @@ public class PatcherStateService implements InitializingBean {
 		try {
 			return objectMapper.readValue(patcherUserDir.resolve(PATCHER_STATE_FILE_NAME).normalize().toFile(), PatcherState.class);
 		} catch (final IOException e) {
-			log.error("Could not parse patcher state.", e);
+			log.info("Could not parse patcher state. Message: {}", e.getMessage());
 			// fallback to default patcher state if unable to read
 			return new PatcherState();
 		}

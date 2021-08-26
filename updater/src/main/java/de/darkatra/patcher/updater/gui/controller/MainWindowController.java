@@ -1,5 +1,6 @@
 package de.darkatra.patcher.updater.gui.controller;
 
+import de.darkatra.patcher.updater.gui.element.UpdateProgressBar;
 import de.darkatra.patcher.updater.listener.PatchEventListener;
 import de.darkatra.patcher.updater.properties.UpdaterProperties;
 import de.darkatra.patcher.updater.service.OptionFileService;
@@ -22,7 +23,6 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckMenuItem;
-import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import lombok.RequiredArgsConstructor;
@@ -62,9 +62,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 	private Path rotwkHomeDir;
 
 	@FXML
-	private ProgressBar patchProgressBar;
-	@FXML
-	private Label patchProgressLabel;
+	private UpdateProgressBar updateProgressBar;
 	@FXML
 	private Button updateButton;
 	@FXML
@@ -114,14 +112,14 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 
 		versionMenuItem.setText(updaterProperties.getVersion());
 
-		patchProgressBar.setProgress(0);
-		patchProgressLabel.setText("Waiting for user input.");
+		updateProgressBar.setProgress(0);
+		updateProgressBar.setText("Waiting for user input.");
 
 		subscription = patchProgressPublisher
 			.throttleLast(100, TimeUnit.MILLISECONDS)
 			.subscribe(updateProgress -> Platform.runLater(() -> {
-				patchProgressBar.setProgress((double) updateProgress.getCurrent() / updateProgress.getTotal());
-				patchProgressLabel.setText(humanReadableByteCountBin(updateProgress.getCurrent()) + "/" + humanReadableByteCountBin(updateProgress.getTotal()));
+				updateProgressBar.setProgress((double) updateProgress.getCurrent() / updateProgress.getTotal());
+				updateProgressBar.setText(humanReadableByteCountBin(updateProgress.getCurrent()) + "/" + humanReadableByteCountBin(updateProgress.getTotal()));
 			}));
 
 		updateButton.setOnAction(event -> {
@@ -136,8 +134,8 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 			}).completable().whenComplete((patchResult, e) -> {
 				if (e != null) {
 					Platform.runLater(() -> {
-						patchProgressBar.setProgress(0);
-						patchProgressLabel.setText("Update failed. Please try again later.");
+						updateProgressBar.setProgress(0);
+						updateProgressBar.setText("Update failed. Please try again later.");
 						getAlertForThrowable(e).show();
 						updateButton.setDisable(false);
 					});
@@ -214,59 +212,59 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 	@Override
 	public void preDownloadPatchlist() {
 		Platform.runLater(() -> {
-			patchProgressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
-			patchProgressLabel.setText("Downloading the patchlist...");
+			updateProgressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
+			updateProgressBar.setText("Downloading the patchlist...");
 		});
 	}
 
 	@Override
 	public void postDownloadPatchlist() {
-		Platform.runLater(() -> patchProgressLabel.setText("Downloaded the patchlist."));
+		Platform.runLater(() -> updateProgressBar.setText("Downloaded the patchlist."));
 	}
 
 	@Override
 	public void preReadPatchlist() {
-		Platform.runLater(() -> patchProgressLabel.setText("Reading patchlist..."));
+		Platform.runLater(() -> updateProgressBar.setText("Reading patchlist..."));
 	}
 
 	@Override
 	public void postReadPatchlist() {
-		Platform.runLater(() -> patchProgressLabel.setText("Read patchlist."));
+		Platform.runLater(() -> updateProgressBar.setText("Read patchlist."));
 	}
 
 	@Override
 	public void preCalculateDifferences() {
-		Platform.runLater(() -> patchProgressLabel.setText("Calculating differences..."));
+		Platform.runLater(() -> updateProgressBar.setText("Calculating differences..."));
 	}
 
 	@Override
 	public void postCalculateDifferences() {
-		Platform.runLater(() -> patchProgressLabel.setText("Calculated differences."));
+		Platform.runLater(() -> updateProgressBar.setText("Calculated differences."));
 	}
 
 	@Override
 	public void preDeleteFiles() {
-		Platform.runLater(() -> patchProgressLabel.setText("Deleting obsolete files..."));
+		Platform.runLater(() -> updateProgressBar.setText("Deleting obsolete files..."));
 	}
 
 	@Override
 	public void postDeleteFiles() {
-		Platform.runLater(() -> patchProgressLabel.setText("Deleted obsolete files."));
+		Platform.runLater(() -> updateProgressBar.setText("Deleted obsolete files."));
 	}
 
 	@Override
 	public void prePacketsDownload() {
 		Platform.runLater(() -> {
-			patchProgressBar.setProgress(0);
-			patchProgressLabel.setText("Downloading the patch...");
+			updateProgressBar.setProgress(0);
+			updateProgressBar.setText("Downloading the patch...");
 		});
 	}
 
 	@Override
 	public void postPacketsDownload() {
 		Platform.runLater(() -> {
-			patchProgressBar.setProgress(1);
-			patchProgressLabel.setText("Downloaded the patch.");
+			updateProgressBar.setProgress(1);
+			updateProgressBar.setText("Downloaded the patch.");
 		});
 	}
 
@@ -274,7 +272,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 	public void onPatchDone() {
 		Platform.runLater(() -> {
 			updateButton.setDisable(false);
-			patchProgressLabel.setText("Ready to start the game.");
+			updateProgressBar.setText("Ready to start the game.");
 			updateButton.setText("Start Game");
 			updateButton.setOnAction(event -> launchGame(patcherState.isHdEditionEnabled()));
 			if (patcherState.isLaunchAfterPatch()) {
@@ -285,7 +283,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 
 	@Override
 	public void onValidatingPacket() {
-		Platform.runLater(() -> patchProgressLabel.setText("Validating the packet..."));
+		Platform.runLater(() -> updateProgressBar.setText("Validating the packet..."));
 	}
 
 	@Override
@@ -420,8 +418,8 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 	private void checkForUpdates() {
 		checkUpdates.setDisable(true);
 		updateButton.setDisable(true);
-		patchProgressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
-		patchProgressLabel.setText("Checking for updates...");
+		updateProgressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
+		updateProgressBar.setText("Checking for updates...");
 
 		taskExecutor.submitListenable(updateService::isNewVersionAvailable)
 			.completable().whenComplete((newVersionAvailable, e) -> {
@@ -455,7 +453,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 
 	private void performUpdate() {
 
-		Platform.runLater(() -> patchProgressLabel.setText("Updating..."));
+		Platform.runLater(() -> updateProgressBar.setText("Updating..."));
 
 		taskExecutor.submitListenable(updateService::downloadLatestUpdaterVersion)
 			.completable().whenComplete((downloadSucceeded, e) -> {
@@ -501,8 +499,8 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 
 	private void resetProgressUI() {
 		Platform.runLater(() -> {
-			patchProgressBar.setProgress(0);
-			patchProgressLabel.setText("Waiting for user input.");
+			updateProgressBar.setProgress(0);
+			updateProgressBar.setText("Waiting for user input.");
 			checkUpdates.setDisable(false);
 			updateButton.setDisable(false);
 		});
