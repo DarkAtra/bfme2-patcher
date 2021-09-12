@@ -61,6 +61,8 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 	private Path rotwkUserDir;
 	private Path rotwkHomeDir;
 
+	private boolean patchComplete = false;
+
 	@FXML
 	private UpdateProgressBar updateProgressBar;
 	@FXML
@@ -127,6 +129,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 				return;
 			}
 			updateButton.setDisable(true);
+			checkUpdates.setDisable(true);
 
 			taskExecutor.submitListenable(() -> {
 				patchService.patch(this);
@@ -270,6 +273,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 
 	@Override
 	public void onPatchDone() {
+		patchComplete = true;
 		Platform.runLater(() -> {
 			updateButton.setDisable(false);
 			updateProgressBar.setText("Ready to start the game.");
@@ -499,8 +503,13 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 
 	private void resetProgressUI() {
 		Platform.runLater(() -> {
-			updateProgressBar.setProgress(0);
-			updateProgressBar.setText("Waiting for user input.");
+			if (!patchComplete) {
+				updateProgressBar.setProgress(0);
+				updateProgressBar.setText("Waiting for user input.");
+			} else {
+				updateProgressBar.setProgress(1);
+				updateProgressBar.setText("Ready to start the game.");
+			}
 			checkUpdates.setDisable(false);
 			updateButton.setDisable(false);
 		});
