@@ -141,6 +141,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 						updateProgressBar.setText("Update failed. Please try again later.");
 						getAlertForThrowable(e).show();
 						updateButton.setDisable(false);
+						checkUpdates.setDisable(false);
 					});
 				}
 			});
@@ -275,6 +276,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 	public void onPatchDone() {
 		patchComplete = true;
 		Platform.runLater(() -> {
+			checkUpdates.setDisable(false);
 			updateButton.setDisable(false);
 			updateProgressBar.setText("Ready to start the game.");
 			updateButton.setText("Start Game");
