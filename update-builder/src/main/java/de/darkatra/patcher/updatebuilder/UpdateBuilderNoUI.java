@@ -7,8 +7,8 @@ import de.darkatra.patcher.updatebuilder.service.model.ObsoleteFile;
 import de.darkatra.patcher.updatebuilder.service.model.Packet;
 import de.darkatra.patcher.updatebuilder.service.model.Patch;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.io.IOUtils;
 import org.springframework.util.FileSystemUtils;
+import org.springframework.util.StreamUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -113,7 +113,7 @@ public class UpdateBuilderNoUI {
 		outputFile.getParentFile().mkdirs();
 		try (final FileInputStream inputStream = new FileInputStream(input.toFile());
 			 final GZIPOutputStream outputStream = new GZIPOutputStream(new FileOutputStream(outputFile))) {
-			IOUtils.copy(inputStream, outputStream);
+			StreamUtils.copy(inputStream, outputStream);
 		}
 	}
 
