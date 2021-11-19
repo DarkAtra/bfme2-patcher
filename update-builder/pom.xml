@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>de.darkatra</groupId>
 		<artifactId>patcher</artifactId>
-		<version>0.0.5</version>
+		<version>0.1.0</version>
 	</parent>
 
 	<artifactId>update-builder</artifactId>
