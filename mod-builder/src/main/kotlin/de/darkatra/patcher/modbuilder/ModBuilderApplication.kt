@@ -33,41 +33,49 @@ class ModBuilderApplication {
 		val inputDir = Path.of(MOD_DIR)
 		println("Reading files from: ${inputDir.pathString}")
 
-		val outFile = Path.of(OUTPUT_FILE_NAME).toFile()
-		outFile.mkdirs()
-		outFile.delete()
+		val outFile = Path.of(OUTPUT_FILE_NAME)
+		outFile.toFile().also {
+			it.mkdirs()
+			it.delete()
+		}
 
-		println("* Main archive: ${outFile.path}")
-		val bigArchive = BigArchive(BigArchiveVersion.BIG_F)
+		println("* Main archive: ${outFile.pathString}")
+		val bigArchive = BigArchive(BigArchiveVersion.BIG_F, outFile)
 		readFilesInDirectory(inputDir)
 			.filter { file -> excludedDirs.none { prefix -> file.startsWith("$MOD_DIR/$prefix") } }
 			.forEach { file ->
 				println("** Adding file to archive: ${inputDir.relativize(file).pathString}")
-				bigArchive.addFile(file, inputDir.relativize(file).toString())
+				bigArchive.createEntry(inputDir.relativize(file).toString()).outputStream().use {
+					it.write(Files.readAllBytes(file))
+				}
 			}
+		bigArchive.writeToDisk()
 
-		bigArchive.write(outFile.outputStream())
 		println("** Completed Main archive!")
 
 		buildTranslation(inputDir, ENGLISH_TRANSLATION_FILE, OUTPUT_FILE_LANG_EN_NAME)
 		buildTranslation(inputDir, GERMAN_TRANSLATION_FILE, OUTPUT_FILE_LANG_DE_NAME)
 
-		println("Success! Output: ${outFile.path}")
+		println("Success! Output: ${outFile.pathString}")
 	}
 
 	private fun buildTranslation(inputDir: Path, translationFile: String, outputFile: String) {
 
 		val resolvedTranslationFile = inputDir.resolve(translationFile)
 		println("* Translation archive: ${resolvedTranslationFile.pathString}")
-		val outFile = Path.of(outputFile).toFile()
-		outFile.mkdirs()
-		outFile.delete()
+		val outFile = Path.of(outputFile)
+		outFile.toFile().also {
+			it.mkdirs()
+			it.delete()
+		}
 
-		BigArchive(BigArchiveVersion.BIG_F).also {
+		BigArchive(BigArchiveVersion.BIG_F, outFile).also { bigArchive ->
 			println("** Adding file to archive: ${resolvedTranslationFile.pathString}")
-			it.addFile(resolvedTranslationFile, LOTR_STR_NAME)
+			bigArchive.createEntry(LOTR_STR_NAME).outputStream().use {
+				it.write(Files.readAllBytes(resolvedTranslationFile))
+			}
 		}.also {
-			it.write(outFile.outputStream())
+			it.writeToDisk()
 		}
 		println("** Completed Translation archive!")
 	}
