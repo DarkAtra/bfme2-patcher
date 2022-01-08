@@ -5,6 +5,7 @@ import de.darkatra.bfme2.big.BigArchiveVersion
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.stream.Collectors
+import kotlin.io.path.copyTo
 import kotlin.io.path.pathString
 
 const val OUTPUT_FILE_NAME = "update-builder/rotwk/!mod.big"
@@ -14,8 +15,11 @@ const val MOD_DIR = "bfme2-ep1-mod"
 const val ENGLISH_TRANSLATION_FILE = "data/english-lotr.str"
 const val GERMAN_TRANSLATION_FILE = "data/german-lotr.str"
 const val LOTR_STR_NAME = "data/lotr.str"
+const val ASSET_FILE_NAME = "update-builder/bfme2/asset.dat"
 
 class ModBuilderApplication {
+
+	private val bfmeLocationService = BfmeLocationService
 
 	companion object {
 		@JvmStatic
@@ -57,6 +61,22 @@ class ModBuilderApplication {
 		buildTranslation(inputDir, GERMAN_TRANSLATION_FILE, OUTPUT_FILE_LANG_DE_NAME)
 
 		println("Success! Output: ${outFile.pathString}")
+
+		println("Installing mod...")
+		val bfme2HomeDir = bfmeLocationService.findBfME2HomeDirectory().orElseThrow()
+		val rotwkHomeDir = bfmeLocationService.findBfME2RotWKHomeDirectory().orElseThrow()
+
+		// copy asset.dat
+		val assertFinalLocation = bfme2HomeDir.resolve("asset.dat")
+		Path.of(ASSET_FILE_NAME).copyTo(assertFinalLocation, true)
+		println("* Moved asset.dat to ${assertFinalLocation.pathString}")
+
+		// copy mod.big
+		val modFinalLocation = rotwkHomeDir.resolve("!mod.big")
+		Path.of(OUTPUT_FILE_NAME).copyTo(modFinalLocation, true)
+		println("* Moved asset.dat to ${modFinalLocation.pathString}")
+
+		println("Installed mod.")
 	}
 
 	private fun buildTranslation(inputDir: Path, translationFile: String, outputFile: String) {

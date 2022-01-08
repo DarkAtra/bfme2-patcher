@@ -31,6 +31,12 @@
 			<version>${bfme2-modding-utils.version}</version>
 		</dependency>
 
+		<!-- Windows Registry Reader/Writer -->
+		<dependency>
+			<groupId>net.java.dev.jna</groupId>
+			<artifactId>jna-platform</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>org.jetbrains.kotlin</groupId>
 			<artifactId>kotlin-test</artifactId>
