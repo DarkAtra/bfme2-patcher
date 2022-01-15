@@ -1,5 +1,7 @@
 package de.darkatra.patcher.updatebuilder
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+import java.nio.file.Path
 import java.time.Instant
 
 data class Packet(
@@ -9,5 +11,7 @@ data class Packet(
 	val dateTime: Instant,
 	val checksum: String,
 	val backupExisting: Boolean,
-	val compression: Compression
+	val compression: Compression,
+	@JsonIgnore
+	val gzipPath: Path? = null
 )

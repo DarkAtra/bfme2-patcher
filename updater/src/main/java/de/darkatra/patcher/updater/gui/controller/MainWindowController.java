@@ -68,7 +68,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 	@FXML
 	private Button updateButton;
 	@FXML
-	private Button toggleModButton;
+	private Button startGameButton;
 	@FXML
 	private MenuItem versionMenuItem;
 	@FXML
@@ -85,8 +85,6 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 	private CheckMenuItem patchOnStartup;
 	@FXML
 	private CheckMenuItem launchAfterPatch;
-	//	@FXML
-	//	private MenuItem changeResolution;
 
 	private final SimpleAsyncTaskExecutor taskExecutor = new SimpleAsyncTaskExecutor();
 	private final Subject<UpdateProgress> patchProgressPublisher = BehaviorSubject.create();
@@ -130,6 +128,8 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 			}
 			updateButton.setDisable(true);
 			checkUpdates.setDisable(true);
+			startGameButton.setDisable(true);
+			patchComplete = false;
 
 			taskExecutor.submitListenable(() -> {
 				patchService.patch(this);
@@ -147,10 +147,8 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 			});
 		});
 
-		toggleModButton.setDisable(true);
-		toggleModButton.setOnAction(event -> {
-			// TODO: toggle mod (enable/disable)
-		});
+		startGameButton.setDisable(true);
+		startGameButton.setOnAction(event -> launchGame(patcherState.isHdEditionEnabled()));
 
 		checkUpdates.setOnAction(event -> checkForUpdates());
 
@@ -205,8 +203,6 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 			patcherState.setLaunchAfterPatch(launchAfterPatch.isSelected());
 			persistsPatcherState(patcherState);
 		});
-
-		// changeResolution.setOnAction(event -> uiUtils.dialog("/view/game-settings-window.fxml").show());
 
 		if (patcherState.isPatchOnStartup()) {
 			updateButton.fire();
@@ -279,10 +275,9 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 			checkUpdates.setDisable(false);
 			updateButton.setDisable(false);
 			updateProgressBar.setText("Ready to start the game.");
-			updateButton.setText("Start Game");
-			updateButton.setOnAction(event -> launchGame(patcherState.isHdEditionEnabled()));
+			startGameButton.setDisable(false);
 			if (patcherState.isLaunchAfterPatch()) {
-				updateButton.fire();
+				startGameButton.fire();
 			}
 		});
 	}
@@ -508,9 +503,11 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 			if (!patchComplete) {
 				updateProgressBar.setProgress(0);
 				updateProgressBar.setText("Waiting for user input.");
+				startGameButton.setDisable(true);
 			} else {
 				updateProgressBar.setProgress(1);
 				updateProgressBar.setText("Ready to start the game.");
+				startGameButton.setDisable(false);
 			}
 			checkUpdates.setDisable(false);
 			updateButton.setDisable(false);

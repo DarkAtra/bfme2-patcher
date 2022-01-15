@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.StackPane?>
-<StackPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="400.0" prefWidth="600.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="de.darkatra.patcher.updater.gui.controller.MainWindowController">
+<StackPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="400.0" prefWidth="600.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="de.darkatra.patcher.updater.gui.controller.MainWindowController">
 	<FadingBackground maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308"/>
 	<BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
 		<bottom>
@@ -37,7 +37,7 @@
 							<Insets top="5.0"/>
 						</BorderPane.margin>
 						<Button fx:id="updateButton" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Check for Updates"/>
-						<Button fx:id="toggleModButton" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Enable Mod" GridPane.columnIndex="1"/>
+						<Button fx:id="startGameButton" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Start Game" GridPane.columnIndex="1"/>
 					</GridPane>
 				</bottom>
 			</BorderPane>

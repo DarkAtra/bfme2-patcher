@@ -9,7 +9,9 @@ import java.nio.file.StandardOpenOption
 import java.time.Instant
 import java.util.stream.Collectors
 import java.util.zip.GZIPOutputStream
+import kotlin.io.path.exists
 import kotlin.io.path.inputStream
+import kotlin.io.path.pathString
 
 fun main() {
 	UpdateBuilderNoUI.build()
@@ -37,7 +39,7 @@ object UpdateBuilderNoUI {
 			else -> null
 		}
 
-		println("Applying obsolete files from: " + obsoleteFilesPath.toFile().path)
+		println("Applying obsolete files from: ${obsoleteFilesPath.toFile().path}")
 		val obsoleteFiles: Set<ObsoleteFile> = objectMapper.readValue(obsoleteFilesPath.toFile(), Array<ObsoleteFile>::class.java).toSet()
 
 		var added = 0
@@ -46,7 +48,7 @@ object UpdateBuilderNoUI {
 		for (directory in Directory.values()) {
 			val basePath = Path.of("./" + directory.dirName)
 			for (filePath in readFilesInDirectory(basePath)) {
-				println("* Adding file: " + filePath.toFile().path)
+				println("* Adding file: ${filePath.pathString}")
 				if (addFilesToPatch(packets, lastPatch, directory, filePath)) {
 					archived++
 				}
@@ -55,20 +57,34 @@ object UpdateBuilderNoUI {
 		}
 		println("Files added: $added, Files archived: $archived")
 
+		val patch = Patch(
+			obsoleteFiles = obsoleteFiles,
+			packets = packets.toSet()
+		)
+
+		println("Deleting obsolete files from output folder...")
+
+		var deleted = 0
+		readFilesInDirectory(Path.of("./output")).forEach { distributionFile ->
+			if (patch.packets.none { packet -> Files.isSameFile(packet.gzipPath!!, distributionFile) }) {
+				println("* Deleting file: ${distributionFile.pathString}")
+				Files.delete(distributionFile)
+				deleted++
+			}
+		}
+		println("Files deleted: $deleted")
+
 		println("Writing version.json...")
 		Files.writeString(
 			versionJsonPath,
-			objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(Patch(
-				obsoleteFiles = obsoleteFiles,
-				packets = packets.toSet()
-			)),
+			objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(patch),
 			StandardOpenOption.WRITE,
 			StandardOpenOption.TRUNCATE_EXISTING,
 			StandardOpenOption.CREATE
 		)
 
 		val endTime = System.nanoTime()
-		println("Success! Took: " + (endTime - startTime) / 1000000 + "ms")
+		println("Success! Took: ${(endTime - startTime) / 1000000}ms")
 	}
 
 	private fun addFilesToPatch(packets: MutableSet<Packet>, lastPatch: Patch?, directory: Directory, filePath: Path): Boolean {
@@ -77,7 +93,7 @@ object UpdateBuilderNoUI {
 		// this only compares the checksum of the source file and will not ensure that the archive is identical!
 		// manually deleting the version.json will always trigger the creation of a new archive
 		val checksum = hashingService.getSHA3Checksum(filePath.toFile())
-			.orElseThrow { IllegalStateException("Could not calculate the hash for: " + filePath.toFile()) }
+			.orElseThrow { IllegalStateException("Could not calculate the hash for: ${filePath.toFile()}") }
 
 		val dest = Path.of(directory.contextVariable).resolve(
 			Path.of(directory.dirName).relativize(filePath)
@@ -95,7 +111,7 @@ object UpdateBuilderNoUI {
 		val outputExists: Boolean = output.exists()
 		val archive: Boolean = fileChanged || !outputExists
 		if (archive) {
-			println("** Archiving file (changed: " + fileChanged + ", exists: " + outputExists + "): " + output.path)
+			println("** Archiving file (changed: $fileChanged, exists: $outputExists): ${output.path}")
 			createGzipArchive(filePath, output)
 		}
 
@@ -108,7 +124,8 @@ object UpdateBuilderNoUI {
 			dateTime = Instant.now(),
 			checksum = checksum,
 			backupExisting = filesRequireBackup.contains(filePath.toFile().name),
-			compression = Compression.ZIP
+			compression = Compression.ZIP,
+			gzipPath = output.toPath()
 		))
 
 		return archive
@@ -124,11 +141,13 @@ object UpdateBuilderNoUI {
 	}
 
 	private fun readFilesInDirectory(directory: Path): Set<Path> {
-		return Files.walk(directory).use { stream ->
-			stream
-				.filter { path: Path -> Files.isRegularFile(path) }
-				.collect(Collectors.toSet())
+		return when (directory.exists()) {
+			true -> Files.walk(directory).use { stream ->
+				stream
+					.filter { path: Path -> Files.isRegularFile(path) }
+					.collect(Collectors.toSet())
+			}
+			else -> emptySet()
 		}
 	}
-
 }
