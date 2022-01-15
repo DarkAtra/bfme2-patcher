@@ -72,7 +72,16 @@ object UpdateBuilderNoUI {
 				deleted++
 			}
 		}
-		println("Files deleted: $deleted")
+
+		println("Removing empty folders...")
+
+		var deletedEmptyFolders = 0
+		readFoldersInDirectory(Path.of("./output"))
+			.filter { folder -> folder.toFile().list()?.isEmpty() ?: false }
+			.forEach { folder ->
+				deletedEmptyFolders += deleteFolder(Path.of("./output"), folder)
+			}
+		println("Files deleted: $deleted, empty Folders deleted: $deletedEmptyFolders")
 
 		println("Writing version.json...")
 		Files.writeString(
@@ -149,5 +158,26 @@ object UpdateBuilderNoUI {
 			}
 			else -> emptySet()
 		}
+	}
+
+	private fun readFoldersInDirectory(directory: Path): Set<Path> {
+		return when (directory.exists()) {
+			true -> Files.walk(directory).use { stream ->
+				stream
+					.filter { path: Path -> Files.isDirectory(path) }
+					.collect(Collectors.toSet())
+			}
+			else -> emptySet()
+		}
+	}
+
+	private fun deleteFolder(topLevelDir: Path, currentPath: Path): Int {
+		var deleted = 0
+		if (topLevelDir != currentPath && currentPath.startsWith(topLevelDir)) {
+			val parent = currentPath.parent
+			Files.delete(currentPath)
+			deleted += 1 + deleteFolder(topLevelDir, parent)
+		}
+		return deleted
 	}
 }
