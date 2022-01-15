@@ -1,6 +1,6 @@
 package de.darkatra.patcher.updatebuilder
 
-internal enum class Directory(
+enum class Directory(
 	val dirName: String,
 	val contextVariable: String
 ) {
