@@ -31,6 +31,8 @@
 		<maven.compiler.target>11</maven.compiler.target>
 		<maven.compiler.source>11</maven.compiler.source>
 
+		<kotlin.version>1.6.10</kotlin.version>
+		<bfme2-modding-utils.version>0.2.1</bfme2-modding-utils.version>
 		<javafx.version>17.0.1</javafx.version>
 		<bouncycastle.version>1.70</bouncycastle.version>
 		<jna.version>5.10.0</jna.version>
@@ -38,8 +40,35 @@
 		<commons-io.version>2.11.0</commons-io.version>
 	</properties>
 
+	<dependencies>
+		<!-- Kotlin -->
+		<dependency>
+			<groupId>org.jetbrains.kotlin</groupId>
+			<artifactId>kotlin-bom</artifactId>
+			<version>${kotlin.version}</version>
+			<type>pom</type>
+		</dependency>
+	</dependencies>
+
 	<dependencyManagement>
 		<dependencies>
+			<!-- Bfme Utils -->
+			<dependency>
+				<groupId>de.darkatra.bfme2</groupId>
+				<artifactId>big</artifactId>
+				<version>${bfme2-modding-utils.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.darkatra.bfme2</groupId>
+				<artifactId>map</artifactId>
+				<version>${bfme2-modding-utils.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.darkatra.bfme2</groupId>
+				<artifactId>refpack</artifactId>
+				<version>${bfme2-modding-utils.version}</version>
+			</dependency>
+
 			<dependency>
 				<groupId>org.openjfx</groupId>
 				<artifactId>javafx-controls</artifactId>
@@ -78,7 +107,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.9.0</version>
 				<configuration>
 					<release>11</release>
 					<annotationProcessorPaths>

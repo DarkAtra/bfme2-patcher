@@ -17,17 +17,13 @@ const val GERMAN_TRANSLATION_FILE = "data/german-lotr.str"
 const val LOTR_STR_NAME = "data/lotr.str"
 const val ASSET_FILE_NAME = "update-builder/bfme2/asset.dat"
 
-class ModBuilderApplication {
+fun main() {
+	ModBuilderApplication.build()
+}
+
+object ModBuilderApplication {
 
 	private val bfmeLocationService = BfmeLocationService
-
-	companion object {
-		@JvmStatic
-		fun main(args: Array<String>) {
-			ModBuilderApplication().build()
-		}
-	}
-
 	private val excludedDirs = listOf(".git", ".gitignore", ".idea", ENGLISH_TRANSLATION_FILE, GERMAN_TRANSLATION_FILE)
 
 	fun build() {
