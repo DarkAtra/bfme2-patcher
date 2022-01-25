@@ -145,8 +145,4 @@ buildNumber.properties
 !/.mvn/wrapper/maven-wrapper.jar
 
 .idea/
-patcher.iml
-base/base.iml
-updater/updater.iml
-update-builder/update-builder.iml
-mod-builder/mod-builder.iml
+*.iml

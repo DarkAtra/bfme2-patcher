@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
@@ -9,37 +10,24 @@
 		<version>0.2.0</version>
 	</parent>
 
-	<artifactId>update-builder</artifactId>
-	<packaging>jar</packaging>
-
-	<name>Update-Builder</name>
-	<description>An application that builds the version.txt for the updater.</description>
+	<artifactId>map-builder</artifactId>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.jetbrains.kotlin</groupId>
 			<artifactId>kotlin-stdlib-jdk8</artifactId>
 		</dependency>
+
+		<!-- Bfme2 Modding Utils -->
 		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
+			<groupId>de.darkatra.bfme2</groupId>
+			<artifactId>big</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.fasterxml.jackson.datatype</groupId>
-			<artifactId>jackson-datatype-jsr310</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.module</groupId>
-			<artifactId>jackson-module-kotlin</artifactId>
+			<groupId>de.darkatra.bfme2</groupId>
+			<artifactId>map</artifactId>
 		</dependency>
 
-		<!-- SHA-3 -->
-		<dependency>
-			<groupId>org.bouncycastle</groupId>
-			<artifactId>bcprov-jdk15on</artifactId>
-		</dependency>
-
-		<!-- Testing -->
 		<dependency>
 			<groupId>org.jetbrains.kotlin</groupId>
 			<artifactId>kotlin-test</artifactId>
@@ -86,7 +74,7 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
 					<executable>true</executable>
-					<mainClass>de.darkatra.patcher.updatebuilder.UpdateBuilderNoUIKt</mainClass>
+					<mainClass>de.darkatra.patcher.mapbuilder.MapBuilderApplicationKt</mainClass>
 				</configuration>
 			</plugin>
 		</plugins>

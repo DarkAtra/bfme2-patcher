@@ -9,6 +9,11 @@ The Patcher consists of 3 applications:
 - **Update-Builder**:
   The Update-Builder is an application that makes it easy to create a `version.json`. The updater needs this file to calculate differences between client and
   server. This file contains the checksums, size specifications, paths and timestamps of the individual files.
+- **Map-Builder**:
+  The Map-Builder is an application that helps with building the `!map.big` archive. It takes all the necessary files for each map, generates the `mapcache.ini`
+  and creates the final big archive.
+- **Map-Compressor**:
+  The Map-Compressor is an application that compresses all maps in a given folder using the `deflate` compression format.
 - **Mod-Builder**:
   The Mod-Builder is an application that helps with bundling a new version of the mod. It basically takes the necessary files and puts them in dedicated big
   archives for release.

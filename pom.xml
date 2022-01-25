@@ -21,6 +21,8 @@
 	<modules>
 		<module>updater</module>
 		<module>update-builder</module>
+		<module>map-builder</module>
+		<module>map-compressor</module>
 		<module>mod-builder</module>
 	</modules>
 
@@ -53,6 +55,11 @@
 	<dependencyManagement>
 		<dependencies>
 			<!-- Bfme Utils -->
+			<dependency>
+				<groupId>de.darkatra.bfme2</groupId>
+				<artifactId>core</artifactId>
+				<version>${bfme2-modding-utils.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>de.darkatra.bfme2</groupId>
 				<artifactId>big</artifactId>
@@ -120,4 +127,15 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<repositories>
+		<repository>
+			<id>github</id>
+			<name>GitHub Packages</name>
+			<url>https://maven.pkg.github.com/DarkAtra/bfme2-modding-utils</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
 </project>
