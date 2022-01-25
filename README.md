@@ -1,6 +1,6 @@
 # Patcher
 
-The Patcher consists of 3 applications:
+The Patcher consists of the following applications:
 
 - **Updater**:
   The updater keeps all files for a program and itself up to date. It calculates the differences between the current version of the program and the latest
