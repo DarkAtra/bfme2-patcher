@@ -34,7 +34,7 @@
 		<maven.compiler.source>11</maven.compiler.source>
 
 		<kotlin.version>1.6.10</kotlin.version>
-		<bfme2-modding-utils.version>0.2.4</bfme2-modding-utils.version>
+		<bfme2-modding-utils.version>0.2.5</bfme2-modding-utils.version>
 		<javafx.version>17.0.2</javafx.version>
 		<bouncycastle.version>1.70</bouncycastle.version>
 		<jna.version>5.10.0</jna.version>
