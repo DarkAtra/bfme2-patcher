@@ -19,7 +19,7 @@ import kotlin.io.path.pathString
 
 
 const val MAP_DIR = "maps-camera-fix"
-const val OUTPUT_FILE_NAME = "update-builder/rotwk/!map_test.big" // TODO: finalize file name
+const val OUTPUT_FILE_NAME = "update-builder/rotwk/!map.big"
 
 fun main() {
 	MapBuilderApplication.build()
@@ -64,7 +64,6 @@ object MapBuilderApplication {
 						timestampLo = winFileTimeFromInstant(file.getLastModifiedTime().toInstant()).toInt(),
 						timestampHi = (winFileTimeFromInstant(file.getLastModifiedTime().toInstant()) shr 32).toInt(),
 						isOfficial = true,
-						isMultiplayer = (map.multiplayerPositions?.size ?: 1) > 1,
 						isScenarioMP = map.worldSettings.find { it.key.name == "isScenarioMultiplayer" }?.value as Boolean? ?: false,
 						// not sure why, but the game multiplies the coordinates by factor 10
 						extentMin = Vector3(map.heightMap.borders[0].x1.toFloat() * 10f, map.heightMap.borders[0].y1.toFloat() * 10f, 0f),
@@ -86,7 +85,7 @@ object MapBuilderApplication {
 		println("** Generating mapcache.ini...")
 
 		bigArchive.createEntry("maps\\mapcache.ini").outputStream().use {
-			mapCache.forEach { entry ->
+			mapCache.sortedWith(Comparator.comparing(MapCacheEntry::mapPath)).forEach { entry ->
 				entry.serialize(it)
 				it.write(System.lineSeparator().toByteArray())
 				it.write(System.lineSeparator().toByteArray())

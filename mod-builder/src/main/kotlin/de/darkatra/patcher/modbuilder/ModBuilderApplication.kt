@@ -72,6 +72,16 @@ object ModBuilderApplication {
 		Path.of(OUTPUT_FILE_NAME).copyTo(modFinalLocation, true)
 		println("* Moved asset.dat to ${modFinalLocation.pathString}")
 
+		// copy englishstringsmod.big
+		val enStringsLocation = rotwkHomeDir.resolve("lang/englishstringsmod.big")
+		Path.of(OUTPUT_FILE_LANG_EN_NAME).copyTo(enStringsLocation, true)
+		println("* Moved englishstringsmod.big to ${enStringsLocation.pathString}")
+
+		// copy germanstringsmod.big
+		val deStringsLocation = rotwkHomeDir.resolve("lang/germanstringsmod.big")
+		Path.of(OUTPUT_FILE_LANG_DE_NAME).copyTo(deStringsLocation, true)
+		println("* Moved germanstringsmod.big to ${deStringsLocation.pathString}")
+
 		println("Installed mod.")
 	}
 

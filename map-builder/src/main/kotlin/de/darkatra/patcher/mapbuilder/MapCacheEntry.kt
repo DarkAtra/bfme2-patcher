@@ -2,6 +2,7 @@ package de.darkatra.patcher.mapbuilder
 
 import de.darkatra.bfme2.Vector3
 import java.io.OutputStream
+import java.util.Locale
 import kotlin.math.max
 
 data class MapCacheEntry(
@@ -11,7 +12,6 @@ data class MapCacheEntry(
 	val timestampLo: Int,
 	val timestampHi: Int,
 	val isOfficial: Boolean,
-	val isMultiplayer: Boolean,
 	val isScenarioMP: Boolean,
 	val extentMin: Vector3,
 	val extentMax: Vector3,
@@ -29,7 +29,8 @@ data class MapCacheEntry(
 			.takeWhile { it != null }
 			.size,
 		1
-	)
+	),
+	val isMultiplayer: Boolean = numPlayers > 1
 ) {
 
 	fun serialize(outputStream: OutputStream) {
@@ -104,7 +105,7 @@ data class MapCacheEntry(
 	}
 
 	private fun formatVector3(vector3: Vector3): String {
-		return "X:${vector3.x} Y:${vector3.y} Z:${vector3.z}"
+		return "X:${String.format(Locale.ROOT, "%.2f", vector3.x)} Y:${String.format(Locale.ROOT, "%.2f", vector3.y)} Z:${String.format(Locale.ROOT, "%.2f", vector3.z)}"
 	}
 
 	private fun formatBoolean(boolean: Boolean): String {
@@ -128,12 +129,16 @@ data class MapCacheEntry(
 	}
 
 	private fun generateMapName(mapPath: String): String {
-		val mapName = mapPath.split("\\")[1].split(" ").joinToString("")
-		return escapeString("\u0024Map:$mapName".map { "$it\u0000" }.joinToString(""))
+		return escapeString("\u0024Map:${getEncodedMapName(mapPath)}".map { "$it\u0000" }.joinToString(""))
 	}
 
 	private fun generateMapDescription(mapPath: String): String {
-		val mapName = mapPath.split("\\")[1].split(" ").joinToString("")
-		return escapeString("Map:$mapName/Desc".map { "$it\u0000" }.joinToString(""))
+		return escapeString("Map:${getEncodedMapName(mapPath)}/Desc".map { "$it\u0000" }.joinToString(""))
+	}
+
+	private fun getEncodedMapName(mapPath: String): String {
+		return mapPath.split("\\")[1].split(" ").joinToString("").filter {
+			it.code in 48..57 || it.code in 65..90 || it.code in 97..122
+		}
 	}
 }
