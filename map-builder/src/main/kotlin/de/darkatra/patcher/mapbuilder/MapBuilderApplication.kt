@@ -19,7 +19,7 @@ import kotlin.io.path.pathString
 
 
 const val MAP_DIR = "maps-camera-fix"
-const val OUTPUT_FILE_NAME = "update-builder/rotwk/!map.big"
+const val OUTPUT_FILE_NAME = "update-builder/rotwk/!maps.big"
 
 fun main() {
 	MapBuilderApplication.build()
