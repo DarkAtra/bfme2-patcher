@@ -65,5 +65,12 @@
 				</Menu>
 			</MenuBar>
 		</top>
+		<right>
+			<Button fx:id="quickUpdate" visible="false" mnemonicParsing="false" text="Update available" BorderPane.alignment="TOP_RIGHT">
+				<BorderPane.margin>
+					<Insets right="10.0" top="10.0"/>
+				</BorderPane.margin>
+			</Button>
+		</right>
 	</BorderPane>
 </StackPane>

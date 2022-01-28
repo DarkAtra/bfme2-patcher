@@ -70,6 +70,8 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 	@FXML
 	private Button startGameButton;
 	@FXML
+	private Button quickUpdate;
+	@FXML
 	private MenuItem versionMenuItem;
 	@FXML
 	private MenuItem checkUpdates;
@@ -128,6 +130,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 			}
 			updateButton.setDisable(true);
 			checkUpdates.setDisable(true);
+			quickUpdate.setDisable(true);
 			startGameButton.setDisable(true);
 			patchComplete = false;
 
@@ -142,6 +145,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 						getAlertForThrowable(e).show();
 						updateButton.setDisable(false);
 						checkUpdates.setDisable(false);
+						quickUpdate.setDisable(false);
 					});
 				}
 			});
@@ -203,6 +207,16 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 			patcherState.setLaunchAfterPatch(launchAfterPatch.isSelected());
 			persistsPatcherState(patcherState);
 		});
+
+		quickUpdate.setOnAction(event -> performUpdate());
+		try {
+			if (updateService.isNewVersionAvailable()) {
+				quickUpdate.setVisible(true);
+			}
+		} catch (final IllegalStateException e) {
+			// ignore
+			log.debug("IllegalStateException while checking for patcher updates", e);
+		}
 
 		if (patcherState.isPatchOnStartup()) {
 			updateButton.fire();
@@ -273,6 +287,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 		patchComplete = true;
 		Platform.runLater(() -> {
 			checkUpdates.setDisable(false);
+			quickUpdate.setDisable(false);
 			updateButton.setDisable(false);
 			updateProgressBar.setText("Ready to start the game.");
 			startGameButton.setDisable(false);
@@ -418,6 +433,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 
 	private void checkForUpdates() {
 		checkUpdates.setDisable(true);
+		quickUpdate.setDisable(true);
 		updateButton.setDisable(true);
 		updateProgressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
 		updateProgressBar.setText("Checking for updates...");
@@ -454,7 +470,13 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 
 	private void performUpdate() {
 
-		Platform.runLater(() -> updateProgressBar.setText("Updating..."));
+		Platform.runLater(() -> {
+			checkUpdates.setDisable(true);
+			quickUpdate.setDisable(true);
+			updateButton.setDisable(true);
+
+			updateProgressBar.setText("Updating...");
+		});
 
 		taskExecutor.submitListenable(updateService::downloadLatestUpdaterVersion)
 			.completable().whenComplete((downloadSucceeded, e) -> {
@@ -510,6 +532,7 @@ public class MainWindowController implements PatchEventListener, InitializingBea
 				startGameButton.setDisable(false);
 			}
 			checkUpdates.setDisable(false);
+			quickUpdate.setDisable(false);
 			updateButton.setDisable(false);
 		});
 	}
