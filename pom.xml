@@ -33,7 +33,7 @@
 		<maven.compiler.target>11</maven.compiler.target>
 		<maven.compiler.source>11</maven.compiler.source>
 
-		<kotlin.version>1.6.20</kotlin.version>
+		<kotlin.version>1.6.21</kotlin.version>
 		<bfme2-modding-utils.version>0.2.5</bfme2-modding-utils.version>
 		<javafx.version>18</javafx.version>
 		<bouncycastle.version>1.70</bouncycastle.version>
