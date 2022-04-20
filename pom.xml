@@ -35,7 +35,7 @@
 
 		<kotlin.version>1.6.21</kotlin.version>
 		<bfme2-modding-utils.version>0.2.5</bfme2-modding-utils.version>
-		<javafx.version>18</javafx.version>
+		<javafx.version>18.0.1</javafx.version>
 		<bouncycastle.version>1.70</bouncycastle.version>
 		<jna.version>5.11.0</jna.version>
 		<mslinks.version>1.0.6.2</mslinks.version>
