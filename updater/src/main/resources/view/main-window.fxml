@@ -57,7 +57,7 @@
 					<CheckMenuItem fx:id="launchAfterPatch" mnemonicParsing="false" text="Auto launch after patching"/>
 				</Menu>
 				<Menu mnemonicParsing="false" text="Version">
-					<MenuItem fx:id="versionMenuItem" mnemonicParsing="false" text="unknown"/>
+					<MenuItem fx:id="versionMenuItem" mnemonicParsing="false" text="Unknown"/>
 					<MenuItem fx:id="checkUpdates" mnemonicParsing="false" text="Check Updates"/>
 				</Menu>
 				<Menu mnemonicParsing="false" text="Credits">
@@ -66,7 +66,7 @@
 			</MenuBar>
 		</top>
 		<right>
-			<Button fx:id="quickUpdate" visible="false" mnemonicParsing="false" text="Update available" BorderPane.alignment="TOP_RIGHT">
+			<Button fx:id="quickUpdate" mnemonicParsing="false" text="Update available" visible="false" BorderPane.alignment="TOP_RIGHT">
 				<BorderPane.margin>
 					<Insets right="10.0" top="10.0"/>
 				</BorderPane.margin>

@@ -64,8 +64,6 @@ public class PatchService {
 
 		checkIfIsInterrupted();
 
-		checkIfIsInterrupted();
-
 		patchEventListener.preDeleteFiles();
 		deleteFiles(patch);
 		patchEventListener.postDeleteFiles();

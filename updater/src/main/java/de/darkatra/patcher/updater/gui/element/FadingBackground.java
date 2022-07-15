@@ -20,11 +20,11 @@ public class FadingBackground extends StackPane implements DisposableBean {
 	private static final Duration TRANSITION_PAUSE_DURATION = Duration.seconds(10);
 	private final String[] imagePaths = new String[]{
 		"/images/splash2_1920x1080.jpg",
-		"/images/splash6_1920x1200.jpg",
 		"/images/splash8_2560x1600.jpg",
-		"/images/splash9_1920x1200.jpg",
-		"/images/splash11_1920x1200.jpg",
-		"/images/splash13_1920x1080.jpg"
+		"/images/splash13_1920x1080.jpg",
+		"/images/splash14_1920x1080.jpg",
+		"/images/splash15_1920x1080.jpg",
+		"/images/splash19_1500x1200.jpg"
 	};
 	private final SequentialTransition backgroundTransition = new SequentialTransition();
 	private final Pane fadeOut = new Pane();
