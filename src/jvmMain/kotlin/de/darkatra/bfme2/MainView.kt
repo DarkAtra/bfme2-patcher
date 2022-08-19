@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.FrameWindowScope
-import androidx.compose.ui.window.MenuBar
 import java.time.Duration
 
 private val imagePaths = arrayOf(
@@ -30,34 +29,7 @@ private val imagePaths = arrayOf(
 @Composable
 fun MainView(frameWindowScope: FrameWindowScope) {
 
-    with(frameWindowScope) {
-        MenuBar {
-
-            Menu(text = "Startup Fix") {
-                Item(text = "Fix BfME 2", onClick = {})
-                Item(text = "Fix BfME 2 RotWK", onClick = {})
-            }
-
-            Menu(text = "Game Settings") {
-                Item(text = "Enable HD Edition", onClick = {})
-            }
-
-            Menu(text = "Patcher Settings") {
-                Item(text = "Auto patch on startup", onClick = {})
-                Item(text = "Auto launch after patching", onClick = {})
-            }
-
-            Menu(text = "Version") {
-                Item(text = "Unknown", onClick = {})
-                Item(text = "Check Updates", onClick = {})
-            }
-
-            Menu(text = "Credits") {
-                Item(text = "BFME: Reforged for providing the icon for this application.", onClick = {})
-            }
-
-        }
-    }
+    Toolbar(frameWindowScope)
 
     FadingBackground(
         imagePaths = imagePaths,
