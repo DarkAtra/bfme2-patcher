@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -29,6 +31,8 @@ private val imagePaths = arrayOf(
 @Composable
 fun MainView(frameWindowScope: FrameWindowScope) {
 
+    val (isUpdateInProgress, setUpdateInProgress) = remember { mutableStateOf(true) }
+
     Toolbar(frameWindowScope)
 
     FadingBackground(
@@ -46,7 +50,7 @@ fun MainView(frameWindowScope: FrameWindowScope) {
             ProgressBar(
                 progress = 0f,
                 text = "Waiting for user input.",
-                isIntermediate = true
+                isIntermediate = false
             )
 
             Spacer(modifier = Modifier.height(5f.dp))
@@ -63,8 +67,9 @@ fun MainView(frameWindowScope: FrameWindowScope) {
                 Spacer(modifier = Modifier.width(5f.dp))
 
                 Button(
+                    enabled = isUpdateInProgress,
                     modifier = Modifier.weight(1f).height(32.dp),
-                    onClick = {}
+                    onClick = { setUpdateInProgress(false) }
                 ) {
                     Text(text = "Start Game", fontSize = 14.sp)
                 }

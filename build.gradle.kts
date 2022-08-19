@@ -20,16 +20,39 @@ kotlin {
         compilations.all {
             kotlinOptions.jvmTarget = "11"
         }
-        withJava()
+
+        testRuns["test"].executionTask.configure {
+            useJUnitPlatform()
+        }
     }
     sourceSets {
+        all {
+            languageSettings.apply {
+                progressiveMode = true
+            }
+        }
+
         val jvmMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${extra["kotlin-coroutine.version"]}")
+                implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${extra["jackson-kotlin-module.version"]}")
+                implementation("org.bouncycastle:bcprov-jdk15on:${extra["bouncycastle.version"]}")
             }
         }
-        val jvmTest by getting
+        val jvmTest by getting {
+
+            languageSettings {
+                optIn("kotlin.RequiresOptIn")
+            }
+
+            dependencies {
+                implementation(kotlin("test"))
+                implementation("org.assertj:assertj-core:${extra["assertj.version"]}")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${extra["kotlin-coroutine.version"]}")
+                implementation("com.github.tomakehurst:wiremock-jre8:${extra["wiremock.version"]}")
+            }
+        }
     }
 }
 

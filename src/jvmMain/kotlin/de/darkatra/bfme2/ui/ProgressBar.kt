@@ -33,8 +33,6 @@ fun ProgressBar(
                 color = color,
                 modifier = modifiers,
             )
-
-            Text(text = text, fontSize = 14.sp, modifier = Modifier.align(Alignment.Center))
         } else {
             LinearProgressIndicator(
                 backgroundColor = backgroundColor,
@@ -42,8 +40,8 @@ fun ProgressBar(
                 modifier = modifiers,
                 progress = progress
             )
-
-            Text(text = text, fontSize = 14.sp, modifier = Modifier.align(Alignment.Center))
         }
+
+        Text(text = text, fontSize = 14.sp, modifier = Modifier.align(Alignment.Center))
     }
 }
