@@ -10,28 +10,28 @@ import javax.swing.UIManager
 
 fun main() = application {
 
-	// set styles for the menu bar
-	try {
-		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
-	} catch (e: Exception) {
-		// noop
-	}
+    // set styles for the menu bar
+    try {
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+    } catch (e: Exception) {
+        // noop
+    }
 
-	MaterialTheme(
-		colors = lightColors(
-			primary = Color.White,
-			onPrimary = Color.DarkGray,
-			secondary = Color(67, 160, 71),
-			onSecondary = Color.DarkGray
-		)
-	) {
-		Window(
-			title = "BfME Mod Launcher",
-			icon = painterResource("/images/icon.png"),
-			resizable = false,
-			onCloseRequest = ::exitApplication
-		) {
-			MainView(this)
-		}
-	}
+    MaterialTheme(
+        colors = lightColors(
+            primary = Color.White,
+            onPrimary = Color.DarkGray,
+            secondary = Color(67, 160, 71),
+            onSecondary = Color.DarkGray
+        )
+    ) {
+        Window(
+            title = "BfME Mod Launcher",
+            icon = painterResource("/images/icon.png"),
+            resizable = false,
+            onCloseRequest = ::exitApplication
+        ) {
+            MainView(this)
+        }
+    }
 }

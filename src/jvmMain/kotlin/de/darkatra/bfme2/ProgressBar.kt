@@ -16,34 +16,34 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun ProgressBar(
-	progress: Float,
-	text: String,
-	isIntermediate: Boolean
+    progress: Float,
+    text: String,
+    isIntermediate: Boolean
 ) {
 
-	Box {
+    Box {
 
-		val color = MaterialTheme.colors.secondary
-		val backgroundColor = MaterialTheme.colors.primary
-		val modifiers = Modifier.fillMaxWidth().height(28.dp).clip(RoundedCornerShape(4.dp))
+        val color = MaterialTheme.colors.secondary
+        val backgroundColor = MaterialTheme.colors.primary
+        val modifiers = Modifier.fillMaxWidth().height(28.dp).clip(RoundedCornerShape(4.dp))
 
-		if (isIntermediate) {
-			LinearProgressIndicator(
-				backgroundColor = backgroundColor,
-				color = color,
-				modifier = modifiers,
-			)
+        if (isIntermediate) {
+            LinearProgressIndicator(
+                backgroundColor = backgroundColor,
+                color = color,
+                modifier = modifiers,
+            )
 
-			Text(text = text, fontSize = 14.sp, modifier = Modifier.align(Alignment.Center))
-		} else {
-			LinearProgressIndicator(
-				backgroundColor = backgroundColor,
-				color = color,
-				modifier = modifiers,
-				progress = progress
-			)
+            Text(text = text, fontSize = 14.sp, modifier = Modifier.align(Alignment.Center))
+        } else {
+            LinearProgressIndicator(
+                backgroundColor = backgroundColor,
+                color = color,
+                modifier = modifiers,
+                progress = progress
+            )
 
-			Text(text = text, fontSize = 14.sp, modifier = Modifier.align(Alignment.Center))
-		}
-	}
+            Text(text = text, fontSize = 14.sp, modifier = Modifier.align(Alignment.Center))
+        }
+    }
 }

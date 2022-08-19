@@ -18,35 +18,36 @@ import kotlinx.coroutines.launch
 import java.time.Duration
 
 @Composable
-fun FadingBackgroundPanel(
-	imagePaths: Array<String>,
-	transitionDelay: Duration,
-	transitionDuration: Duration,
-	content: @Composable BoxScope.() -> Unit
+fun FadingBackground(
+    imagePaths: Array<String>,
+    transitionDelay: Duration,
+    transitionDuration: Duration,
+    content: @Composable BoxScope.() -> Unit
 ) {
 
-	val animatedBackgroundScope = rememberCoroutineScope()
-	val (currentImage, setCurrentImage) = remember { mutableStateOf(0) }
+    val animatedBackgroundScope = rememberCoroutineScope()
+    val (currentImage, setCurrentImage) = remember { mutableStateOf(0) }
 
-	Box(modifier = Modifier.fillMaxSize()) {
-		Crossfade(
-			targetState = imagePaths[currentImage],
-			animationSpec = tween(transitionDuration.toMillis().toInt())
-		) { image ->
-			Image(
-				painter = painterResource(image),
-				contentDescription = null,
-				contentScale = ContentScale.Crop
-			)
-		}
-	}
+    Box(modifier = Modifier.fillMaxSize()) {
+        Crossfade(
+            targetState = imagePaths[currentImage],
+            animationSpec = tween(transitionDuration.toMillis().toInt())
+        ) { image ->
+            Image(
+                painter = painterResource(image),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
 
-	Box(modifier = Modifier.fillMaxSize()) {
-		content()
-	}
+    Box(modifier = Modifier.fillMaxSize()) {
+        content()
+    }
 
-	animatedBackgroundScope.launch {
-		delay(transitionDelay.toMillis())
-		setCurrentImage((currentImage + 1) % imagePaths.size)
-	}
+    animatedBackgroundScope.launch {
+        delay(transitionDelay.toMillis())
+        setCurrentImage((currentImage + 1) % imagePaths.size)
+    }
 }
