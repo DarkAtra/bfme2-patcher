@@ -6,10 +6,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.net.URI
+import java.net.URL
 import java.nio.file.Path
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
+import kotlin.io.path.pathString
 
 class PatchService(
     private val context: Context,
@@ -17,11 +19,9 @@ class PatchService(
     private val hashingService: HashingService = HashingService()
 ) {
 
-    private var isPatching: Boolean = false
+    suspend fun patch(progressListener: PatchProgressListener?) = withContext(Dispatchers.IO) {
 
-    suspend fun patch() = withContext(Dispatchers.IO) {
-
-        if (isPatching) return@withContext
+        progressListener?.onPatchStarted()
 
         ensureActive()
 
@@ -30,6 +30,8 @@ class PatchService(
 
         ensureActive()
 
+        progressListener?.deletingObsoleteFiles()
+
         patch.obsoleteFiles.forEach { obsoleteFile ->
 
             Path.of(obsoleteFile.dest).deleteIfExists()
@@ -37,17 +39,45 @@ class PatchService(
             ensureActive()
         }
 
+        progressListener?.calculatingDifferences()
+
         val differences = calculateDifferences(patch)
-        val totalPatchSize = differences.size
+
+        var currentNetwork = 0L
+        var currentDisk = 0L
+        val totalNetwork = differences.compressedSize
+        val totalDisk = differences.size
 
         differences.packets.forEach { packet ->
 
-            // TODO download the packet and track the download progress (current and total)
+            val dest = Path.of(packet.dest)
+            downloadService.download(URL(packet.src), dest, packet.compression) { downloadProgress ->
 
-            // TODO validate the packet checksum
+                currentNetwork += downloadProgress.countNetwork
+                currentDisk += downloadProgress.countDisk
+
+                progressListener?.onPatchProgress(
+                    PatchProgress(
+                        currentNetwork = currentNetwork,
+                        currentDisk = currentDisk,
+                        totalNetwork = totalNetwork,
+                        totalDisk = totalDisk
+                    )
+                )
+            }
+
+            ensureActive()
+
+            progressListener?.validatingPacket()
+
+            if (packet.checksum != hashingService.calculateSha3Checksum(dest.inputStream())) {
+                error("The checksum of local file '${dest.pathString}' does not match the servers checksum.")
+            }
 
             ensureActive()
         }
+
+        progressListener?.onPatchFinished()
     }
 
     private suspend fun calculateDifferences(patch: Patch): Patch = withContext(Dispatchers.IO) {

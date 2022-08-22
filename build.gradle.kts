@@ -36,8 +36,10 @@ kotlin {
             dependencies {
                 implementation(compose.desktop.currentOs)
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${extra["kotlin-coroutine.version"]}")
-                implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${extra["jackson-kotlin-module.version"]}")
+                implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${extra["jackson.version"]}")
+                implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${extra["jackson.version"]}")
                 implementation("org.bouncycastle:bcprov-jdk15on:${extra["bouncycastle.version"]}")
+                implementation("commons-io:commons-io:${extra["commons-io.version"]}")
             }
         }
         val jvmTest by getting {

@@ -1,4 +1,4 @@
-package de.darkatra.bfme2
+package de.darkatra.bfme2.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.window.FrameWindowScope

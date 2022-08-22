@@ -6,9 +6,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import de.darkatra.bfme2.patch.Context
+import de.darkatra.bfme2.patch.PatchService
+import de.darkatra.bfme2.ui.MainView
+import java.nio.file.Paths
 import javax.swing.UIManager
 
 fun main() = application {
+
+    val patchService = PatchService(getTestContext())
 
     // set styles for the menu bar
     try {
@@ -31,7 +37,18 @@ fun main() = application {
             resizable = false,
             onCloseRequest = ::exitApplication
         ) {
-            MainView(this)
+            MainView(patchService, this)
         }
+    }
+}
+
+private fun getTestContext(): Context {
+    return Context().apply {
+        putIfAbsent("serverUrl", "https://darkatra.de")
+        putIfAbsent("bfme2HomeDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/bfme2/").normalize().toString())
+        putIfAbsent("bfme2UserDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/userDirBfme2/").normalize().toString())
+        putIfAbsent("rotwkHomeDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/bfme2ep1/").normalize().toString())
+        putIfAbsent("patcherUserDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/.patcher").normalize().toString())
+        putIfAbsent("rotwkUserDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/userDirBfme2Ep1/").normalize().toString())
     }
 }

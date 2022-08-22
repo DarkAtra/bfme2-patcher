@@ -1,12 +1,15 @@
 package de.darkatra.bfme2.patch
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import java.nio.file.Path
 import java.time.Instant
 
 data class Packet(
     var src: String,
     var dest: String,
+    @JsonProperty("packetSize")
     val size: Long,
+    val compressedSize: Long,
     val dateTime: Instant,
     val checksum: String,
     val backupExisting: Boolean,

@@ -6,6 +6,7 @@ data class Patch(
 ) : ContextAware {
 
     val size: Long = packets.sumOf { packet -> packet.size }
+    val compressedSize: Long = packets.sumOf { packet -> packet.compressedSize }
 
     /**
      * Applies the given [Context] to the [Patch], replacing placeholders of both [Packets][Packet] and [ObsoleteFiles][ObsoleteFile] with their actual value.

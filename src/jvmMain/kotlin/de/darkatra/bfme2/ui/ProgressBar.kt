@@ -1,4 +1,4 @@
-package de.darkatra.bfme2
+package de.darkatra.bfme2.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,11 +14,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+const val INDETERMINATE_PROGRESS = -1f
+
 @Composable
 fun ProgressBar(
     progress: Float,
     text: String,
-    isIntermediate: Boolean
 ) {
 
     Box {
@@ -27,7 +28,7 @@ fun ProgressBar(
         val backgroundColor = MaterialTheme.colors.primary
         val modifiers = Modifier.fillMaxWidth().height(28.dp).clip(RoundedCornerShape(4.dp))
 
-        if (isIntermediate) {
+        if (progress == INDETERMINATE_PROGRESS) {
             LinearProgressIndicator(
                 backgroundColor = backgroundColor,
                 color = color,

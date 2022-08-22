@@ -9,19 +9,19 @@ import java.util.Base64
 
 class HashingService {
 
-    companion object {
-        private const val BUFFER_SIZE = 8192
-    }
-
     suspend fun calculateSha3Checksum(inputStream: InputStream): String = withContext(Dispatchers.IO) {
 
         val sha3Digest: SHA3.Digest256 = SHA3.Digest256()
 
-        inputStream.buffered().use {
+        inputStream.buffered().use { bufferedInputStream ->
 
-            sha3Digest.update(it.readNBytes(BUFFER_SIZE))
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            var count: Int
 
-            ensureActive()
+            while (bufferedInputStream.read(buffer).also { count = it } != -1) {
+                sha3Digest.update(buffer, 0, count)
+                ensureActive()
+            }
         }
 
         return@withContext Base64.getEncoder().encodeToString(sha3Digest.digest())
