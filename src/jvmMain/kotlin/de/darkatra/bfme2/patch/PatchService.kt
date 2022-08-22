@@ -7,10 +7,13 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.net.URI
 import java.net.URL
+import java.nio.file.Files
 import java.nio.file.Path
+import java.time.Instant
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
+import kotlin.io.path.name
 import kotlin.io.path.pathString
 
 class PatchService(
@@ -49,6 +52,8 @@ class PatchService(
         val totalDisk = differences.size
 
         differences.packets.forEach { packet ->
+
+            backupExistingFileIfRequired(packet)
 
             val dest = Path.of(packet.dest)
             downloadService.download(URL(packet.src), dest, packet.compression) { downloadProgress ->
@@ -97,5 +102,15 @@ class PatchService(
             packets = packets,
             obsoleteFiles = patch.obsoleteFiles.toSet()
         )
+    }
+
+    private fun backupExistingFileIfRequired(packet: Packet) {
+        val pathToFile: Path = Path.of(packet.dest)
+        if (pathToFile.toFile().exists() && packet.backupExisting) {
+            Files.move(
+                pathToFile,
+                Path.of(pathToFile.parent.pathString, String.format("%s-%s.bak", pathToFile.name, Instant.now().toString().replace(":", "-")))
+            )
+        }
     }
 }
