@@ -8,6 +8,7 @@ data class Packet(
 	val src: String,
 	val dest: String,
 	val packetSize: Long,
+	val compressedSize: Long,
 	val dateTime: Instant,
 	val checksum: String,
 	val backupExisting: Boolean,

@@ -124,18 +124,21 @@ object UpdateBuilderNoUI {
 			createGzipArchive(filePath, output)
 		}
 
-		packets.add(Packet(
-			src = Path.of("\${serverUrl}/bfmemod2/").resolve(
-				Path.of(directory.dirName).relativize(Path.of("$filePath.gz"))
-			).normalize().toString().replace("\\", "/"),
-			dest = dest,
-			packetSize = filePath.toFile().length(),
-			dateTime = Instant.now(),
-			checksum = checksum,
-			backupExisting = filesRequireBackup.contains(filePath.toFile().name),
-			compression = Compression.ZIP,
-			gzipPath = output.toPath()
-		))
+		packets.add(
+			Packet(
+				src = Path.of("\${serverUrl}/bfmemod2/").resolve(
+					Path.of(directory.dirName).relativize(Path.of("$filePath.gz"))
+				).normalize().toString().replace("\\", "/"),
+				dest = dest,
+				packetSize = filePath.toFile().length(),
+				compressedSize = output.length(),
+				dateTime = Instant.now(),
+				checksum = checksum,
+				backupExisting = filesRequireBackup.contains(filePath.toFile().name),
+				compression = Compression.ZIP,
+				gzipPath = output.toPath()
+			)
+		)
 
 		return archive
 	}
@@ -156,6 +159,7 @@ object UpdateBuilderNoUI {
 					.filter { path: Path -> Files.isRegularFile(path) }
 					.collect(Collectors.toSet())
 			}
+
 			else -> emptySet()
 		}
 	}
@@ -167,6 +171,7 @@ object UpdateBuilderNoUI {
 					.filter { path: Path -> Files.isDirectory(path) }
 					.collect(Collectors.toSet())
 			}
+
 			else -> emptySet()
 		}
 	}
