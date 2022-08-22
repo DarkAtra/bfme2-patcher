@@ -68,8 +68,6 @@ class PatchService(
 
             ensureActive()
 
-            progressListener?.validatingPacket()
-
             if (packet.checksum != hashingService.calculateSha3Checksum(dest.inputStream())) {
                 error("The checksum of local file '${dest.pathString}' does not match the servers checksum.")
             }

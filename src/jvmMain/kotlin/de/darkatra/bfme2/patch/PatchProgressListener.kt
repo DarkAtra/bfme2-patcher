@@ -10,7 +10,5 @@ interface PatchProgressListener {
 
     fun onPatchProgress(patchProgress: PatchProgress)
 
-    fun validatingPacket()
-
     fun onPatchFinished()
 }

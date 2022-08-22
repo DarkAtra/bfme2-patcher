@@ -1,6 +1,7 @@
 package de.darkatra.bfme2.patch
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import java.nio.file.Path
 import java.time.Instant
 
@@ -13,6 +14,7 @@ data class Packet(
     val dateTime: Instant,
     val checksum: String,
     val backupExisting: Boolean,
+    @JsonDeserialize(converter = CompressionDeserializer::class)
     val compression: Compression
 ) : ContextAware {
 

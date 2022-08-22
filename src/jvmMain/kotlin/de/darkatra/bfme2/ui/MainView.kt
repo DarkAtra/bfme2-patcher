@@ -22,7 +22,11 @@ import de.darkatra.bfme2.patch.PatchProgress
 import de.darkatra.bfme2.patch.PatchProgressListener
 import de.darkatra.bfme2.patch.PatchService
 import kotlinx.coroutines.launch
+import java.text.DecimalFormat
 import java.time.Duration
+import kotlin.math.log10
+import kotlin.math.pow
+
 
 private val imagePaths = arrayOf(
     "/images/splash2_1920x1080.jpg",
@@ -94,12 +98,7 @@ fun MainView(
 
                                 override fun onPatchProgress(patchProgress: PatchProgress) {
                                     setProgress(patchProgress.currentDisk.toFloat() / patchProgress.totalDisk.toFloat())
-                                    setProgressText("${patchProgress.currentDisk}/${patchProgress.totalDisk}")
-                                }
-
-                                override fun validatingPacket() {
-                                    setProgress(INDETERMINATE_PROGRESS)
-                                    setProgressText("Validating the packet...")
+                                    setProgressText("${humanReadableSize(patchProgress.currentNetwork)}/${humanReadableSize(patchProgress.totalNetwork)}")
                                 }
 
                                 override fun onPatchFinished() {
@@ -127,4 +126,11 @@ fun MainView(
             }
         }
     }
+}
+
+private fun humanReadableSize(size: Long): String {
+    if (size <= 0) return "0 B"
+    val units = arrayOf("B", "kB", "MB", "GB", "TB", "EB")
+    val digitGroups = (log10(size.toDouble()) / log10(1024.0)).toInt()
+    return DecimalFormat("#,##0.#").format(size / 1024.0.pow(digitGroups.toDouble())) + " " + units[digitGroups]
 }

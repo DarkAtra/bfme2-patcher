@@ -85,7 +85,6 @@ class DownloadService(
         val contentInputStream = when (compression) {
             Compression.NONE -> networkInputStream
             Compression.GZIP -> GZIPInputStream(networkInputStream)
-            Compression.ZIP -> GZIPInputStream(networkInputStream)
         }.buffered()
 
         return CountingInputStream(contentInputStream) to networkInputStream
