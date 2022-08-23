@@ -40,6 +40,7 @@ kotlin {
                 implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${extra["jackson.version"]}")
                 implementation("org.bouncycastle:bcprov-jdk15on:${extra["bouncycastle.version"]}")
                 implementation("commons-io:commons-io:${extra["commons-io.version"]}")
+                implementation("net.java.dev.jna:jna-platform:${extra["jna.version"]}")
             }
         }
         val jvmTest by getting {
