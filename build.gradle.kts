@@ -1,5 +1,4 @@
 import org.jetbrains.compose.compose
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
     kotlin("multiplatform")
@@ -28,6 +27,7 @@ kotlin {
     sourceSets {
         all {
             languageSettings.apply {
+                optIn("kotlin.RequiresOptIn")
                 progressiveMode = true
             }
         }
@@ -43,12 +43,8 @@ kotlin {
                 implementation("net.java.dev.jna:jna-platform:${extra["jna.version"]}")
             }
         }
+
         val jvmTest by getting {
-
-            languageSettings {
-                optIn("kotlin.RequiresOptIn")
-            }
-
             dependencies {
                 implementation(kotlin("test"))
                 implementation("org.assertj:assertj-core:${extra["assertj.version"]}")
@@ -59,11 +55,16 @@ kotlin {
     }
 }
 
+tasks {
+    withType<Jar> {
+        exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
+    }
+}
+
 compose.desktop {
     application {
         mainClass = "de.darkatra.bfme2.MainKt"
         nativeDistributions {
-            targetFormats(TargetFormat.Exe)
             packageName = "patcher"
             packageVersion = "1.0.0"
         }
