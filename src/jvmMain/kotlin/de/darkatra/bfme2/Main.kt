@@ -2,8 +2,11 @@ package de.darkatra.bfme2
 
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.lightColors
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import de.darkatra.bfme2.patch.Context
@@ -11,6 +14,9 @@ import de.darkatra.bfme2.patch.PatchService
 import de.darkatra.bfme2.ui.MainView
 import java.nio.file.Paths
 import javax.swing.UIManager
+
+const val applicationName = "BfME Mod Launcher"
+const val iconPath = "/images/icon.png"
 
 fun main() = application {
 
@@ -23,6 +29,18 @@ fun main() = application {
         // noop
     }
 
+    val (isVisible, setVisible) = remember { mutableStateOf(true) }
+
+    Tray(
+        icon = painterResource(iconPath),
+        tooltip = applicationName,
+        onAction = { setVisible(true) },
+        menu = {
+            Item("Open", onClick = { setVisible(true) })
+            Item("Exit", onClick = ::exitApplication)
+        }
+    )
+
     MaterialTheme(
         colors = lightColors(
             primary = Color.White,
@@ -32,10 +50,11 @@ fun main() = application {
         )
     ) {
         Window(
-            title = "BfME Mod Launcher",
-            icon = painterResource("/images/icon.png"),
+            title = applicationName,
+            icon = painterResource(iconPath),
             resizable = false,
-            onCloseRequest = ::exitApplication
+            onCloseRequest = { setVisible(false) },
+            visible = isVisible
         ) {
             MainView(patchService, this)
         }
