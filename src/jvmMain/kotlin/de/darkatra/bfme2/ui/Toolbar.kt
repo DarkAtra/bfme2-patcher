@@ -14,7 +14,9 @@ import androidx.compose.ui.window.MenuBar
 
 @Composable
 @OptIn(ExperimentalMaterialApi::class)
-fun Toolbar(frameWindowScope: FrameWindowScope) {
+fun Toolbar(
+    frameWindowScope: FrameWindowScope,
+) {
 
     val (isFixDialogVisible, setFixDialogVisible) = remember { mutableStateOf(false) }
 

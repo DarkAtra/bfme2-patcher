@@ -9,18 +9,53 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import de.darkatra.bfme2.checksum.HashingService
+import de.darkatra.bfme2.download.DownloadService
 import de.darkatra.bfme2.patch.Context
 import de.darkatra.bfme2.patch.PatchService
+import de.darkatra.bfme2.selfupdate.SelfUpdateService
 import de.darkatra.bfme2.ui.MainView
 import java.nio.file.Paths
 import javax.swing.UIManager
 
-const val applicationName = "BfME Mod Launcher"
-const val iconPath = "/images/icon.png"
+const val APPLICATION_NAME = "BfME Mod Launcher"
+private const val ICON_PATH = "/images/icon.png"
 
-fun main() = application {
+fun main(args: Array<String>) = application {
 
-    val patchService = PatchService(getTestContext())
+    val context = getTestContext()
+
+    if (!context.isValid()) {
+        exitApplication()
+        return@application
+    }
+
+    val downloadService = DownloadService()
+    val hashingService = HashingService()
+    val patchService = PatchService(context, downloadService, hashingService)
+    val selfUpdateService = SelfUpdateService(context, downloadService, hashingService)
+
+    if (!selfUpdateService.isInCorrectLocation()) {
+        selfUpdateService.moveToCorrectLocation()
+        exitApplication()
+        return@application
+    }
+
+    when {
+        args.contains(SelfUpdateService.UNINSTALL_CURRENT_PARAMETER) -> {
+            selfUpdateService.uninstallPreviousVersion()
+            exitApplication()
+            return@application
+        }
+
+        args.contains(SelfUpdateService.INSTALL_PARAMETER) -> {
+            selfUpdateService.installNewVersion()
+            exitApplication()
+            return@application
+        }
+    }
+
+    selfUpdateService.performCleanup()
 
     // set styles for the menu bar
     try {
@@ -32,8 +67,8 @@ fun main() = application {
     val (isVisible, setVisible) = remember { mutableStateOf(true) }
 
     Tray(
-        icon = painterResource(iconPath),
-        tooltip = applicationName,
+        icon = painterResource(ICON_PATH),
+        tooltip = APPLICATION_NAME,
         onAction = { setVisible(true) },
         menu = {
             Item("Open", onClick = { setVisible(true) })
@@ -50,24 +85,24 @@ fun main() = application {
         )
     ) {
         Window(
-            title = applicationName,
-            icon = painterResource(iconPath),
+            title = APPLICATION_NAME,
+            icon = painterResource(ICON_PATH),
             resizable = false,
             onCloseRequest = { setVisible(false) },
             visible = isVisible
         ) {
-            MainView(patchService, this)
+            MainView(patchService, selfUpdateService, this)
         }
     }
 }
 
 private fun getTestContext(): Context {
     return Context().apply {
-        putIfAbsent("serverUrl", "https://darkatra.de")
-        putIfAbsent("bfme2HomeDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/bfme2/").normalize().toString())
-        putIfAbsent("bfme2UserDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/userDirBfme2/").normalize().toString())
-        putIfAbsent("rotwkHomeDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/bfme2ep1/").normalize().toString())
-        putIfAbsent("patcherUserDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/.patcher").normalize().toString())
-        putIfAbsent("rotwkUserDir", Paths.get(System.getProperty("user.home"), "Desktop/Test/userDirBfme2Ep1/").normalize().toString())
+        putIfAbsent(Context.SERVER_URL_IDENTIFIER, "https://darkatra.de")
+        putIfAbsent(Context.BFME2_HOME_DIR_IDENTIFIER, Paths.get(System.getProperty("user.home"), "Desktop/Test/bfme2/").normalize().toString())
+        putIfAbsent(Context.BFME2_USER_DIR_IDENTIFIER, Paths.get(System.getProperty("user.home"), "Desktop/Test/userDirBfme2/").normalize().toString())
+        putIfAbsent(Context.ROTWK_HOME_DIR_IDENTIFIER, Paths.get(System.getProperty("user.home"), "Desktop/Test/bfme2ep1/").normalize().toString())
+        putIfAbsent(Context.ROTWK_USER_DIR_IDENTIFIER, Paths.get(System.getProperty("user.home"), "Desktop/Test/userDirBfme2Ep1/").normalize().toString())
+        putIfAbsent(Context.PATCHER_USER_DIR_IDENTIFIER, Paths.get(System.getProperty("user.home"), "Desktop/Test/.patcher").normalize().toString())
     }
 }

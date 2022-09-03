@@ -41,6 +41,7 @@ kotlin {
                 implementation("org.bouncycastle:bcprov-jdk18on:${extra["bouncycastle.version"]}")
                 implementation("commons-io:commons-io:${extra["commons-io.version"]}")
                 implementation("net.java.dev.jna:jna-platform:${extra["jna.version"]}")
+                implementation("com.github.vatbub:mslinks:${extra["mslinks.version"]}")
             }
         }
 

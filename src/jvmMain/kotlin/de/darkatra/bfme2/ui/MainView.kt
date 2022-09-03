@@ -1,5 +1,6 @@
 package de.darkatra.bfme2.ui
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,12 +22,12 @@ import androidx.compose.ui.window.FrameWindowScope
 import de.darkatra.bfme2.patch.PatchProgress
 import de.darkatra.bfme2.patch.PatchProgressListener
 import de.darkatra.bfme2.patch.PatchService
+import de.darkatra.bfme2.selfupdate.SelfUpdateService
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 import java.time.Duration
 import kotlin.math.log10
 import kotlin.math.pow
-
 
 private val imagePaths = arrayOf(
     "/images/splash2_1920x1080.jpg",
@@ -40,11 +41,13 @@ private val imagePaths = arrayOf(
 @Composable
 fun MainView(
     patchService: PatchService,
+    selfUpdateService: SelfUpdateService,
     frameWindowScope: FrameWindowScope
 ) {
 
     val patchScope = rememberCoroutineScope()
 
+    val (isNewVersionAvailable, setNewVersionAvailable) = remember { mutableStateOf(selfUpdateService.isNewVersionAvailable()) }
     val (isUpdateInProgress, setUpdateInProgress) = remember { mutableStateOf(false) }
     val (hasPatchedOnce, setPatchedOnce) = remember { mutableStateOf(false) }
     val (progress, setProgress) = remember { mutableStateOf(0f) }
@@ -57,6 +60,19 @@ fun MainView(
         transitionDelay = Duration.ofSeconds(10),
         transitionDuration = Duration.ofSeconds(2)
     ) {
+
+        if (isNewVersionAvailable) {
+            Box(modifier = Modifier.align(Alignment.TopEnd).padding(10.dp)) {
+
+                Button(
+                    modifier = Modifier.height(32.dp),
+                    onClick = {}
+                ) {
+                    Text(text = "Update available", fontSize = 14.sp)
+                }
+
+            }
+        }
 
         Column(
             modifier = Modifier.fillMaxWidth()

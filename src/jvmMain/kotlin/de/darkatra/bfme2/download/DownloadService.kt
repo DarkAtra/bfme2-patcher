@@ -23,14 +23,14 @@ class DownloadService(
     private val objectMapper: ObjectMapper = jacksonMapperBuilder().addModule(JavaTimeModule()).build()
 ) {
 
-    fun <T : Any> getContent(uri: URI, clazz: KClass<T>): T {
+    fun <T : Any> getContent(url: URL, clazz: KClass<T>): T {
 
-        val content = uri.toURL().openStream().bufferedReader().use { it.readText() }
+        val content = url.openStream().bufferedReader().use { it.readText() }
 
         return objectMapper.readValue(content, clazz.java)
     }
 
-    suspend fun download(src: URL, dest: Path, compression: Compression, progressListener: Consumer<DownloadProgress>?) = withContext(Dispatchers.IO) {
+    suspend fun download(src: URL, dest: Path, compression: Compression, progressListener: Consumer<DownloadProgress>? = null) = withContext(Dispatchers.IO) {
 
         val uri = URI(src.protocol, src.userInfo, src.host, src.port, src.path, src.query, src.ref)
 

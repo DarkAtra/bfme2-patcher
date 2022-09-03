@@ -18,8 +18,8 @@ import kotlin.io.path.pathString
 
 class PatchService(
     private val context: Context,
-    private val downloadService: DownloadService = DownloadService(),
-    private val hashingService: HashingService = HashingService()
+    private val downloadService: DownloadService,
+    private val hashingService: HashingService
 ) {
 
     suspend fun patch(progressListener: PatchProgressListener?) = withContext(Dispatchers.IO) {
@@ -28,7 +28,7 @@ class PatchService(
 
         ensureActive()
 
-        val patch = downloadService.getContent(URI.create(PatchConstants.PATCH_LIST_URL), Patch::class)
+        val patch = downloadService.getContent(URI.create(PatchConstants.PATCH_LIST_URL).toURL(), Patch::class)
         patch.applyContext(context)
 
         ensureActive()
