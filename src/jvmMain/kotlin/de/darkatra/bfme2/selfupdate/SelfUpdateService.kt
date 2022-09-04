@@ -43,12 +43,12 @@ class SelfUpdateService(
     private val linkIconLocation: Path = patcherUserDir.resolve("icon.ico")
 
     fun isInCorrectLocation(): Boolean {
-        return !applicationHome.isRunningAsJar() || applicationHome.source?.startsWith(patcherUserDir) ?: false
+        return !applicationHome.isRunningAsJar() || applicationHome.source.startsWith(patcherUserDir)
     }
 
     fun moveToCorrectLocation() {
 
-        if (applicationHome.source == null) {
+        if (!applicationHome.isRunningAsJar()) {
             return
         }
 
@@ -98,7 +98,7 @@ class SelfUpdateService(
 
     fun isNewVersionAvailable(): Boolean {
 
-        if (applicationHome.source == null) {
+        if (!applicationHome.isRunningAsJar()) {
             return true
         }
 
