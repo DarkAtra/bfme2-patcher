@@ -9,16 +9,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import de.darkatra.bfme2.checksum.HashingService
-import de.darkatra.bfme2.download.DownloadService
 import de.darkatra.bfme2.patch.Context
-import de.darkatra.bfme2.patch.PatchService
 import de.darkatra.bfme2.selfupdate.SelfUpdateService
 import de.darkatra.bfme2.ui.MainView
+import de.darkatra.bfme2.ui.UpdaterContext
+import de.darkatra.bfme2.ui.UpdaterContextProvider
+import org.jetbrains.skiko.setSystemLookAndFeel
 import java.nio.file.Paths
-import javax.swing.UIManager
 
-const val APPLICATION_NAME = "BfME Mod Launcher"
 private const val ICON_PATH = "/images/icon.png"
 
 fun main(args: Array<String>) = application {
@@ -30,68 +28,65 @@ fun main(args: Array<String>) = application {
         return@application
     }
 
-    val downloadService = DownloadService()
-    val hashingService = HashingService()
-    val patchService = PatchService(context, downloadService, hashingService)
-    val selfUpdateService = SelfUpdateService(context, downloadService, hashingService)
-
-    if (!selfUpdateService.isInCorrectLocation()) {
-        selfUpdateService.moveToCorrectLocation()
-        exitApplication()
-        return@application
-    }
-
-    when {
-        args.contains(SelfUpdateService.UNINSTALL_CURRENT_PARAMETER) -> {
-            selfUpdateService.uninstallPreviousVersion()
-            exitApplication()
-            return@application
-        }
-
-        args.contains(SelfUpdateService.INSTALL_PARAMETER) -> {
-            selfUpdateService.installNewVersion()
-            exitApplication()
-            return@application
-        }
-    }
-
-    selfUpdateService.performCleanup()
-
-    // set styles for the menu bar
-    try {
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
-    } catch (e: Exception) {
-        // noop
-    }
+    setSystemLookAndFeel()
 
     val (isVisible, setVisible) = remember { mutableStateOf(true) }
 
-    Tray(
-        icon = painterResource(ICON_PATH),
-        tooltip = APPLICATION_NAME,
-        onAction = { setVisible(true) },
-        menu = {
-            Item("Open", onClick = { setVisible(true) })
-            Item("Exit", onClick = ::exitApplication)
-        }
-    )
-
-    MaterialTheme(
-        colors = lightColors(
-            primary = Color.White,
-            onPrimary = Color.DarkGray,
-            secondary = Color(67, 160, 71),
-            onSecondary = Color.DarkGray
-        )
+    UpdaterContextProvider(
+        context = context
     ) {
-        Window(
-            title = APPLICATION_NAME,
+
+        val selfUpdateService = UpdaterContext.selfUpdateService
+
+        if (!selfUpdateService.isInCorrectLocation()) {
+            selfUpdateService.moveToCorrectLocation()
+            exitApplication()
+            return@UpdaterContextProvider
+        }
+
+        when {
+            args.contains(SelfUpdateService.UNINSTALL_CURRENT_PARAMETER) -> {
+                selfUpdateService.uninstallPreviousVersion()
+                exitApplication()
+                return@UpdaterContextProvider
+            }
+
+            args.contains(SelfUpdateService.INSTALL_PARAMETER) -> {
+                selfUpdateService.installNewVersion()
+                exitApplication()
+                return@UpdaterContextProvider
+            }
+        }
+
+        selfUpdateService.performCleanup()
+
+        Tray(
             icon = painterResource(ICON_PATH),
-            resizable = false,
-            onCloseRequest = { setVisible(false) },
-            visible = isVisible
+            tooltip = UpdaterContext.applicationName,
+            onAction = { setVisible(true) },
+            menu = {
+                Item("Open", onClick = { setVisible(true) })
+                Item("Exit", onClick = ::exitApplication)
+            }
+        )
+
+        MaterialTheme(
+            colors = lightColors(
+                primary = Color.White,
+                onPrimary = Color.Black,
+                secondary = Color(67, 160, 71),
+                onSecondary = Color.Black
+            )
         ) {
-            MainView(patchService, selfUpdateService, this)
+            Window(
+                title = UpdaterContext.applicationName,
+                icon = painterResource(ICON_PATH),
+                resizable = false,
+                onCloseRequest = { setVisible(false) },
+                visible = isVisible
+            ) {
+                MainView(this)
+            }
         }
     }
 }

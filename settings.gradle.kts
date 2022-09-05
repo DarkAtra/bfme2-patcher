@@ -12,4 +12,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = "patcher"
+rootProject.name = "bfme2-patcher"

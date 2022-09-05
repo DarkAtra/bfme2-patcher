@@ -1,45 +1,61 @@
 package de.darkatra.bfme2.ui
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.Button
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.MenuBar
+import de.darkatra.bfme2.game.Game
+import kotlin.io.path.exists
+import kotlin.io.path.notExists
 
 @Composable
-@OptIn(ExperimentalMaterialApi::class)
 fun Toolbar(
     frameWindowScope: FrameWindowScope,
+    onCheckForUpdates: () -> Unit
 ) {
 
-    val (isFixDialogVisible, setFixDialogVisible) = remember { mutableStateOf(false) }
+    val context = UpdaterContext.context
+    val optionFileService = UpdaterContext.optionFileService
+
+    val (gameToFix, setGameToFix) = remember { mutableStateOf<Game?>(null) }
+    val (isFixConfirmationDialogVisible, setFixConfirmationDialogVisible) = remember { mutableStateOf(false) }
+    val (isFixSuccessDialogVisible, setFixSuccessDialogVisible) = remember { mutableStateOf(false) }
+
+    fun fixGame(gameToFix: Game, force: Boolean = false) {
+
+        setGameToFix(gameToFix)
+
+        val gameUserDirectory = when (gameToFix) {
+            Game.BFME2 -> context.getBfme2UserDir()
+            Game.BFME2EP1 -> context.getRotwkUserDir()
+        }
+
+        if (gameUserDirectory.notExists()) {
+            gameUserDirectory.toFile().mkdirs()
+        }
+
+        val optionsIni = gameUserDirectory.resolve("options.ini")
+        if (!force && optionsIni.exists()) {
+            setFixConfirmationDialogVisible(true)
+            return
+        }
+
+        optionFileService.writeOptionsFile(optionsIni, optionFileService.buildDefaultOptions())
+        setFixSuccessDialogVisible(true)
+    }
 
     with(frameWindowScope) {
         MenuBar {
 
             Menu(text = "Startup Fix") {
-                Item(text = "Fix BfME 2", onClick = {})
-                Item(text = "Fix BfME 2 RotWK", onClick = {})
-            }
-
-            Menu(text = "Game Settings") {
-                Item(text = "Enable HD Edition", onClick = {})
-            }
-
-            Menu(text = "Patcher Settings") {
-                Item(text = "Auto patch on startup", onClick = {})
-                Item(text = "Auto launch after patching", onClick = {})
+                Item(text = "Fix ${Game.BFME2.displayName}", onClick = { fixGame(Game.BFME2) })
+                Item(text = "Fix ${Game.BFME2EP1.displayName}", onClick = { fixGame(Game.BFME2EP1) })
             }
 
             Menu(text = "Version") {
-                Item(text = "Unknown", onClick = {})
-                Item(text = "Check Updates", onClick = {})
+                Item(text = "Version ${UpdaterContext.applicationVersion}", onClick = {})
+                Item(text = "Check Updates", onClick = onCheckForUpdates)
             }
 
             Menu(text = "Credits") {
@@ -49,21 +65,29 @@ fun Toolbar(
         }
     }
 
-    if (isFixDialogVisible) {
-        AlertDialog(
-            onDismissRequest = {},
-            title = {
-                Text(text = "Fixed BfME 2")
+    if (isFixConfirmationDialogVisible && gameToFix != null) {
+        ConfirmationDialog(
+            title = "${gameToFix.displayName} seems to be working just fine.",
+            text = "Trying to fix the game again could result in the loss of settings. Are you sure that you want to continue?",
+            onConfirm = {
+                setFixConfirmationDialogVisible(false)
+                fixGame(gameToFix, true)
             },
-            text = {
-                Text(text = "The options.ini file was created successfully.")
-            },
-            confirmButton = {
-                Button(onClick = { setFixDialogVisible(false) }) {
-                    Text(text = "Ok")
-                }
-            },
-            modifier = Modifier.fillMaxWidth(0.6f)
+            onDismiss = {
+                setFixConfirmationDialogVisible(false)
+                setGameToFix(null)
+            }
+        )
+    }
+
+    if (isFixSuccessDialogVisible && gameToFix != null) {
+        MessageDialog(
+            title = "Fixed ${gameToFix.displayName}.",
+            text = "The options.ini file was created successfully.",
+            onConfirm = {
+                setFixSuccessDialogVisible(false)
+                setGameToFix(null)
+            }
         )
     }
 }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -21,8 +22,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.FrameWindowScope
 import de.darkatra.bfme2.patch.PatchProgress
 import de.darkatra.bfme2.patch.PatchProgressListener
-import de.darkatra.bfme2.patch.PatchService
-import de.darkatra.bfme2.selfupdate.SelfUpdateService
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 import java.time.Duration
@@ -40,20 +39,38 @@ private val imagePaths = arrayOf(
 
 @Composable
 fun MainView(
-    patchService: PatchService,
-    selfUpdateService: SelfUpdateService,
     frameWindowScope: FrameWindowScope
 ) {
 
     val patchScope = rememberCoroutineScope()
 
-    val (isNewVersionAvailable, setNewVersionAvailable) = remember { mutableStateOf(selfUpdateService.isNewVersionAvailable()) }
+    val patchService = UpdaterContext.patchService
+    val selfUpdateService = UpdaterContext.selfUpdateService
+
+    val (isNewVersionAvailable, setNewVersionAvailable) = remember { mutableStateOf(false) }
+    val (isSelfUpdateDialogVisible, setSelfUpdateDialogVisible) = remember { mutableStateOf(false) }
+    val (isSelfUpdateInProgress, setSelfUpdateInProgress) = remember { mutableStateOf(false) }
     val (isUpdateInProgress, setUpdateInProgress) = remember { mutableStateOf(false) }
     val (hasPatchedOnce, setPatchedOnce) = remember { mutableStateOf(false) }
     val (progress, setProgress) = remember { mutableStateOf(0f) }
     val (progressText, setProgressText) = remember { mutableStateOf("Waiting for user input.") }
 
-    Toolbar(frameWindowScope)
+    fun performSelfUpdate() {
+        setSelfUpdateInProgress(true)
+        setProgress(INDETERMINATE_PROGRESS)
+        setProgressText("Performing self update...")
+        patchScope.launch {
+            selfUpdateService.downloadLatestUpdaterVersion()
+        }
+        setSelfUpdateInProgress(false)
+    }
+
+    Toolbar(frameWindowScope) {
+        patchScope.launch {
+            setNewVersionAvailable(selfUpdateService.isNewVersionAvailable())
+            setSelfUpdateDialogVisible(true)
+        }
+    }
 
     FadingBackground(
         imagePaths = imagePaths,
@@ -65,8 +82,11 @@ fun MainView(
             Box(modifier = Modifier.align(Alignment.TopEnd).padding(10.dp)) {
 
                 Button(
+                    enabled = !isSelfUpdateInProgress && !isUpdateInProgress,
                     modifier = Modifier.height(32.dp),
-                    onClick = {}
+                    onClick = {
+                        performSelfUpdate()
+                    }
                 ) {
                     Text(text = "Update available", fontSize = 14.sp)
                 }
@@ -90,7 +110,7 @@ fun MainView(
             Row(modifier = Modifier.fillMaxWidth()) {
 
                 Button(
-                    enabled = !isUpdateInProgress,
+                    enabled = !isSelfUpdateInProgress && !isUpdateInProgress,
                     modifier = Modifier.weight(1f).height(32.dp),
                     onClick = {
                         setUpdateInProgress(true)
@@ -133,7 +153,7 @@ fun MainView(
                 Spacer(modifier = Modifier.width(5f.dp))
 
                 Button(
-                    enabled = !isUpdateInProgress && hasPatchedOnce,
+                    enabled = !isSelfUpdateInProgress && !isUpdateInProgress && hasPatchedOnce,
                     modifier = Modifier.weight(1f).height(32.dp),
                     onClick = {}
                 ) {
@@ -141,6 +161,33 @@ fun MainView(
                 }
             }
         }
+    }
+
+    if (isSelfUpdateDialogVisible) {
+        if (isNewVersionAvailable) {
+            ConfirmationDialog(
+                title = "Update available",
+                text = "Do you want to proceed and update to the latest version?",
+                onConfirm = {
+                    performSelfUpdate()
+                },
+                onDismiss = {
+                    setSelfUpdateDialogVisible(false)
+                }
+            )
+        } else {
+            MessageDialog(
+                title = "No Update available.",
+                text = "You're already using the latest version of the updater. Good Job!",
+                onConfirm = {
+                    setSelfUpdateDialogVisible(false)
+                }
+            )
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        setNewVersionAvailable(selfUpdateService.isNewVersionAvailable())
     }
 }
 

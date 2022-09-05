@@ -1,3 +1,4 @@
+import org.gradle.jvm.tasks.Jar
 import org.jetbrains.compose.compose
 
 plugins {
@@ -56,6 +57,12 @@ kotlin {
     }
 }
 
+tasks {
+    withType<Jar> {
+        exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
+    }
+}
+
 compose.desktop {
     application {
         mainClass = "de.darkatra.bfme2.MainKt"
@@ -63,12 +70,5 @@ compose.desktop {
             packageName = "patcher"
             packageVersion = "1.0.0"
         }
-    }
-}
-
-project.afterEvaluate {
-    tasks {
-        val packageUberJarTask = findByPath(":packageUberJarForCurrentOS") as org.gradle.jvm.tasks.Jar
-        packageUberJarTask.exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
     }
 }

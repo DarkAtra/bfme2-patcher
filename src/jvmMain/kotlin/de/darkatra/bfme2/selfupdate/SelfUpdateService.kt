@@ -1,6 +1,5 @@
 package de.darkatra.bfme2.selfupdate
 
-import de.darkatra.bfme2.APPLICATION_NAME
 import de.darkatra.bfme2.checksum.HashingService
 import de.darkatra.bfme2.download.DownloadService
 import de.darkatra.bfme2.patch.Compression
@@ -9,6 +8,7 @@ import de.darkatra.bfme2.patch.PatchConstants
 import de.darkatra.bfme2.util.ProcessUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import mslinks.ShellLink
 import java.net.URI
 import java.nio.file.Path
@@ -16,14 +16,14 @@ import kotlin.io.path.absolutePathString
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
+import kotlin.io.path.isRegularFile
 import kotlin.io.path.moveTo
 import kotlin.io.path.outputStream
 
 class SelfUpdateService(
-    private val context: Context,
+    context: Context,
     private val downloadService: DownloadService,
-    private val hashingService: HashingService,
-    private val applicationHome: ApplicationHome = ApplicationHome()
+    private val hashingService: HashingService
 ) {
 
     companion object {
@@ -35,20 +35,21 @@ class SelfUpdateService(
         const val INSTALL_PARAMETER = "--install"
     }
 
+    private val applicationHome: Path = Path.of(javaClass.protectionDomain.codeSource.location.path)
     private val patcherUserDir: Path = context.getPatcherUserDir()
     private val updaterTempLocation: Path = patcherUserDir.resolve(UPDATER_TEMP_NAME)
     private val currentUpdaterLocation: Path = patcherUserDir.resolve(UPDATER_NAME)
     private val oldUpdaterLocation: Path = patcherUserDir.resolve(UPDATER_OLD_NAME)
-    private val linkLocation: Path = Path.of(System.getProperty("user.home"), "Desktop", "$APPLICATION_NAME.lnk")
+    private val linkLocation: Path = Path.of(System.getProperty("user.home"), "Desktop", "BfME Mod Launcher.lnk")
     private val linkIconLocation: Path = patcherUserDir.resolve("icon.ico")
 
     fun isInCorrectLocation(): Boolean {
-        return !applicationHome.isRunningAsJar() || applicationHome.source.startsWith(patcherUserDir)
+        return !isRunningAsJar() || applicationHome.startsWith(patcherUserDir)
     }
 
     fun moveToCorrectLocation() {
 
-        if (!applicationHome.isRunningAsJar()) {
+        if (!isRunningAsJar()) {
             return
         }
 
@@ -58,7 +59,7 @@ class SelfUpdateService(
             }
         }
 
-        applicationHome.source.inputStream().use { input ->
+        applicationHome.inputStream().use { input ->
             currentUpdaterLocation.outputStream().use { output ->
                 input.copyTo(output)
             }
@@ -96,31 +97,31 @@ class SelfUpdateService(
         oldUpdaterLocation.deleteIfExists()
     }
 
-    fun isNewVersionAvailable(): Boolean {
+    suspend fun isNewVersionAvailable(): Boolean = withContext(Dispatchers.IO) {
 
-        if (!applicationHome.isRunningAsJar()) {
-            return true
+        if (!isRunningAsJar()) {
+            return@withContext true
         }
 
-        return runBlocking(Dispatchers.IO) {
-            val latestUpdaterChecksum: String = hashingService.calculateSha3Checksum(URI.create(PatchConstants.UPDATER_URL).toURL().openStream())
-            val currentUpdaterChecksum: String = hashingService.calculateSha3Checksum(applicationHome.source.inputStream())
+        val latestUpdaterChecksum: String = hashingService.calculateSha3Checksum(URI.create(PatchConstants.UPDATER_URL).toURL().openStream())
+        val currentUpdaterChecksum: String = hashingService.calculateSha3Checksum(applicationHome.inputStream())
 
-            currentUpdaterChecksum != latestUpdaterChecksum
-        }
+        return@withContext currentUpdaterChecksum != latestUpdaterChecksum
     }
 
-    fun downloadLatestUpdaterVersion() {
+    suspend fun downloadLatestUpdaterVersion() = withContext(Dispatchers.IO) {
 
         updaterTempLocation.deleteIfExists()
 
-        runBlocking {
-            downloadService.download(
-                URI.create(PatchConstants.UPDATER_URL).toURL(),
-                updaterTempLocation,
-                Compression.NONE,
-                null
-            )
-        }
+        downloadService.download(
+            URI.create(PatchConstants.UPDATER_URL).toURL(),
+            updaterTempLocation,
+            Compression.NONE,
+            null
+        )
+    }
+
+    private fun isRunningAsJar(): Boolean {
+        return applicationHome.isRegularFile()
     }
 }
