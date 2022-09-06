@@ -6,8 +6,10 @@ plugins {
     id("org.jetbrains.compose")
 }
 
+val appVersion = "1.0.0"
+
 group = "de.darkatra.bfme2"
-version = "1.0.0"
+version = appVersion
 
 repositories {
     google()
@@ -60,6 +62,10 @@ kotlin {
 tasks {
     withType<Jar> {
         exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
+
+        manifest {
+            attributes("Implementation-Version" to appVersion)
+        }
     }
 }
 
@@ -68,7 +74,7 @@ compose.desktop {
         mainClass = "de.darkatra.bfme2.MainKt"
         nativeDistributions {
             packageName = "patcher"
-            packageVersion = "1.0.0"
+            packageVersion = appVersion
         }
     }
 }
