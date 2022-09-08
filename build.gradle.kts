@@ -6,7 +6,7 @@ plugins {
     id("org.jetbrains.compose")
 }
 
-val appVersion = "1.0.0"
+val appVersion = "0.5.0"
 
 group = "de.darkatra.bfme2"
 version = appVersion
