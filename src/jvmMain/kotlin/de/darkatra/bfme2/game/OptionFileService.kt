@@ -4,7 +4,7 @@ import java.nio.file.Path
 import java.util.Hashtable
 import kotlin.io.path.outputStream
 
-class OptionFileService {
+object OptionFileService {
 
     fun writeOptionsFile(path: Path, options: Hashtable<String, Any>) {
 

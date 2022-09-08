@@ -11,7 +11,7 @@ import java.net.URI
 @WireMockTest
 internal class DownloadServiceTest {
 
-    private val downloadService = DownloadService()
+    private val downloadService = DownloadService
 
     @Test
     fun `should download content from uri`(wireMockRuntimeInfo: WireMockRuntimeInfo) {
@@ -25,7 +25,7 @@ internal class DownloadServiceTest {
         val port = wireMockRuntimeInfo.httpPort
 
         @Suppress("UNCHECKED_CAST")
-        val content: Map<String, String> = downloadService.getContent(URI.create("http://localhost:$port/test.json"), Map::class) as Map<String, String>
+        val content: Map<String, String> = downloadService.getContent(URI.create("http://localhost:$port/test.json").toURL(), Map::class) as Map<String, String>
 
         assertThat(content).containsEntry("name", "Testi")
     }

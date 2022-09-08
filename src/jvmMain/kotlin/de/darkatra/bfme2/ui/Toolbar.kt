@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.MenuBar
 import de.darkatra.bfme2.game.Game
+import de.darkatra.bfme2.game.OptionFileService
 import kotlin.io.path.exists
 import kotlin.io.path.notExists
 
@@ -14,9 +15,6 @@ fun Toolbar(
     frameWindowScope: FrameWindowScope,
     onCheckForUpdates: () -> Unit
 ) {
-
-    val context = UpdaterContext.context
-    val optionFileService = UpdaterContext.optionFileService
 
     val (gameToFix, setGameToFix) = remember { mutableStateOf<Game?>(null) }
     val (isFixConfirmationDialogVisible, setFixConfirmationDialogVisible) = remember { mutableStateOf(false) }
@@ -27,8 +25,8 @@ fun Toolbar(
         setGameToFix(gameToFix)
 
         val gameUserDirectory = when (gameToFix) {
-            Game.BFME2 -> context.getBfme2UserDir()
-            Game.BFME2EP1 -> context.getRotwkUserDir()
+            Game.BFME2 -> UpdaterContext.context.getBfme2UserDir()
+            Game.BFME2EP1 -> UpdaterContext.context.getRotwkUserDir()
         }
 
         if (gameUserDirectory.notExists()) {
@@ -41,7 +39,7 @@ fun Toolbar(
             return
         }
 
-        optionFileService.writeOptionsFile(optionsIni, optionFileService.buildDefaultOptions())
+        OptionFileService.writeOptionsFile(optionsIni, OptionFileService.buildDefaultOptions())
         setFixSuccessDialogVisible(true)
     }
 

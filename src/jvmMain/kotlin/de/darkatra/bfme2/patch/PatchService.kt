@@ -2,6 +2,7 @@ package de.darkatra.bfme2.patch
 
 import de.darkatra.bfme2.checksum.HashingService
 import de.darkatra.bfme2.download.DownloadService
+import de.darkatra.bfme2.ui.UpdaterContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -16,11 +17,7 @@ import kotlin.io.path.inputStream
 import kotlin.io.path.name
 import kotlin.io.path.pathString
 
-class PatchService(
-    private val context: Context,
-    private val downloadService: DownloadService,
-    private val hashingService: HashingService
-) {
+object PatchService {
 
     suspend fun patch(progressListener: PatchProgressListener?) = withContext(Dispatchers.IO) {
 
@@ -28,8 +25,8 @@ class PatchService(
 
         ensureActive()
 
-        val patch = downloadService.getContent(URI.create(PatchConstants.PATCH_LIST_URL).toURL(), Patch::class)
-        patch.applyContext(context)
+        val patch = DownloadService.getContent(URI.create(PatchConstants.PATCH_LIST_URL).toURL(), Patch::class)
+        patch.applyContext(UpdaterContext.context)
 
         ensureActive()
 
@@ -56,7 +53,7 @@ class PatchService(
             backupExistingFileIfRequired(packet)
 
             val dest = Path.of(packet.dest)
-            downloadService.download(URL(packet.src), dest, packet.compression) { downloadProgress ->
+            DownloadService.download(URL(packet.src), dest, packet.compression) { downloadProgress ->
 
                 currentNetwork += downloadProgress.countNetwork
                 currentDisk += downloadProgress.countDisk
@@ -73,7 +70,7 @@ class PatchService(
 
             ensureActive()
 
-            if (packet.checksum != hashingService.calculateSha3Checksum(dest.inputStream())) {
+            if (packet.checksum != HashingService.calculateSha3Checksum(dest.inputStream())) {
                 error("The checksum of local file '${dest.pathString}' does not match the servers checksum.")
             }
 
@@ -91,7 +88,7 @@ class PatchService(
 
             val destPath = Path.of(packet.dest)
 
-            if (!destPath.exists() || hashingService.calculateSha3Checksum(destPath.inputStream()) != packet.checksum) {
+            if (!destPath.exists() || HashingService.calculateSha3Checksum(destPath.inputStream()) != packet.checksum) {
                 packets.add(packet)
             }
 

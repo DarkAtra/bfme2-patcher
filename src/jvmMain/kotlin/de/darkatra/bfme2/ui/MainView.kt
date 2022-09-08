@@ -19,9 +19,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.FrameWindowScope
 import de.darkatra.bfme2.patch.PatchProgress
 import de.darkatra.bfme2.patch.PatchProgressListener
+import de.darkatra.bfme2.patch.PatchService
+import de.darkatra.bfme2.selfupdate.SelfUpdateService
 import de.darkatra.bfme2.util.ProcessUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,13 +45,12 @@ private val imagePaths = arrayOf(
 
 @Composable
 fun MainView(
+    applicationScope: ApplicationScope,
     frameWindowScope: FrameWindowScope
 ) {
 
     val patchScope = rememberCoroutineScope()
 
-    val patchService = UpdaterContext.patchService
-    val selfUpdateService = UpdaterContext.selfUpdateService
     val rotwkHomeDir = UpdaterContext.context.getRotwkHomeDir()
 
     val (isNewVersionAvailable, setNewVersionAvailable) = remember { mutableStateOf(false) }
@@ -65,14 +67,16 @@ fun MainView(
         setProgress(INDETERMINATE_PROGRESS)
         setProgressText("Performing self update...")
         patchScope.launch {
-            selfUpdateService.downloadLatestUpdaterVersion()
+            SelfUpdateService.downloadLatestUpdaterVersion()
+            SelfUpdateService.applyUpdate()
+            applicationScope.exitApplication()
         }
         setSelfUpdateInProgress(false)
     }
 
     Toolbar(frameWindowScope) {
         patchScope.launch {
-            setNewVersionAvailable(selfUpdateService.isNewVersionAvailable())
+            setNewVersionAvailable(SelfUpdateService.isNewVersionAvailable())
             setSelfUpdateDialogVisible(true)
         }
     }
@@ -120,7 +124,7 @@ fun MainView(
                     onClick = {
                         setUpdateInProgress(true)
                         patchScope.launch {
-                            patchService.patch(object : PatchProgressListener {
+                            PatchService.patch(object : PatchProgressListener {
 
                                 override fun onPatchStarted() {
                                     setProgress(INDETERMINATE_PROGRESS)
@@ -208,7 +212,7 @@ fun MainView(
     }
 
     LaunchedEffect(Unit) {
-        setNewVersionAvailable(selfUpdateService.isNewVersionAvailable())
+        setNewVersionAvailable(SelfUpdateService.isNewVersionAvailable())
     }
 }
 

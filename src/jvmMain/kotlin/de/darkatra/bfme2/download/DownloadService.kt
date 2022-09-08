@@ -19,9 +19,9 @@ import kotlin.io.path.outputStream
 import kotlin.io.path.pathString
 import kotlin.reflect.KClass
 
-class DownloadService(
+object DownloadService {
+
     private val objectMapper: ObjectMapper = jacksonMapperBuilder().addModule(JavaTimeModule()).build()
-) {
 
     fun <T : Any> getContent(url: URL, clazz: KClass<T>): T {
 

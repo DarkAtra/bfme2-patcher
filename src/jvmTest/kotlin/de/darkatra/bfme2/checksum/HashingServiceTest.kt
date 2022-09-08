@@ -8,7 +8,7 @@ import java.io.ByteArrayInputStream
 
 internal class HashingServiceTest {
 
-    private val hashingService = HashingService()
+    private val hashingService = HashingService
 
     @Test
     @OptIn(ExperimentalCoroutinesApi::class)

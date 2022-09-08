@@ -7,7 +7,7 @@ import org.bouncycastle.jcajce.provider.digest.SHA3
 import java.io.InputStream
 import java.util.Base64
 
-class HashingService {
+object HashingService {
 
     suspend fun calculateSha3Checksum(inputStream: InputStream): String = withContext(Dispatchers.IO) {
 
