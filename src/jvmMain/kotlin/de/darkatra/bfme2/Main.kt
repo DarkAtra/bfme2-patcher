@@ -47,17 +47,21 @@ fun main(args: Array<String>) = application {
 
     setSystemLookAndFeel()
 
+    // TODO: make the tray icon an optional setting
+    val (isTrayEnabled, setTrayEnabled) = remember { mutableStateOf(false) }
     val (isVisible, setVisible) = remember { mutableStateOf(true) }
 
-    Tray(
-        icon = painterResource(ICON_PATH),
-        tooltip = UpdaterContext.applicationName,
-        onAction = { setVisible(true) },
-        menu = {
-            Item("Open", onClick = { setVisible(true) })
-            Item("Exit", onClick = ::exitApplication)
-        }
-    )
+    if (isTrayEnabled) {
+        Tray(
+            icon = painterResource(ICON_PATH),
+            tooltip = UpdaterContext.applicationName,
+            onAction = { setVisible(true) },
+            menu = {
+                Item("Open", onClick = { setVisible(true) })
+                Item("Exit", onClick = ::exitApplication)
+            }
+        )
+    }
 
     MaterialTheme(
         colors = lightColors(
@@ -71,8 +75,14 @@ fun main(args: Array<String>) = application {
             title = UpdaterContext.applicationName,
             icon = painterResource(ICON_PATH),
             resizable = false,
-            onCloseRequest = { setVisible(false) },
-            visible = isVisible
+            onCloseRequest = {
+                if (isTrayEnabled) {
+                    setVisible(false)
+                } else {
+                    exitApplication()
+                }
+            },
+            visible = !isTrayEnabled || isVisible
         ) {
             MainView(this@application, this@Window)
         }
