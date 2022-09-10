@@ -195,7 +195,9 @@ fun MainView(
                 title = "Update available",
                 text = "Do you want to proceed and update to the latest version?",
                 onConfirm = {
-                    performSelfUpdate()
+                    if (!isSelfUpdateInProgress) {
+                        performSelfUpdate()
+                    }
                 },
                 onDismiss = {
                     setSelfUpdateDialogVisible(false)
