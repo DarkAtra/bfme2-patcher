@@ -1,8 +1,8 @@
 package de.darkatra.bfme2.patch
 
+import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.checksum.HashingService
 import de.darkatra.bfme2.download.DownloadService
-import de.darkatra.bfme2.ui.UpdaterContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext

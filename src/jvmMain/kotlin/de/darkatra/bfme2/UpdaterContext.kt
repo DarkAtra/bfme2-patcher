@@ -1,4 +1,4 @@
-package de.darkatra.bfme2.ui
+package de.darkatra.bfme2
 
 import de.darkatra.bfme2.patch.Context
 import de.darkatra.bfme2.registry.RegistryService

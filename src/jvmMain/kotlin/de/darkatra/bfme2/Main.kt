@@ -11,19 +11,32 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import de.darkatra.bfme2.selfupdate.SelfUpdateService
 import de.darkatra.bfme2.ui.MainView
-import de.darkatra.bfme2.ui.UpdaterContext
 import org.jetbrains.skiko.setSystemLookAndFeel
+import java.util.logging.Logger
+import kotlin.io.path.absolutePathString
 
 private const val ICON_PATH = "/images/icon.png"
+private val logger = Logger.getLogger("updater")
 
 fun main(args: Array<String>) = application {
 
     if (!UpdaterContext.context.isValid()) {
+        logger.info("Updater context is invalid. Existing...")
         exitApplication()
         return@application
     }
 
+    logger.info(
+        """------------------------------
+        |Starting Updater with:
+        |  applicationVersion: ${UpdaterContext.applicationVersion}
+        |  applicationHome: ${UpdaterContext.applicationHome.absolutePathString()}
+        |------------------------------
+        """.trimMargin()
+    )
+
     if (!SelfUpdateService.isInCorrectLocation()) {
+        logger.info("Updater is in wrong location. Moving to correct location...")
         SelfUpdateService.moveToCorrectLocation()
         exitApplication()
         return@application

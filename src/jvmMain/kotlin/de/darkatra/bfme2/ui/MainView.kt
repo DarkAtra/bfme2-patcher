@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.FrameWindowScope
+import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.patch.PatchProgress
 import de.darkatra.bfme2.patch.PatchProgressListener
 import de.darkatra.bfme2.patch.PatchService

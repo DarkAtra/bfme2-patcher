@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.MenuBar
+import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.game.Game
 import de.darkatra.bfme2.game.OptionFileService
 import kotlin.io.path.exists

@@ -1,11 +1,11 @@
 package de.darkatra.bfme2.selfupdate
 
+import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.checksum.HashingService
 import de.darkatra.bfme2.download.DownloadService
 import de.darkatra.bfme2.patch.Compression
 import de.darkatra.bfme2.patch.Context
 import de.darkatra.bfme2.patch.PatchConstants
-import de.darkatra.bfme2.ui.UpdaterContext
 import de.darkatra.bfme2.util.ProcessUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
