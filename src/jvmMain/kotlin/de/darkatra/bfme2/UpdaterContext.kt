@@ -41,11 +41,11 @@ object UpdaterContext {
             putIfAbsent(Context.SERVER_URL_IDENTIFIER, "https://darkatra.de")
             putIfAbsent(Context.BFME2_HOME_DIR_IDENTIFIER, RegistryService.findBaseGameHomeDirectory().normalize().toString())
             putIfAbsent(Context.BFME2_USER_DIR_IDENTIFIER, RegistryService.findBaseGameUserDirectory().normalize().toString())
-            putIfAbsent(Context.ROTWK_HOME_DIR_IDENTIFIER, RegistryService.findExpansionHomeDirectory().normalize().toString())
-            RegistryService.findExpansionUserDirectory().normalize().let { expansionUserDir ->
-                putIfAbsent(Context.ROTWK_USER_DIR_IDENTIFIER, expansionUserDir.toString())
-                putIfAbsent(Context.PATCHER_USER_DIR_IDENTIFIER, expansionUserDir.resolve(".patcher").normalize().toString())
+            RegistryService.findExpansionHomeDirectory().normalize().let { expansionHomeDir ->
+                putIfAbsent(Context.ROTWK_HOME_DIR_IDENTIFIER, expansionHomeDir.toString())
+                putIfAbsent(Context.PATCHER_USER_DIR_IDENTIFIER, expansionHomeDir.resolve(".patcher").normalize().toString())
             }
+            putIfAbsent(Context.ROTWK_USER_DIR_IDENTIFIER, RegistryService.findExpansionUserDirectory().normalize().toString())
         }
     }
 }
