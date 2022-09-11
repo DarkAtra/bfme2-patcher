@@ -27,6 +27,7 @@ kotlin {
             useJUnitPlatform()
         }
     }
+
     sourceSets {
         all {
             languageSettings.apply {
@@ -38,6 +39,8 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
+                implementation("com.arkivanov.decompose:decompose:${extra["decompose.version"]}")
+                implementation("com.arkivanov.decompose:extensions-compose-jetbrains:${extra["decompose.version"]}")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${extra["kotlin-coroutine.version"]}")
                 implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${extra["jackson.version"]}")
                 implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${extra["jackson.version"]}")

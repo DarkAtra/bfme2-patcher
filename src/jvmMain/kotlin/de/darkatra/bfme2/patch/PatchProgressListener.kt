@@ -4,9 +4,9 @@ interface PatchProgressListener {
 
     fun onPatchStarted()
 
-    fun deletingObsoleteFiles()
+    fun onDeletingObsoleteFiles()
 
-    fun calculatingDifferences()
+    fun onCalculatingDifferences()
 
     fun onPatchProgress(patchProgress: PatchProgress)
 

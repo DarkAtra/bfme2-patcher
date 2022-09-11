@@ -1,10 +1,12 @@
 package de.darkatra.bfme2.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.MenuBar
+import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.game.Game
 import de.darkatra.bfme2.game.OptionFileService
@@ -13,9 +15,12 @@ import kotlin.io.path.notExists
 
 @Composable
 fun Toolbar(
+    updaterModel: UpdaterModel,
     frameWindowScope: FrameWindowScope,
     onCheckForUpdates: () -> Unit
 ) {
+
+    val state by updaterModel.state.subscribeAsState()
 
     val (gameToFix, setGameToFix) = remember { mutableStateOf<Game?>(null) }
     val (isFixConfirmationDialogVisible, setFixConfirmationDialogVisible) = remember { mutableStateOf(false) }
@@ -50,6 +55,30 @@ fun Toolbar(
             Menu(text = "Startup Fix") {
                 Item(text = "Fix ${Game.BFME2.displayName}", onClick = { fixGame(Game.BFME2) })
                 Item(text = "Fix ${Game.BFME2EP1.displayName}", onClick = { fixGame(Game.BFME2EP1) })
+            }
+
+            Menu(text = "Game Settings") {
+                Item(
+                    text = when (state.hdEditionEnabled) {
+                        true -> "Disable HD Edition"
+                        false -> "Enable HD Edition"
+                    },
+                    onClick = {
+                        updaterModel.setHdEditionEnabled(!state.hdEditionEnabled)
+                    }
+                )
+            }
+
+            Menu(text = "Updater Settings") {
+                Item(
+                    text = when (state.trayIconEnabled) {
+                        true -> "Disable Tray Icon"
+                        false -> "Enable Tray Icon"
+                    },
+                    onClick = {
+                        updaterModel.setTrayIconEnabled(!state.trayIconEnabled)
+                    }
+                )
             }
 
             Menu(text = "Version") {

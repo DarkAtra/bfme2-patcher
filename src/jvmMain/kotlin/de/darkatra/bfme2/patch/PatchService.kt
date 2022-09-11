@@ -30,7 +30,7 @@ object PatchService {
 
         ensureActive()
 
-        progressListener?.deletingObsoleteFiles()
+        progressListener?.onDeletingObsoleteFiles()
 
         patch.obsoleteFiles.forEach { obsoleteFile ->
 
@@ -39,7 +39,7 @@ object PatchService {
             ensureActive()
         }
 
-        progressListener?.calculatingDifferences()
+        progressListener?.onCalculatingDifferences()
 
         val differences = calculateDifferences(patch)
 
