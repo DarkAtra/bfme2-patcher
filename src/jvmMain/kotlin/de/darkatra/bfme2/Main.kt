@@ -19,6 +19,7 @@ import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import de.darkatra.bfme2.selfupdate.SelfUpdateService
 import de.darkatra.bfme2.ui.UpdaterModel
 import de.darkatra.bfme2.ui.UpdaterView
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.skiko.setSystemLookAndFeel
 import java.util.logging.Logger
 import kotlin.io.path.absolutePathString
@@ -50,12 +51,16 @@ fun main(args: Array<String>) {
 
     when {
         args.contains(SelfUpdateService.UNINSTALL_CURRENT_PARAMETER) -> {
-            SelfUpdateService.uninstallPreviousVersion()
+            runBlocking {
+                SelfUpdateService.uninstallPreviousVersion()
+            }
             return
         }
 
         args.contains(SelfUpdateService.INSTALL_PARAMETER) -> {
-            SelfUpdateService.installNewVersion()
+            runBlocking {
+                SelfUpdateService.installNewVersion()
+            }
             return
         }
     }

@@ -8,6 +8,7 @@ import de.darkatra.bfme2.patch.Context
 import de.darkatra.bfme2.patch.PatchConstants
 import de.darkatra.bfme2.util.ProcessUtils
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import mslinks.ShellLink
@@ -29,6 +30,8 @@ object SelfUpdateService {
 
     const val UNINSTALL_CURRENT_PARAMETER = "--uninstall-current"
     const val INSTALL_PARAMETER = "--install"
+
+    private const val MAX_RENAME_ATTEMPTS = 7
 
     private val linkLocation: Path = Path.of(System.getProperty("user.home"), "Desktop", "BfME Mod Launcher.lnk")
     private val patcherUserDir: Path = UpdaterContext.context.getPatcherUserDir()
@@ -81,13 +84,13 @@ object SelfUpdateService {
         ProcessUtils.runJar(updaterTempLocation, arrayOf(UNINSTALL_CURRENT_PARAMETER))
     }
 
-    fun uninstallPreviousVersion() {
-        currentUpdaterLocation.moveTo(oldUpdaterLocation, true)
+    suspend fun uninstallPreviousVersion() = withContext(Dispatchers.IO) {
+        attemptRename(currentUpdaterLocation, oldUpdaterLocation, true)
         ProcessUtils.runJar(oldUpdaterLocation, arrayOf(INSTALL_PARAMETER))
     }
 
-    fun installNewVersion() {
-        updaterTempLocation.moveTo(currentUpdaterLocation)
+    suspend fun installNewVersion() = withContext(Dispatchers.IO) {
+        attemptRename(updaterTempLocation, currentUpdaterLocation, true)
         ProcessUtils.runJar(currentUpdaterLocation)
     }
 
@@ -121,5 +124,17 @@ object SelfUpdateService {
 
     private fun isRunningAsJar(): Boolean {
         return UpdaterContext.applicationHome.isRegularFile()
+    }
+
+    private suspend fun attemptRename(from: Path, to: Path, overwrite: Boolean) = withContext(Dispatchers.IO) {
+        for (i in 0 until MAX_RENAME_ATTEMPTS) {
+            runCatching {
+                from.moveTo(to, overwrite)
+            }.onSuccess {
+                return@withContext
+            }
+
+            delay(100L * (i + 1))
+        }
     }
 }
