@@ -141,7 +141,7 @@ fun UpdaterView(
                 title = "Update available",
                 text = "Do you want to proceed and update to the latest version?",
                 onConfirm = {
-                    if (!state.selfUpdateInProgress) {
+                    if (!state.gameRunning && !state.selfUpdateInProgress && !state.patchInProgress) {
                         performSelfUpdate()
                     }
                 },

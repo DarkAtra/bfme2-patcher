@@ -95,7 +95,9 @@ object SelfUpdateService {
     }
 
     fun performCleanup() {
-        oldUpdaterLocation.deleteIfExists()
+        runCatching {
+            oldUpdaterLocation.deleteIfExists()
+        }
     }
 
     suspend fun isNewVersionAvailable(): Boolean = withContext(Dispatchers.IO) {
