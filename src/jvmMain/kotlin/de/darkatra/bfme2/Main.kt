@@ -5,11 +5,16 @@ import androidx.compose.material.lightColors
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import de.darkatra.bfme2.selfupdate.SelfUpdateService
 import de.darkatra.bfme2.ui.UpdaterModel
@@ -65,6 +70,10 @@ fun main(args: Array<String>) {
 
         val state by updaterModel.state.subscribeAsState()
 
+        val windowState = rememberWindowState(
+            position = WindowPosition(alignment = Alignment.Center),
+            size = DpSize(800.dp, 600.dp)
+        )
         val (isVisible, setVisible) = remember { mutableStateOf(true) }
 
         if (state.trayIconEnabled) {
@@ -91,6 +100,7 @@ fun main(args: Array<String>) {
                 title = UpdaterContext.applicationName,
                 icon = painterResource(ICON_PATH),
                 resizable = false,
+                state = windowState,
                 onCloseRequest = {
                     if (state.trayIconEnabled) {
                         setVisible(false)
