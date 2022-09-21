@@ -44,6 +44,10 @@ class UpdaterModel : PatchProgressListener {
         setPatchedOnce(true)
     }
 
+    fun setVisible(isVisible: Boolean) {
+        state.reduce { it.copy(isVisible = isVisible) }
+    }
+
     fun setNewVersionAvailable(newVersionAvailable: Boolean) {
         state.reduce { it.copy(newVersionAvailable = newVersionAvailable) }
     }
@@ -74,7 +78,7 @@ class UpdaterModel : PatchProgressListener {
     }
 
     fun setTrayIconEnabled(trayIconEnabled: Boolean) {
-        state.reduce { it.copy(trayIconEnabled = trayIconEnabled) }
+        state.reduce { it.copy(trayIconEnabled = trayIconEnabled, isVisible = true) }
         updatePersistentState()
     }
 
@@ -88,6 +92,8 @@ class UpdaterModel : PatchProgressListener {
     }
 
     data class State(
+        val isVisible: Boolean = true,
+
         val newVersionAvailable: Boolean = false,
         val selfUpdateInProgress: Boolean = false,
 

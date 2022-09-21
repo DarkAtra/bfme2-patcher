@@ -3,7 +3,6 @@ package de.darkatra.bfme2
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
@@ -79,15 +78,14 @@ fun main(args: Array<String>) {
             position = WindowPosition(alignment = Alignment.Center),
             size = DpSize(800.dp, 600.dp)
         )
-        val (isVisible, setVisible) = remember { mutableStateOf(true) }
 
         if (state.trayIconEnabled) {
             Tray(
                 icon = painterResource(ICON_PATH),
                 tooltip = UpdaterContext.applicationName,
-                onAction = { setVisible(true) },
+                onAction = { updaterModel.setVisible(true) },
                 menu = {
-                    Item("Open", onClick = { setVisible(true) })
+                    Item("Open", onClick = { updaterModel.setVisible(true) })
                     Item("Exit", onClick = ::exitApplication)
                 }
             )
@@ -108,12 +106,12 @@ fun main(args: Array<String>) {
                 state = windowState,
                 onCloseRequest = {
                     if (state.trayIconEnabled) {
-                        setVisible(false)
+                        updaterModel.setVisible(false)
                     } else {
                         exitApplication()
                     }
                 },
-                visible = !state.trayIconEnabled || isVisible
+                visible = !state.trayIconEnabled || state.isVisible
             ) {
                 UpdaterView(
                     updaterModel = updaterModel,

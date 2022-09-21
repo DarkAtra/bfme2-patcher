@@ -120,11 +120,11 @@ fun UpdaterView(
                                         }
                                     ).waitFor()
                                 }
-                            }.onSuccess {
+                            }.also {
                                 updaterModel.setGameRunning(false)
+                                updaterModel.setVisible(true)
                             }.onFailure {
                                 // TODO: show error message
-                                updaterModel.setGameRunning(false)
                             }
                         }
                     }
