@@ -49,14 +49,14 @@ fun main(args: Array<String>) {
     }
 
     when {
-        args.contains(SelfUpdateService.UNINSTALL_CURRENT_PARAMETER) -> {
+        SelfUpdateService.UNINSTALL_CURRENT_PARAMETER in args -> {
             runBlocking {
                 SelfUpdateService.uninstallPreviousVersion()
             }
             return
         }
 
-        args.contains(SelfUpdateService.INSTALL_PARAMETER) -> {
+        SelfUpdateService.INSTALL_PARAMETER in args -> {
             runBlocking {
                 SelfUpdateService.installNewVersion()
             }
@@ -71,7 +71,6 @@ fun main(args: Array<String>) {
     application {
 
         val updaterModel = remember { UpdaterModel() }
-
         val state by updaterModel.state.subscribeAsState()
 
         val windowState = rememberWindowState(

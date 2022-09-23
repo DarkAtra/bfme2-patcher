@@ -58,25 +58,21 @@ fun Toolbar(
             }
 
             Menu(text = "Game Settings") {
-                Item(
-                    text = when (state.hdEditionEnabled) {
-                        true -> "Disable HD Edition"
-                        false -> "Enable HD Edition"
-                    },
-                    onClick = {
-                        updaterModel.setHdEditionEnabled(!state.hdEditionEnabled)
+                CheckboxItem(
+                    text = "HD Edition",
+                    checked = state.hdEditionEnabled,
+                    onCheckedChange = { hdEditionEnabled ->
+                        updaterModel.setHdEditionEnabled(hdEditionEnabled)
                     }
                 )
             }
 
             Menu(text = "Updater Settings") {
-                Item(
-                    text = when (state.trayIconEnabled) {
-                        true -> "Disable Tray Icon"
-                        false -> "Enable Tray Icon"
-                    },
-                    onClick = {
-                        updaterModel.setTrayIconEnabled(!state.trayIconEnabled)
+                CheckboxItem(
+                    text = "Tray Icon",
+                    checked = state.trayIconEnabled,
+                    onCheckedChange = { trayIconEnabled ->
+                        updaterModel.setTrayIconEnabled(trayIconEnabled)
                     }
                 )
             }

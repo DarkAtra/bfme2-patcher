@@ -94,10 +94,8 @@ object SelfUpdateService {
         ProcessUtils.runJar(currentUpdaterLocation)
     }
 
-    fun performCleanup() {
-        runCatching {
-            oldUpdaterLocation.deleteIfExists()
-        }
+    fun performCleanup() = runCatching {
+        oldUpdaterLocation.deleteIfExists()
     }
 
     suspend fun isNewVersionAvailable(): Boolean = withContext(Dispatchers.IO) {
