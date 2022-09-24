@@ -64,6 +64,10 @@ fun main(args: Array<String>) {
         }
     }
 
+    if (!SingleInstance.acquireLock()) {
+        return
+    }
+
     SelfUpdateService.performCleanup()
 
     setSystemLookAndFeel()
