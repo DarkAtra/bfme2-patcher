@@ -11,57 +11,62 @@ const val BFME2EP1_REGISTRY_KEY = "SOFTWARE\\Wow6432Node\\Electronic Arts\\Elect
 
 object BfmeLocationService {
 
-	/**
-	 * Resolves the BfME 2 install dir by reading the windows registry.
-	 *
-	 * @return the BfME 2 install dir path
-	 */
-	fun findBfME2HomeDirectory(): Optional<Path> {
-		return try {
-			Optional.of(Paths.get(Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, BFME2_REGISTRY_KEY, "InstallPath")).normalize())
-		} catch (e: Exception) {
-			Optional.empty()
-		}
-	}
+    /**
+     * Resolves the BfME 2 install dir by reading the windows registry.
+     *
+     * @return the BfME 2 install dir path
+     */
+    fun findBfME2HomeDirectory(): Optional<Path> {
+        return try {
+            Optional.of(Paths.get(Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, BFME2_REGISTRY_KEY, "InstallPath")).normalize())
+        } catch (e: Exception) {
+            Optional.empty()
+        }
+    }
 
-	/**
-	 * Resolves the BfME 2 user dir by reading the windows registry.
-	 *
-	 * @return the BfME 2 user dir path
-	 */
-	fun findBfME2UserDirectory(): Optional<Path> {
-		return try {
-			Optional
-				.of(Paths.get(System.getenv("APPDATA"), Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, BFME2_REGISTRY_KEY, "UserDataLeafName")))
-		} catch (e: Exception) {
-			Optional.empty()
-		}
-	}
+    /**
+     * Resolves the BfME 2 user dir by reading the windows registry.
+     *
+     * @return the BfME 2 user dir path
+     */
+    fun findBfME2UserDirectory(): Optional<Path> {
+        return try {
+            Optional
+                .of(Paths.get(System.getenv("APPDATA"), Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, BFME2_REGISTRY_KEY, "UserDataLeafName")))
+        } catch (e: Exception) {
+            Optional.empty()
+        }
+    }
 
-	/**
-	 * Resolves the BfME 2 EP 1 install dir by reading the windows registry.
-	 *
-	 * @return the BfME 2 EP 1 install dir path
-	 */
-	fun findBfME2RotWKHomeDirectory(): Optional<Path> {
-		return try {
-			Optional.of(Paths.get(Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, BFME2EP1_REGISTRY_KEY, "InstallPath")))
-		} catch (e: Exception) {
-			Optional.empty()
-		}
-	}
+    /**
+     * Resolves the BfME 2 EP 1 install dir by reading the windows registry.
+     *
+     * @return the BfME 2 EP 1 install dir path
+     */
+    fun findBfME2RotWKHomeDirectory(): Optional<Path> {
+        return try {
+            Optional.of(Paths.get(Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, BFME2EP1_REGISTRY_KEY, "InstallPath")))
+        } catch (e: Exception) {
+            Optional.empty()
+        }
+    }
 
-	/**
-	 * Resolves the BfME 2 EP 1 user dir by reading the windows registry.
-	 *
-	 * @return the BfME 2 EP 1 user dir path
-	 */
-	fun findBfME2RotWKUserDirectory(): Optional<Path> {
-		return try {
-			Optional
-				.of(Paths.get(System.getenv("APPDATA"), Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, BFME2EP1_REGISTRY_KEY, "UserDataLeafName")))
-		} catch (e: Exception) {
-			Optional.empty()
-		}
-	}
+    /**
+     * Resolves the BfME 2 EP 1 user dir by reading the windows registry.
+     *
+     * @return the BfME 2 EP 1 user dir path
+     */
+    fun findBfME2RotWKUserDirectory(): Optional<Path> {
+        return try {
+            Optional
+                .of(
+                    Paths.get(
+                        System.getenv("APPDATA"),
+                        Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, BFME2EP1_REGISTRY_KEY, "UserDataLeafName")
+                    )
+                )
+        } catch (e: Exception) {
+            Optional.empty()
+        }
+    }
 }
