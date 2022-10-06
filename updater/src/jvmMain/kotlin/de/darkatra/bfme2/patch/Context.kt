@@ -1,6 +1,8 @@
 package de.darkatra.bfme2.patch
 
 import java.nio.file.Path
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.exists
 
 class Context : HashMap<String, String>() {
 
@@ -23,6 +25,15 @@ class Context : HashMap<String, String>() {
             containsKey(ROTWK_HOME_DIR_IDENTIFIER) &&
             containsKey(ROTWK_USER_DIR_IDENTIFIER) &&
             containsKey(PATCHER_USER_DIR_IDENTIFIER)
+    }
+
+    fun ensureRequiredDirectoriesExist() {
+        val patcherUserDir = getPatcherUserDir()
+        if (!patcherUserDir.exists()) {
+            check(patcherUserDir.toFile().mkdirs()) {
+                "Could not create: '${patcherUserDir.absolutePathString()}'."
+            }
+        }
     }
 
     fun getServerUrl(): String {

@@ -5,7 +5,6 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import de.darkatra.bfme2.UpdaterContext
 import java.io.IOException
 import java.util.logging.Logger
-import kotlin.io.path.exists
 import kotlin.io.path.outputStream
 
 object PersistenceService {
@@ -29,9 +28,6 @@ object PersistenceService {
     }
 
     fun savePersistentState(persistentState: PersistentState) {
-        if (!patcherUserDir.exists()) {
-            patcherUserDir.toFile().mkdirs()
-        }
         objectMapper.writeValue(
             patcherUserDir.resolve(PATCHER_STATE_FILE_NAME).normalize().outputStream(),
             persistentState

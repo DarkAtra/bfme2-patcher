@@ -1,11 +1,9 @@
 package de.darkatra.bfme2
 
-import de.darkatra.bfme2.patch.Context
 import java.io.RandomAccessFile
 import java.nio.file.Path
 import java.util.logging.Logger
 import kotlin.io.path.deleteIfExists
-import kotlin.io.path.exists
 
 private val logger = Logger.getLogger("updater-single-instance")
 
@@ -16,7 +14,6 @@ object SingleInstance {
     private val lockFilePath: Path = patcherUserDir.resolve(LOCK_FILE_NAME)
 
     fun acquireLock(): Boolean {
-        ensurePatcherUserDirExists()
 
         runCatching {
             val lockFile = RandomAccessFile(lockFilePath.toFile(), "rw")
@@ -34,13 +31,5 @@ object SingleInstance {
         }
 
         return false
-    }
-
-    private fun ensurePatcherUserDirExists() {
-        if (!patcherUserDir.exists()) {
-            check(patcherUserDir.toFile().mkdirs()) {
-                "Could not create ${Context.PATCHER_USER_DIR_IDENTIFIER}."
-            }
-        }
     }
 }

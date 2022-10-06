@@ -25,9 +25,17 @@ data class Packet(
      * @param context the [Context] containing values for placeholders
      */
     override fun applyContext(context: Context) {
+
+        val origSrc: String = src
+        val origDest: String = dest
+
         context.forEach { key, value ->
             src = src.replace("${Context.PREFIX}$key${Context.SUFFIX}", value)
             dest = Path.of(dest.replace("${Context.PREFIX}$key${Context.SUFFIX}", value)).normalize().toString()
+        }
+
+        if (src == origSrc || dest == origDest) {
+            error("Invalid Packet without placeholder was found. (Src: '$src', Dest: '$dest')")
         }
     }
 }

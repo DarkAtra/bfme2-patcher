@@ -72,8 +72,8 @@ object DownloadService {
     private fun ensureParentFolderExists(src: Path) {
         val parentFile = src.toFile().parentFile
         if (!parentFile.exists()) {
-            if (!parentFile.mkdirs()) {
-                error("Could not create folder: ${parentFile.absolutePath}")
+            check(parentFile.mkdirs()) {
+                "Could not create: '${parentFile.absolutePath}'."
             }
         }
     }

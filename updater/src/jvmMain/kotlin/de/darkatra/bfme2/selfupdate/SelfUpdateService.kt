@@ -4,7 +4,6 @@ import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.checksum.HashingService
 import de.darkatra.bfme2.download.DownloadService
 import de.darkatra.bfme2.patch.Compression
-import de.darkatra.bfme2.patch.Context
 import de.darkatra.bfme2.patch.PatchConstants
 import de.darkatra.bfme2.util.ProcessUtils
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +15,6 @@ import java.net.URI
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.deleteIfExists
-import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.moveTo
@@ -50,12 +48,6 @@ object SelfUpdateService {
             return
         }
 
-        if (!patcherUserDir.exists()) {
-            check(patcherUserDir.toFile().mkdirs()) {
-                "Could not create ${Context.PATCHER_USER_DIR_IDENTIFIER}."
-            }
-        }
-
         UpdaterContext.applicationHome.inputStream().use { input ->
             currentUpdaterLocation.outputStream().use { output ->
                 input.copyTo(output)
@@ -84,12 +76,12 @@ object SelfUpdateService {
         ProcessUtils.runJar(updaterTempLocation, arrayOf(UNINSTALL_CURRENT_PARAMETER))
     }
 
-    suspend fun uninstallPreviousVersion() = withContext(Dispatchers.IO) {
+    fun uninstallPreviousVersion() = runBlocking(Dispatchers.IO) {
         attemptRename(currentUpdaterLocation, oldUpdaterLocation, true)
         ProcessUtils.runJar(oldUpdaterLocation, arrayOf(INSTALL_PARAMETER))
     }
 
-    suspend fun installNewVersion() = withContext(Dispatchers.IO) {
+    fun installNewVersion() = runBlocking(Dispatchers.IO) {
         attemptRename(updaterTempLocation, currentUpdaterLocation, true)
         ProcessUtils.runJar(currentUpdaterLocation)
     }

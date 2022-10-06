@@ -18,7 +18,6 @@ import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import de.darkatra.bfme2.selfupdate.SelfUpdateService
 import de.darkatra.bfme2.ui.UpdaterModel
 import de.darkatra.bfme2.ui.UpdaterView
-import kotlinx.coroutines.runBlocking
 import org.jetbrains.skiko.setSystemLookAndFeel
 import java.util.logging.Logger
 import kotlin.io.path.absolutePathString
@@ -42,6 +41,8 @@ fun main(args: Array<String>) {
         """.trimMargin()
     )
 
+    UpdaterContext.context.ensureRequiredDirectoriesExist()
+
     if (!SelfUpdateService.isInCorrectLocation()) {
         logger.info("Updater is in wrong location. Moving to correct location...")
         SelfUpdateService.moveToCorrectLocation()
@@ -50,16 +51,12 @@ fun main(args: Array<String>) {
 
     when {
         SelfUpdateService.UNINSTALL_CURRENT_PARAMETER in args -> {
-            runBlocking {
-                SelfUpdateService.uninstallPreviousVersion()
-            }
+            SelfUpdateService.uninstallPreviousVersion()
             return
         }
 
         SelfUpdateService.INSTALL_PARAMETER in args -> {
-            runBlocking {
-                SelfUpdateService.installNewVersion()
-            }
+            SelfUpdateService.installNewVersion()
             return
         }
     }

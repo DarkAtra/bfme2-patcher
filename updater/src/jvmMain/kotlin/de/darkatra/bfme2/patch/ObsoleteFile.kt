@@ -13,8 +13,15 @@ data class ObsoleteFile(
      * @param context the [Context] containing values for placeholders
      */
     override fun applyContext(context: Context) {
+
+        val origDest: String = dest
+
         context.forEach { key, value ->
             dest = Path.of(dest.replace("${Context.PREFIX}$key${Context.SUFFIX}", value)).normalize().toString()
+        }
+
+        if (dest == origDest) {
+            error("Invalid ObsoleteFile without placeholder was found. (Dest: '$dest')")
         }
     }
 }
