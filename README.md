@@ -33,4 +33,4 @@ Build the project using the following command:
 gradlew clean packageUberJarForCurrentOS
 ```
 
-The jar files are located in the `build` folders of the respective applications. E.g.: `updater/build/updater-<os>-0.5.0.jar`
+The jar files are located in the `build` folders of the respective applications. E.g.: `updater/build/updater-<os>-0.5.3.jar`
