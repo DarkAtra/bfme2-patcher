@@ -1,6 +1,6 @@
 allprojects {
     group = "de.darkatra.bfme2"
-    version = "0.5.3"
+    version = "0.5.4"
 
     repositories {
         google()
