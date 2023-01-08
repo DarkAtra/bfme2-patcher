@@ -16,8 +16,8 @@ The `bfme2-patcher` consists of the following applications:
   server. This file contains the checksums, size specifications, paths and timestamps of the individual files.
 - **updater**:
   The `updater` keeps all files for a program and itself up to date. It calculates the differences between the current version of the program and the latest
-  version from the server. For this purpose a SHA-3 hash is created for each file and compared with the server's hash. Afterwards all newer or damaged files are
-  downloaded from the server and old files are deleted.
+  version from the server. For this purpose a SHA-3 hash is created for each file and compared with the server's hash. Afterwards all outdated or damaged files
+  are downloaded from the server and old files are deleted.
 
 ## Build
 
