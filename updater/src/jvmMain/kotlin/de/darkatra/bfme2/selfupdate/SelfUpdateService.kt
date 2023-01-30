@@ -29,8 +29,6 @@ object SelfUpdateService {
     const val UNINSTALL_CURRENT_PARAMETER = "--uninstall-current"
     const val INSTALL_PARAMETER = "--install"
 
-    private const val MAX_RENAME_ATTEMPTS = 7
-
     private val linkLocation: Path = Path.of(System.getProperty("user.home"), "Desktop", "BfME Mod Launcher.lnk")
     private val patcherUserDir: Path = UpdaterContext.context.getPatcherUserDir()
     private val updaterTempLocation: Path = patcherUserDir.resolve(UPDATER_TEMP_NAME)
@@ -118,15 +116,27 @@ object SelfUpdateService {
         return UpdaterContext.applicationHome.isRegularFile()
     }
 
-    private suspend fun attemptRename(from: Path, to: Path, overwrite: Boolean) = withContext(Dispatchers.IO) {
-        for (i in 0 until MAX_RENAME_ATTEMPTS) {
+    private suspend fun attemptRename(
+        from: Path,
+        to: Path,
+        overwrite: Boolean,
+        retryAttempts: Int = 7,
+        initialDelay: Long = 100,
+        maxDelay: Long = 1000,
+        delayMultiplier: Double = 2.0
+    ) = withContext(Dispatchers.IO) {
+
+        var currentDelay: Long = initialDelay
+        repeat(retryAttempts) {
+
             runCatching {
                 from.moveTo(to, overwrite)
             }.onSuccess {
                 return@withContext
             }
 
-            delay(100L * (i + 1))
+            currentDelay = (currentDelay * delayMultiplier).toLong().coerceAtMost(maxDelay)
+            delay(currentDelay)
         }
     }
 }
