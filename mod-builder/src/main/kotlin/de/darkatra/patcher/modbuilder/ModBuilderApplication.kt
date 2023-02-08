@@ -8,14 +8,14 @@ import java.util.stream.Collectors
 import kotlin.io.path.copyTo
 import kotlin.io.path.pathString
 
-const val OUTPUT_FILE_NAME = "update-builder/rotwk/!mod.big"
-const val OUTPUT_FILE_LANG_EN_NAME = "update-builder/rotwk/lang/englishstringsmod.big"
-const val OUTPUT_FILE_LANG_DE_NAME = "update-builder/rotwk/lang/germanstringsmod.big"
-const val MOD_DIR = "bfme2-ep1-mod"
-const val ENGLISH_TRANSLATION_FILE = "data/english-lotr.str"
-const val GERMAN_TRANSLATION_FILE = "data/german-lotr.str"
-const val LOTR_STR_NAME = "data/lotr.str"
-const val ASSET_FILE_NAME = "update-builder/bfme2/asset.dat"
+private const val OUTPUT_FILE_NAME = "update-builder/rotwk/!mod.big"
+private const val OUTPUT_FILE_LANG_EN_NAME = "update-builder/rotwk/lang/englishstringsmod.big"
+private const val OUTPUT_FILE_LANG_DE_NAME = "update-builder/rotwk/lang/germanstringsmod.big"
+private const val MOD_DIR = "bfme2-ep1-mod"
+private const val ENGLISH_TRANSLATION_FILE = "data/english-lotr.str"
+private const val GERMAN_TRANSLATION_FILE = "data/german-lotr.str"
+private const val LOTR_STR_NAME = "data/lotr.str"
+private const val ASSET_FILE_NAME = "update-builder/bfme2/asset.dat"
 
 fun main() {
     ModBuilderApplication.build()

@@ -3,6 +3,7 @@ allprojects {
     version = "0.5.4"
 
     repositories {
+        mavenLocal()
         google()
         mavenCentral()
         maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
