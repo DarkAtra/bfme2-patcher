@@ -19,7 +19,9 @@ import de.darkatra.bfme2.selfupdate.SelfUpdateService
 import de.darkatra.bfme2.ui.UpdaterModel
 import de.darkatra.bfme2.ui.UpdaterView
 import org.jetbrains.skiko.setSystemLookAndFeel
+import java.util.logging.FileHandler
 import java.util.logging.Logger
+import java.util.logging.SimpleFormatter
 import kotlin.io.path.absolutePathString
 
 private const val ICON_PATH = "/images/icon.png"
@@ -30,6 +32,14 @@ fun main(args: Array<String>) {
     if (!UpdaterContext.context.isValid()) {
         LOGGER.info("Updater context is invalid. Existing...")
         return
+    }
+
+    if ("filelog" in args) {
+        LOGGER.addHandler(
+            FileHandler(UpdaterContext.applicationHome.parent.toAbsolutePath().resolve("log-%g.txt").absolutePathString()).apply {
+                formatter = SimpleFormatter()
+            }
+        )
     }
 
     LOGGER.info(
