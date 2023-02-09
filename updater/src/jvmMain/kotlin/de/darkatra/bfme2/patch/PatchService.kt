@@ -1,5 +1,6 @@
 package de.darkatra.bfme2.patch
 
+import de.darkatra.bfme2.LOGGER
 import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.checksum.HashingService
 import de.darkatra.bfme2.download.DownloadService
@@ -11,7 +12,7 @@ import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
-import kotlin.io.path.deleteIfExists
+import kotlin.io.path.deleteExisting
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 import kotlin.io.path.name
@@ -34,7 +35,12 @@ object PatchService {
 
         patch.obsoleteFiles.forEach { obsoleteFile ->
 
-            Path.of(obsoleteFile.dest).deleteIfExists()
+            val toDelete = Path.of(obsoleteFile.dest)
+
+            if (toDelete.exists()) {
+                LOGGER.info("Deleting obsolete file: ${obsoleteFile.dest}")
+                toDelete.deleteExisting()
+            }
 
             ensureActive()
         }
@@ -48,7 +54,11 @@ object PatchService {
         val totalNetwork = differences.compressedSize
         val totalDisk = differences.size
 
+        LOGGER.info("${differences.packets.size} files need updates (total disk: ${totalDisk}, total network: ${totalNetwork}).")
+
         differences.packets.forEach { packet ->
+
+            LOGGER.info("Downloading '${packet.src}' to '${packet.dest}' (size disk: ${packet.size}, size network: ${packet.compressedSize}, backup existing: ${packet.backupExisting})")
 
             backupExistingFileIfRequired(packet)
 

@@ -23,16 +23,16 @@ import java.util.logging.Logger
 import kotlin.io.path.absolutePathString
 
 private const val ICON_PATH = "/images/icon.png"
-private val logger = Logger.getLogger("updater")
+val LOGGER: Logger = Logger.getLogger("updater")
 
 fun main(args: Array<String>) {
 
     if (!UpdaterContext.context.isValid()) {
-        logger.info("Updater context is invalid. Existing...")
+        LOGGER.info("Updater context is invalid. Existing...")
         return
     }
 
-    logger.info(
+    LOGGER.info(
         """------------------------------
         |Starting Updater with:
         |  applicationVersion: ${UpdaterContext.applicationVersion}
@@ -44,7 +44,7 @@ fun main(args: Array<String>) {
     UpdaterContext.context.ensureRequiredDirectoriesExist()
 
     if (!SelfUpdateService.isInCorrectLocation()) {
-        logger.info("Updater is in wrong location. Moving to correct location...")
+        LOGGER.info("Updater is in wrong location. Moving to correct location...")
         SelfUpdateService.moveToCorrectLocation()
         return
     }
