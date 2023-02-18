@@ -22,17 +22,13 @@ import org.jetbrains.skiko.setSystemLookAndFeel
 import java.util.logging.FileHandler
 import java.util.logging.Logger
 import java.util.logging.SimpleFormatter
+import javax.swing.JOptionPane
 import kotlin.io.path.absolutePathString
 
-private const val ICON_PATH = "/images/icon.png"
 val LOGGER: Logger = Logger.getLogger("updater")
+private const val ICON_PATH = "/images/icon.png"
 
 fun main(args: Array<String>) {
-
-    if (!UpdaterContext.context.isValid()) {
-        LOGGER.info("Updater context is invalid. Existing...")
-        return
-    }
 
     if ("filelog" in args) {
         LOGGER.addHandler(
@@ -50,6 +46,14 @@ fun main(args: Array<String>) {
         |------------------------------
         """.trimMargin()
     )
+
+    setSystemLookAndFeel()
+
+    if (!UpdaterContext.context.isValid()) {
+        LOGGER.info("Updater context is invalid.")
+        JOptionPane.showMessageDialog(null, "Updater context is invalid. This usually means that the Games are not installed properly.")
+        return
+    }
 
     UpdaterContext.context.ensureRequiredDirectoriesExist()
 

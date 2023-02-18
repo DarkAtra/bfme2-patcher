@@ -36,14 +36,6 @@ class Context : HashMap<String, String>() {
         }
     }
 
-    fun getServerUrl(): String {
-        return get(SERVER_URL_IDENTIFIER)!!
-    }
-
-    fun getBfme2HomeDir(): Path {
-        return Path.of(get(BFME2_HOME_DIR_IDENTIFIER)!!)
-    }
-
     fun getBfme2UserDir(): Path {
         return Path.of(get(BFME2_USER_DIR_IDENTIFIER)!!)
     }

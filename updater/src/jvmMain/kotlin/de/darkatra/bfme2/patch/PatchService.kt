@@ -6,6 +6,7 @@ import de.darkatra.bfme2.checksum.HashingService
 import de.darkatra.bfme2.download.DownloadService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.URI
 import java.net.URL
@@ -68,14 +69,16 @@ object PatchService {
                 currentNetwork += downloadProgress.countNetwork
                 currentDisk += downloadProgress.countDisk
 
-                progressListener?.onPatchProgress(
-                    PatchProgress(
-                        currentNetwork = currentNetwork,
-                        currentDisk = currentDisk,
-                        totalNetwork = totalNetwork,
-                        totalDisk = totalDisk
+                launch(Dispatchers.Main.immediate) {
+                    progressListener?.onPatchProgress(
+                        PatchProgress(
+                            currentNetwork = currentNetwork,
+                            currentDisk = currentDisk,
+                            totalNetwork = totalNetwork,
+                            totalDisk = totalDisk
+                        )
                     )
-                )
+                }
             }
 
             ensureActive()

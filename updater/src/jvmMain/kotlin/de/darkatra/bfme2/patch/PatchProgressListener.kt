@@ -2,13 +2,13 @@ package de.darkatra.bfme2.patch
 
 interface PatchProgressListener {
 
-    fun onPatchStarted()
+    suspend fun onPatchStarted()
 
-    fun onDeletingObsoleteFiles()
+    suspend fun onDeletingObsoleteFiles()
 
-    fun onCalculatingDifferences()
+    suspend fun onCalculatingDifferences()
 
-    fun onPatchProgress(patchProgress: PatchProgress)
+    suspend fun onPatchProgress(patchProgress: PatchProgress)
 
-    fun onPatchFinished()
+    suspend fun onPatchFinished()
 }

@@ -22,18 +22,14 @@ import kotlin.io.path.outputStream
 
 object SelfUpdateService {
 
-    const val UPDATER_NAME = "updater.jar"
-    const val UPDATER_TEMP_NAME = "_updater.jar"
-    const val UPDATER_OLD_NAME = "updater.old.jar"
-
     const val UNINSTALL_CURRENT_PARAMETER = "--uninstall-current"
     const val INSTALL_PARAMETER = "--install"
 
     private val linkLocation: Path = Path.of(System.getProperty("user.home"), "Desktop", "BfME Mod Launcher.lnk")
     private val patcherUserDir: Path = UpdaterContext.context.getPatcherUserDir()
-    private val updaterTempLocation: Path = patcherUserDir.resolve(UPDATER_TEMP_NAME)
-    private val currentUpdaterLocation: Path = patcherUserDir.resolve(UPDATER_NAME)
-    private val oldUpdaterLocation: Path = patcherUserDir.resolve(UPDATER_OLD_NAME)
+    private val updaterTempLocation: Path = patcherUserDir.resolve(PatchConstants.UPDATER_TEMP_NAME)
+    private val currentUpdaterLocation: Path = patcherUserDir.resolve(PatchConstants.UPDATER_NAME)
+    private val oldUpdaterLocation: Path = patcherUserDir.resolve(PatchConstants.UPDATER_OLD_NAME)
     private val linkIconLocation: Path = patcherUserDir.resolve("icon.ico")
 
     fun isInCorrectLocation(): Boolean {
@@ -91,7 +87,7 @@ object SelfUpdateService {
     suspend fun isNewVersionAvailable(): Boolean = withContext(Dispatchers.IO) {
 
         if (!isRunningAsJar()) {
-            return@withContext true
+            return@withContext false
         }
 
         val latestUpdaterChecksum: String = HashingService.calculateSha3Checksum(URI.create(PatchConstants.UPDATER_URL).toURL().openStream())

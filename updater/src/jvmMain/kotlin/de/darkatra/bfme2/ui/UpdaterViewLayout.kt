@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun BoxScope.MainViewLayout(
+fun BoxScope.UpdaterViewLayout(
     actionsSlot: @Composable BoxScope.() -> Unit,
     progressBarSlot: @Composable ColumnScope.() -> Unit,
     leftButtonSlot: @Composable RowScope.() -> Unit,

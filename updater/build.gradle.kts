@@ -1,5 +1,4 @@
 import org.gradle.jvm.tasks.Jar
-import org.jetbrains.compose.compose
 
 plugins {
     kotlin("multiplatform")
@@ -31,6 +30,7 @@ kotlin {
                 implementation("com.arkivanov.decompose:decompose:${extra["decompose.version"]}")
                 implementation("com.arkivanov.decompose:extensions-compose-jetbrains:${extra["decompose.version"]}")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${extra["kotlin-coroutine.version"]}")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:${extra["kotlin-coroutine.version"]}")
                 implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${extra["jackson.version"]}")
                 implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${extra["jackson.version"]}")
                 implementation("org.bouncycastle:bcprov-jdk18on:${extra["bouncycastle.version"]}")

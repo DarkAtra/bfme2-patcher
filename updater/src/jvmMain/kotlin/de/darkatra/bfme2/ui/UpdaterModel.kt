@@ -7,6 +7,8 @@ import de.darkatra.bfme2.patch.PatchProgressListener
 import de.darkatra.bfme2.persistence.PersistenceService
 import de.darkatra.bfme2.persistence.PersistentState
 import de.darkatra.bfme2.util.StringUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class UpdaterModel : PatchProgressListener {
 
@@ -19,26 +21,26 @@ class UpdaterModel : PatchProgressListener {
         )
     }
 
-    override fun onPatchStarted() {
+    override suspend fun onPatchStarted() = withContext(Dispatchers.Main.immediate) {
         setProgress(INDETERMINATE_PROGRESS, "Downloading patchlist...")
     }
 
-    override fun onDeletingObsoleteFiles() {
+    override suspend fun onDeletingObsoleteFiles() = withContext(Dispatchers.Main.immediate) {
         setProgress(INDETERMINATE_PROGRESS, "Deleting obsolete files...")
     }
 
-    override fun onCalculatingDifferences() {
+    override suspend fun onCalculatingDifferences() = withContext(Dispatchers.Main.immediate) {
         setProgress(INDETERMINATE_PROGRESS, "Calculating differences...")
     }
 
-    override fun onPatchProgress(patchProgress: PatchProgress) {
+    override suspend fun onPatchProgress(patchProgress: PatchProgress) = withContext(Dispatchers.Main.immediate) {
         setProgress(
             patchProgress.currentDisk.toFloat() / patchProgress.totalDisk.toFloat(),
             "${StringUtils.humanReadableSize(patchProgress.currentNetwork)}/${StringUtils.humanReadableSize(patchProgress.totalNetwork)}"
         )
     }
 
-    override fun onPatchFinished() {
+    override suspend fun onPatchFinished() = withContext(Dispatchers.Main.immediate) {
         setProgress(1f, "Ready to start the game.")
         setPatchInProgress(false)
         setPatchedOnce(true)

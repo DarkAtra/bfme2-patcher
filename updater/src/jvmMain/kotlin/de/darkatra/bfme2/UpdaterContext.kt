@@ -1,6 +1,7 @@
 package de.darkatra.bfme2
 
 import de.darkatra.bfme2.patch.Context
+import de.darkatra.bfme2.patch.PatchConstants
 import de.darkatra.bfme2.registry.RegistryService
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -24,7 +25,7 @@ object UpdaterContext {
 
     private fun getTestContext(): Context {
         return Context().apply {
-            putIfAbsent(Context.SERVER_URL_IDENTIFIER, "https://darkatra.de")
+            putIfAbsent(Context.SERVER_URL_IDENTIFIER, PatchConstants.SERVER_URL)
             putIfAbsent(Context.BFME2_HOME_DIR_IDENTIFIER, Paths.get(System.getProperty("user.home"), "Desktop/updater/bfme2/").normalize().toString())
             putIfAbsent(Context.BFME2_USER_DIR_IDENTIFIER, Paths.get(System.getProperty("user.home"), "Desktop/updater/userDirBfme2/").normalize().toString())
             putIfAbsent(Context.ROTWK_HOME_DIR_IDENTIFIER, Paths.get(System.getProperty("user.home"), "Desktop/updater/bfme2ep1/").normalize().toString())
@@ -38,7 +39,7 @@ object UpdaterContext {
 
     private fun getProductionContext(): Context {
         return Context().apply {
-            putIfAbsent(Context.SERVER_URL_IDENTIFIER, "https://darkatra.de")
+            putIfAbsent(Context.SERVER_URL_IDENTIFIER, PatchConstants.SERVER_URL)
             putIfAbsent(Context.BFME2_HOME_DIR_IDENTIFIER, RegistryService.findBaseGameHomeDirectory().normalize().toString())
             putIfAbsent(Context.BFME2_USER_DIR_IDENTIFIER, RegistryService.findBaseGameUserDirectory().normalize().toString())
             RegistryService.findExpansionHomeDirectory().normalize().let { expansionHomeDir ->

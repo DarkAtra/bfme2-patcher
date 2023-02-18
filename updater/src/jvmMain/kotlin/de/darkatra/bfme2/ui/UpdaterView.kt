@@ -70,7 +70,7 @@ fun UpdaterView(
         transitionDuration = Duration.ofSeconds(2)
     ) {
 
-        MainViewLayout(
+        UpdaterViewLayout(
             actionsSlot = {
                 if (state.newVersionAvailable) {
                     SmallButton(
