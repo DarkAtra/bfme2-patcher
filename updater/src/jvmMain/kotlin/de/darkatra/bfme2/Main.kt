@@ -20,6 +20,7 @@ import de.darkatra.bfme2.ui.UpdaterModel
 import de.darkatra.bfme2.ui.UpdaterView
 import org.jetbrains.skiko.setSystemLookAndFeel
 import java.util.logging.FileHandler
+import java.util.logging.Level
 import java.util.logging.Logger
 import java.util.logging.SimpleFormatter
 import javax.swing.JOptionPane
@@ -51,11 +52,27 @@ fun main(args: Array<String>) {
 
     if (!UpdaterContext.context.isValid()) {
         LOGGER.info("Updater context is invalid.")
-        JOptionPane.showMessageDialog(null, "Updater context is invalid. This usually means that the Games are not installed properly.")
+        JOptionPane.showMessageDialog(
+            null,
+            "Updater context is invalid. This usually means that the Games are not installed properly.",
+            "Info",
+            JOptionPane.INFORMATION_MESSAGE
+        )
         return
     }
 
-    UpdaterContext.context.ensureRequiredDirectoriesExist()
+    runCatching {
+        UpdaterContext.context.ensureRequiredDirectoriesExist()
+    }.onFailure { e ->
+        LOGGER.log(Level.SEVERE, "Ensure required directories failed with: ${e.message}", e)
+        JOptionPane.showMessageDialog(
+            null,
+            "Could not create required directories. This usually occurs if the Games are installed in their default locations. The ${UpdaterContext.applicationName} does not have write permissions to those directories and thus requires installing the games somewhere else.",
+            "Error",
+            JOptionPane.ERROR_MESSAGE
+        )
+        return
+    }
 
     if (!SelfUpdateService.isInCorrectLocation()) {
         LOGGER.info("Updater is in wrong location. Moving to correct location...")

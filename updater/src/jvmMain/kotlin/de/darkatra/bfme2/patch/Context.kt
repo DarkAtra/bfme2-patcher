@@ -30,8 +30,8 @@ class Context : HashMap<String, String>() {
     fun ensureRequiredDirectoriesExist() {
         val patcherUserDir = getPatcherUserDir()
         if (!patcherUserDir.exists()) {
-            check(patcherUserDir.toFile().mkdirs()) {
-                "Could not create: '${patcherUserDir.absolutePathString()}'."
+            if (!patcherUserDir.toFile().mkdirs()) {
+                throw IllegalStateException("Could not create: ${patcherUserDir.absolutePathString()}")
             }
         }
     }
