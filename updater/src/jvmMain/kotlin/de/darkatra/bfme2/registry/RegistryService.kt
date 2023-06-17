@@ -9,6 +9,18 @@ object RegistryService {
     private const val BASE_GAME_REGISTRY_KEY = "SOFTWARE\\Wow6432Node\\Electronic Arts\\Electronic Arts\\The Battle for Middle-earth II"
     private const val EXPANSION_REGISTRY_KEY = "SOFTWARE\\Wow6432Node\\Electronic Arts\\Electronic Arts\\The Lord of the Rings, The Rise of the Witch-king"
 
+    /**
+     * The registry key that allows setting a 'Debugger' for the expansion.
+     * If a 'Debugger' is set, opening the original lotrbfme2ep1.exe will launch whatever is set as value.
+     * For example:
+     * 'Debugger' to 'C:\MyApp\app.exe'
+     * would launch 'C:\MyApp\app.exe' instead of the original game.
+     *
+     * Elevated permissions are required to write the registry key.
+     */
+    @Suppress("unused") // TODO: implement a toggle to set/unset the debugger field
+    private const val HOOK_REGISTRY_KEY = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\lotrbfme2ep1.exe"
+
     fun findBaseGameHomeDirectory(): Path {
         return Path.of(
             Advapi32Util.registryGetStringValue(HKEY_LOCAL_MACHINE, BASE_GAME_REGISTRY_KEY, "InstallPath")
