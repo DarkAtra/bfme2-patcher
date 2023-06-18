@@ -1,8 +1,10 @@
+import edu.sc.seis.launch4j.tasks.DefaultLaunch4jTask
 import org.gradle.jvm.tasks.Jar
 
 plugins {
     kotlin("multiplatform")
     id("org.jetbrains.compose")
+    id("edu.sc.seis.launch4j")
 }
 
 kotlin {
@@ -67,6 +69,17 @@ compose.desktop {
         nativeDistributions {
             packageName = "updater"
             packageVersion = "${project.version}"
+        }
+    }
+}
+
+afterEvaluate {
+    tasks {
+        withType<DefaultLaunch4jTask> {
+            setJarTask(project.tasks.findByName("packageUberJarForCurrentOS"))
+
+            outfile.value("${project.name}.exe")
+            icon.value("$projectDir/icon.ico")
         }
     }
 }

@@ -1,5 +1,6 @@
 package de.darkatra.bfme2.selfupdate
 
+import de.darkatra.bfme2.LOGGER
 import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.checksum.HashingService
 import de.darkatra.bfme2.download.DownloadService
@@ -48,7 +49,13 @@ object SelfUpdateService {
             }
         }
 
+        ProcessUtils.runJar(currentUpdaterLocation)
+    }
+
+    fun updateLinkLocationIfNecessary() {
+
         if (!linkLocation.toFile().exists()) {
+            // create new link
             runBlocking {
                 DownloadService.download(
                     URI.create(PatchConstants.UPDATER_ICON_URL).toURL(),
@@ -61,10 +68,23 @@ object SelfUpdateService {
                 .setWorkingDir(currentUpdaterLocation.parent.absolutePathString())
                 .setIconLocation(linkIconLocation.absolutePathString())
                 .saveTo(linkLocation.absolutePathString())
+
+            LOGGER.info("Created Desktop shortcut.")
+            return
         }
 
-        ProcessUtils.runJar(currentUpdaterLocation)
+        // update existing link
+        val existingLink = ShellLink(linkLocation)
+        if (existingLink.resolveTarget() != currentUpdaterLocation.absolutePathString()) {
+            existingLink
+                .setTarget(currentUpdaterLocation.absolutePathString())
+                .setWorkingDir(currentUpdaterLocation.parent.absolutePathString())
+                .setIconLocation(linkIconLocation.absolutePathString())
+                .saveTo(linkLocation.absolutePathString())
+            LOGGER.info("Updated Desktop shortcut.")
+        }
     }
+
 
     fun applyUpdate() {
         ProcessUtils.runJar(updaterTempLocation, arrayOf(UNINSTALL_CURRENT_PARAMETER))

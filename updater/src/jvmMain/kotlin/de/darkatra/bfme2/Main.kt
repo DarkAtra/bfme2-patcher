@@ -96,6 +96,8 @@ fun main(args: Array<String>) {
         return
     }
 
+    SelfUpdateService.updateLinkLocationIfNecessary()
+
     SelfUpdateService.performCleanup()
 
     setSystemLookAndFeel()
