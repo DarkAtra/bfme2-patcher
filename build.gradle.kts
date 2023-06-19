@@ -15,3 +15,10 @@ allprojects {
         }
     }
 }
+
+plugins {
+    kotlin("multiplatform").apply(false)
+    kotlin("jvm").apply(false)
+    id("org.jetbrains.compose").apply(false)
+    id("edu.sc.seis.launch4j").apply(false)
+}
