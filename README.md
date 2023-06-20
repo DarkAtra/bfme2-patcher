@@ -2,6 +2,8 @@
 
 The `bfme2-patcher` consists of the following applications:
 
+- **game-patcher**:
+  The `game-patcher` aims to patch certain aspects of the original game to allow proper online gameplay. Currently work in progress.
 - **map-builder**:
   The `map-builder` is an application that helps with building the `!map.big` archive. It takes all the necessary files for each map, generates
   the `mapcache.ini`
