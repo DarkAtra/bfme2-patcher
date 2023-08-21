@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.FrameWindowScope
@@ -79,7 +80,7 @@ fun UpdaterView(
                             performSelfUpdate()
                         }
                     ) {
-                        Text(text = "Update available", fontSize = 14.sp)
+                        Text(text = "Update available", fontSize = 14.sp, fontWeight = FontWeight.W400)
                     }
                 }
             },
@@ -100,7 +101,7 @@ fun UpdaterView(
                         }
                     }
                 ) {
-                    Text(text = "Check for Updates", fontSize = 14.sp)
+                    Text(text = "Check for Updates", fontSize = 14.sp, fontWeight = FontWeight.W400)
                 }
             },
             rightButtonSlot = {
@@ -129,7 +130,7 @@ fun UpdaterView(
                         }
                     }
                 ) {
-                    Text(text = "Start Game", fontSize = 14.sp)
+                    Text(text = "Start Game", fontSize = 14.sp, fontWeight = FontWeight.W400)
                 }
             }
         )

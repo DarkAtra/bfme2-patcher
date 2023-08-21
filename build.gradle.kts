@@ -1,10 +1,8 @@
 allprojects {
     group = "de.darkatra.bfme2"
-    version = "0.7.0"
+    version = "0.8.0"
 
     repositories {
-        mavenLocal()
-        google()
         mavenCentral()
         maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
         maven("https://maven.pkg.github.com/DarkAtra/*") {
@@ -13,6 +11,8 @@ allprojects {
                 password = "${extra["github.password"]}"
             }
         }
+        google()
+        mavenLocal()
     }
 }
 

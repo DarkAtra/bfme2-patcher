@@ -4,7 +4,7 @@ import de.darkatra.bfme2.Vector3
 import de.darkatra.bfme2.big.BigArchive
 import de.darkatra.bfme2.big.BigArchiveVersion
 import de.darkatra.bfme2.map.MapFile
-import de.darkatra.bfme2.map.reader.MapFileReader
+import de.darkatra.bfme2.map.serialization.MapFileReader
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
@@ -16,7 +16,6 @@ import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.inputStream
 import kotlin.io.path.name
 import kotlin.io.path.pathString
-
 
 const val MAP_DIR = "maps-camera-fix"
 const val OUTPUT_FILE_NAME = "update-builder/rotwk/!maps.big"
@@ -64,10 +63,10 @@ object MapBuilderApplication {
                         timestampLo = winFileTimeFromInstant(file.getLastModifiedTime().toInstant()).toInt(),
                         timestampHi = (winFileTimeFromInstant(file.getLastModifiedTime().toInstant()) shr 32).toInt(),
                         isOfficial = true,
-                        isScenarioMP = map.worldSettings.find { it.key.name == "isScenarioMultiplayer" }?.value as Boolean? ?: false,
+                        isScenarioMP = map.worldInfo["isScenarioMultiplayer"]?.value as Boolean? ?: false,
+                        extentMin = Vector3(0f, 0f, 0f),
                         // not sure why, but the game multiplies the coordinates by factor 10
-                        extentMin = Vector3(map.heightMap.borders[0].x1.toFloat() * 10f, map.heightMap.borders[0].y1.toFloat() * 10f, 0f),
-                        extentMax = Vector3(map.heightMap.borders[0].x2.toFloat() * 10f, map.heightMap.borders[0].y2.toFloat() * 10f, 0f),
+                        extentMax = Vector3(map.heightMap.borders[0].x.toFloat() * 10f, map.heightMap.borders[0].y.toFloat() * 10f, 0f),
                         player1Start = getWaypointForPlayer(1, map),
                         player2Start = getWaypointForPlayer(2, map),
                         player3Start = getWaypointForPlayer(3, map),
@@ -76,7 +75,7 @@ object MapBuilderApplication {
                         player6Start = getWaypointForPlayer(6, map),
                         player7Start = getWaypointForPlayer(7, map),
                         player8Start = getWaypointForPlayer(8, map),
-                        initialCameraPosition = map.objects.filter { it.typeName == "*Waypoints/Waypoint" }
+                        initialCameraPosition = map.objects.objects.filter { it.typeName == "*Waypoints/Waypoint" }
                             .find { it.properties.find { prop -> prop.key.name == "waypointName" }?.value == "InitialCameraPosition" }
                             ?.position
                     ))
@@ -117,7 +116,7 @@ object MapBuilderApplication {
     }
 
     private fun getWaypointForPlayer(player: Int, map: MapFile): Vector3? {
-        return map.objects.filter { it.typeName == "*Waypoints/Waypoint" }
+        return map.objects.objects.filter { it.typeName == "*Waypoints/Waypoint" }
             .find { it.properties.find { prop -> prop.key.name == "waypointName" }?.value == "Player_${player}_Start" }
             ?.position
     }
