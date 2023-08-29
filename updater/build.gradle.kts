@@ -80,6 +80,7 @@ afterEvaluate {
 
             outfile.value("${project.name}.exe")
             icon.value("$projectDir/icon.ico")
+            manifest.value("$projectDir/launch4j.manifest")
         }
     }
 }
