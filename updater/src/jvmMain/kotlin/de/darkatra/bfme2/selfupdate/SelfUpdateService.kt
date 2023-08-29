@@ -54,6 +54,10 @@ object SelfUpdateService {
 
     fun updateLinkLocationIfNecessary() {
 
+        if (!isRunningAsJar()) {
+            return
+        }
+
         if (!linkLocation.toFile().exists()) {
             // create new link
             runBlocking {
