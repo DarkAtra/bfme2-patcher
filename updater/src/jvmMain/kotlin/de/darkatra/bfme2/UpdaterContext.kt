@@ -10,9 +10,13 @@ import kotlin.io.path.toPath
 
 object UpdaterContext {
 
-    const val applicationName: String = "BfME Mod Launcher"
+    const val APPLICATION_NAME: String = "BfME Mod Launcher"
     val applicationVersion: String = UpdaterContext::class.java.getPackage().implementationVersion ?: "dev"
     val applicationHome: Path = javaClass.protectionDomain.codeSource.location.toURI().toPath()
+    val ifeoHome: Path = when (isRunningAsJar()) {
+        true -> applicationHome.parent.resolve(PatchConstants.UPDATER_IFEO_NAME)
+        false -> Path.of(".").resolve(PatchConstants.UPDATER_IFEO_NAME).normalize()
+    }
 
     val context: Context
 
@@ -21,6 +25,10 @@ object UpdaterContext {
             true -> getProductionContext()
             false -> getTestContext()
         }
+    }
+
+    fun isRunningAsJar(): Boolean {
+        return applicationHome.isRegularFile()
     }
 
     private fun getTestContext(): Context {

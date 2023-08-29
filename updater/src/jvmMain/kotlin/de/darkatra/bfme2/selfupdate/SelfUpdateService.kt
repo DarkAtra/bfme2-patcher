@@ -16,8 +16,8 @@ import java.net.URI
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.deleteIfExists
+import kotlin.io.path.exists
 import kotlin.io.path.inputStream
-import kotlin.io.path.isRegularFile
 import kotlin.io.path.moveTo
 import kotlin.io.path.outputStream
 
@@ -29,17 +29,20 @@ object SelfUpdateService {
     private val linkLocation: Path = Path.of(System.getProperty("user.home"), "Desktop", "BfME Mod Launcher.lnk")
     private val patcherUserDir: Path = UpdaterContext.context.getPatcherUserDir()
     private val updaterTempLocation: Path = patcherUserDir.resolve(PatchConstants.UPDATER_TEMP_NAME)
+    private val fallbackUpdaterTempLocation: Path = patcherUserDir.resolve(PatchConstants.FALLBACK_UPDATER_TEMP_NAME)
     private val currentUpdaterLocation: Path = patcherUserDir.resolve(PatchConstants.UPDATER_NAME)
+    private val fallbackCurrentUpdaterLocation: Path = patcherUserDir.resolve(PatchConstants.FALLBACK_UPDATER_NAME)
     private val oldUpdaterLocation: Path = patcherUserDir.resolve(PatchConstants.UPDATER_OLD_NAME)
+    private val fallbackOldUpdaterLocation: Path = patcherUserDir.resolve(PatchConstants.FALLBACK_UPDATER_OLD_NAME)
     private val linkIconLocation: Path = patcherUserDir.resolve("icon.ico")
 
     fun isInCorrectLocation(): Boolean {
-        return !isRunningAsJar() || UpdaterContext.applicationHome.startsWith(patcherUserDir)
+        return !UpdaterContext.isRunningAsJar() || UpdaterContext.applicationHome.startsWith(patcherUserDir)
     }
 
     fun moveToCorrectLocation() {
 
-        if (!isRunningAsJar()) {
+        if (!UpdaterContext.isRunningAsJar()) {
             return
         }
 
@@ -49,12 +52,13 @@ object SelfUpdateService {
             }
         }
 
-        ProcessUtils.runJar(currentUpdaterLocation)
+        ProcessUtils.run(currentUpdaterLocation)
+        LOGGER.info("Moved updater to correct location, relaunching now.")
     }
 
     fun updateLinkLocationIfNecessary() {
 
-        if (!isRunningAsJar()) {
+        if (!UpdaterContext.isRunningAsJar()) {
             return
         }
 
@@ -77,7 +81,6 @@ object SelfUpdateService {
             return
         }
 
-        // update existing link
         val existingLink = ShellLink(linkLocation)
         if (existingLink.resolveTarget() != currentUpdaterLocation.absolutePathString()) {
             existingLink
@@ -89,28 +92,76 @@ object SelfUpdateService {
         }
     }
 
+    fun downloadUpdaterIfeoIfNecessary() {
+
+        if (!UpdaterContext.isRunningAsJar()) {
+            return
+        }
+
+        if (UpdaterContext.ifeoHome.exists()) {
+
+            val isNewUpdaterIfeoVersionAvailable = runBlocking(Dispatchers.IO) {
+                val latestUpdaterIfeoChecksum: String = runCatching {
+                    HashingService.calculateSha3Checksum(URI.create(PatchConstants.UPDATER_IFEO_URL).toURL().openStream())
+                }.getOrNull() ?: return@runBlocking false
+                val currentUpdaterIfeoChecksum: String = HashingService.calculateSha3Checksum(UpdaterContext.ifeoHome.inputStream())
+                return@runBlocking currentUpdaterIfeoChecksum != latestUpdaterIfeoChecksum
+            }
+
+            if (!isNewUpdaterIfeoVersionAvailable) {
+                return
+            }
+        }
+
+        runBlocking {
+            DownloadService.download(
+                URI.create(PatchConstants.UPDATER_IFEO_URL).toURL(),
+                UpdaterContext.ifeoHome,
+                Compression.NONE
+            )
+        }
+        LOGGER.info("Downloaded updater-ifeo.exe.")
+    }
 
     fun applyUpdate() {
-        ProcessUtils.runJar(updaterTempLocation, arrayOf(UNINSTALL_CURRENT_PARAMETER))
+        if (updaterTempLocation.exists()) {
+            ProcessUtils.run(updaterTempLocation, arrayOf(UNINSTALL_CURRENT_PARAMETER))
+        } else {
+            ProcessUtils.runJar(fallbackUpdaterTempLocation, arrayOf(UNINSTALL_CURRENT_PARAMETER))
+        }
     }
 
     fun uninstallPreviousVersion() = runBlocking(Dispatchers.IO) {
-        attemptRename(currentUpdaterLocation, oldUpdaterLocation, true)
-        ProcessUtils.runJar(oldUpdaterLocation, arrayOf(INSTALL_PARAMETER))
+        if (currentUpdaterLocation.exists()) {
+            attemptRename(currentUpdaterLocation, oldUpdaterLocation, true)
+        } else {
+            attemptRename(fallbackCurrentUpdaterLocation, fallbackOldUpdaterLocation, true)
+        }
+        if (oldUpdaterLocation.exists()) {
+            ProcessUtils.run(oldUpdaterLocation, arrayOf(INSTALL_PARAMETER))
+        } else {
+            ProcessUtils.runJar(fallbackOldUpdaterLocation, arrayOf(INSTALL_PARAMETER))
+        }
     }
 
     fun installNewVersion() = runBlocking(Dispatchers.IO) {
-        attemptRename(updaterTempLocation, currentUpdaterLocation, true)
-        ProcessUtils.runJar(currentUpdaterLocation)
+        if (updaterTempLocation.exists()) {
+            attemptRename(updaterTempLocation, currentUpdaterLocation, true)
+            ProcessUtils.run(currentUpdaterLocation)
+        } else {
+            ProcessUtils.runJar(fallbackCurrentUpdaterLocation)
+        }
     }
 
     fun performCleanup() = runCatching {
         oldUpdaterLocation.deleteIfExists()
+        fallbackOldUpdaterLocation.deleteIfExists()
+        fallbackUpdaterTempLocation.deleteIfExists()
     }
 
     suspend fun isNewVersionAvailable(): Boolean = withContext(Dispatchers.IO) {
 
-        if (!isRunningAsJar()) {
+        if (!UpdaterContext.isRunningAsJar()) {
             return@withContext false
         }
 
@@ -130,10 +181,6 @@ object SelfUpdateService {
             Compression.NONE,
             null
         )
-    }
-
-    private fun isRunningAsJar(): Boolean {
-        return UpdaterContext.applicationHome.isRegularFile()
     }
 
     private suspend fun attemptRename(

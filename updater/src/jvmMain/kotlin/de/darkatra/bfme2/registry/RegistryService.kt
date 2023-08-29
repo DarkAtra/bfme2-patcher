@@ -46,4 +46,8 @@ object RegistryService {
             Advapi32Util.registryGetStringValue(HKEY_LOCAL_MACHINE, EXPANSION_REGISTRY_KEY, "UserDataLeafName")
         ).normalize()
     }
+
+    fun hasExpansionDebugger(): Boolean {
+        return Advapi32Util.registryGetStringValue(HKEY_LOCAL_MACHINE, HOOK_REGISTRY_KEY, "Debugger") != ""
+    }
 }

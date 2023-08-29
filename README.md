@@ -20,6 +20,8 @@ The `bfme2-patcher` consists of the following applications:
   The `updater` keeps all files for a program and itself up to date. It calculates the differences between the current version of the program and the latest
   version from the server. For this purpose a SHA-3 hash is created for each file and compared with the server's hash. Afterwards all outdated or damaged files
   are downloaded from the server and old files are deleted.
+- **updater-ifeo**:
+  The `updater-ifeo` is a tiny utility that is used to set the `Debugger` registry key for the games. This allows the updater to launch instead of the game.
 
 ## Build
 
@@ -32,7 +34,7 @@ git clone git@github.com:DarkAtra/bfme2-patcher.git
 Build the project using the following command:
 
 ```
-gradlew clean packageUberJarForCurrentOS
+gradlew clean createExe
 ```
 
 The jar files are located in the `build` folders of the respective applications. E.g.: `updater/build/updater-<os>-0.5.3.jar`

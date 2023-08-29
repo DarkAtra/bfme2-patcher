@@ -12,7 +12,6 @@ kotlin {
                 implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${extra["jackson.version"]}")
                 implementation("org.bouncycastle:bcprov-jdk18on:${extra["bouncycastle.version"]}")
                 implementation("de.darkatra.bfme2:big:${extra["bfme2-modding-utils.version"]}")
-                implementation("net.java.dev.jna:jna-platform:${extra["jna.version"]}")
             }
         }
     }

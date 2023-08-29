@@ -7,9 +7,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.MenuBar
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
+import de.darkatra.bfme2.LOGGER
 import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.game.Game
 import de.darkatra.bfme2.game.OptionFileService
+import de.darkatra.bfme2.util.ProcessUtils
+import java.util.Base64
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
 import kotlin.io.path.notExists
 
@@ -75,6 +79,34 @@ fun Toolbar(
                         updaterModel.setTrayIconEnabled(trayIconEnabled)
                     }
                 )
+                if (state.hookingSupported) {
+                    CheckboxItem(
+                        text = "Hook Game",
+                        checked = state.hookEnabled,
+                        onCheckedChange = { hookEnabled ->
+
+                            val exitCode = ProcessUtils.runElevated(
+                                UpdaterContext.ifeoHome,
+                                when (hookEnabled) {
+                                    true -> arrayOf(
+                                        "set",
+                                        Base64.getEncoder().encodeToString(UpdaterContext.applicationHome.absolutePathString().toByteArray())
+                                    )
+
+                                    false -> arrayOf("reset")
+                                }
+                            ).waitFor()
+
+                            if (exitCode == 0) {
+                                LOGGER.info("Successfully ${if (hookEnabled) "hooked" else "unhooked"}")
+                                updaterModel.setHookEnabled(hookEnabled)
+                            } else {
+                                // TODO: display error
+                                LOGGER.severe("Could not run updater-ifeo.exe. Exit code: $exitCode")
+                            }
+                        }
+                    )
+                }
             }
 
             Menu(text = "Version") {

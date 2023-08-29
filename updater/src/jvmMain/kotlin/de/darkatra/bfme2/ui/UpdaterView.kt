@@ -56,14 +56,15 @@ fun UpdaterView(
         updaterModel.setSelfUpdateInProgress(false)
     }
 
-    Toolbar(updaterModel, frameWindowScope) {
+    Toolbar(updaterModel, frameWindowScope, onCheckForUpdates = {
         patchScope.launch {
             updaterModel.setNewVersionAvailable(SelfUpdateService.isNewVersionAvailable())
             if (state.newVersionAvailable) {
                 setSelfUpdateDialogVisible(true)
             }
+            // TODO: display message if no update is available
         }
-    }
+    })
 
     FadingBackground(
         imagePaths = imagePaths,

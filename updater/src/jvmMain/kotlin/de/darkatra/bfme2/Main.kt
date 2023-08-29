@@ -5,6 +5,7 @@ import androidx.compose.material.lightColors
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
@@ -29,6 +30,7 @@ import kotlin.io.path.absolutePathString
 val LOGGER: Logger = Logger.getLogger("updater")
 private const val ICON_PATH = "/images/icon.png"
 
+@ExperimentalComposeUiApi
 fun main(args: Array<String>) {
 
     if ("filelog" in args) {
@@ -67,7 +69,7 @@ fun main(args: Array<String>) {
         LOGGER.log(Level.SEVERE, "Ensure required directories failed with: ${e.message}", e)
         JOptionPane.showMessageDialog(
             null,
-            "Could not create required directories. This usually occurs if the Games are installed in their default locations. The ${UpdaterContext.applicationName} does not have write permissions to those directories and thus requires installing the games somewhere else.",
+            "Could not create required directories. This usually occurs if the Games are installed in their default locations. The ${UpdaterContext.APPLICATION_NAME} does not have write permissions to those directories and thus requires installing the games somewhere else.",
             "Error",
             JOptionPane.ERROR_MESSAGE
         )
@@ -97,7 +99,7 @@ fun main(args: Array<String>) {
     }
 
     SelfUpdateService.updateLinkLocationIfNecessary()
-
+    SelfUpdateService.downloadUpdaterIfeoIfNecessary()
     SelfUpdateService.performCleanup()
 
     setSystemLookAndFeel()
@@ -115,7 +117,7 @@ fun main(args: Array<String>) {
         if (state.trayIconEnabled) {
             Tray(
                 icon = painterResource(ICON_PATH),
-                tooltip = UpdaterContext.applicationName,
+                tooltip = UpdaterContext.APPLICATION_NAME,
                 onAction = { updaterModel.setVisible(true) },
                 menu = {
                     Item("Open", onClick = { updaterModel.setVisible(true) })
@@ -133,7 +135,7 @@ fun main(args: Array<String>) {
             )
         ) {
             Window(
-                title = UpdaterContext.applicationName,
+                title = UpdaterContext.APPLICATION_NAME,
                 icon = painterResource(ICON_PATH),
                 resizable = false,
                 state = windowState,

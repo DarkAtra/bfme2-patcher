@@ -2,13 +2,16 @@ package de.darkatra.bfme2.ui
 
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.reduce
+import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.patch.PatchProgress
 import de.darkatra.bfme2.patch.PatchProgressListener
 import de.darkatra.bfme2.persistence.PersistenceService
 import de.darkatra.bfme2.persistence.PersistentState
+import de.darkatra.bfme2.registry.RegistryService
 import de.darkatra.bfme2.util.StringUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlin.io.path.exists
 
 class UpdaterModel : PatchProgressListener {
 
@@ -16,7 +19,9 @@ class UpdaterModel : PatchProgressListener {
         MutableValue(
             State(
                 hdEditionEnabled = it.hdEditionEnabled,
-                trayIconEnabled = it.trayIconEnabled
+                trayIconEnabled = it.trayIconEnabled,
+                hookEnabled = RegistryService.hasExpansionDebugger(),
+                hookingSupported = UpdaterContext.ifeoHome.exists()
             )
         )
     }
@@ -84,6 +89,10 @@ class UpdaterModel : PatchProgressListener {
         updatePersistentState()
     }
 
+    fun setHookEnabled(hookEnabled: Boolean) {
+        state.reduce { it.copy(hookEnabled = hookEnabled) }
+    }
+
     private fun updatePersistentState() {
         PersistenceService.savePersistentState(
             PersistentState(
@@ -107,6 +116,8 @@ class UpdaterModel : PatchProgressListener {
         val progressText: String = "Waiting for user input.",
 
         val hdEditionEnabled: Boolean = false,
-        val trayIconEnabled: Boolean = false
+        val trayIconEnabled: Boolean = false,
+        val hookEnabled: Boolean = false,
+        val hookingSupported: Boolean = false
     )
 }

@@ -13,6 +13,12 @@ object ProcessUtils {
         )
     }
 
+    fun runElevated(executable: Path, args: Array<String> = emptyArray()): Process {
+        return Runtime.getRuntime().exec(
+            "cmd /c \"${executable.absolutePathString()}\" ${args.joinToString(" ")}"
+        )
+    }
+
     fun runJar(jar: Path, args: Array<String> = emptyArray()): Process {
         return run(
             listOf("java", "-jar", jar.name, *args),
