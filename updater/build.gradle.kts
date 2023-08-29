@@ -54,6 +54,11 @@ kotlin {
 }
 
 tasks {
+    withType<JavaCompile> {
+        sourceCompatibility = "11"
+        targetCompatibility = "11"
+    }
+
     withType<Jar> {
         exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
 
@@ -81,6 +86,7 @@ afterEvaluate {
             outfile.value("${project.name}.exe")
             icon.value("$projectDir/icon.ico")
             manifest.value("$projectDir/launch4j.manifest")
+            jreMinVersion.value("11")
         }
     }
 }

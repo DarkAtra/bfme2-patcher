@@ -7,12 +7,6 @@ plugins {
     id("edu.sc.seis.launch4j")
 }
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
-    }
-}
-
 kotlin {
     sourceSets {
         val main by getting {
@@ -24,6 +18,10 @@ kotlin {
 }
 
 tasks {
+    withType<JavaCompile> {
+        sourceCompatibility = "11"
+        targetCompatibility = "11"
+    }
 
     withType<Jar> {
         manifest {
