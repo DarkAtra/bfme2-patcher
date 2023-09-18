@@ -18,7 +18,7 @@ object RegistryService {
      *
      * Elevated permissions are required to write the registry key.
      */
-    @Suppress("unused") // TODO: implement a toggle to set/unset the debugger field
+    @Suppress("unused")
     private const val HOOK_REGISTRY_KEY = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\lotrbfme2ep1.exe"
 
     fun findBaseGameHomeDirectory(): Path {

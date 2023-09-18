@@ -14,6 +14,7 @@ import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.FrameWindowScope
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import de.darkatra.bfme2.UpdaterContext
+import de.darkatra.bfme2.patch.PatchConstants
 import de.darkatra.bfme2.patch.PatchService
 import de.darkatra.bfme2.selfupdate.SelfUpdateService
 import de.darkatra.bfme2.util.ProcessUtils
@@ -21,6 +22,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Duration
+import java.util.Base64
+import kotlin.io.path.absolutePathString
 
 private val imagePaths = arrayOf(
     "/images/splash2_1920x1080.jpg",
@@ -39,6 +42,7 @@ fun UpdaterView(
 ) {
 
     val rotwkHomeDir = UpdaterContext.context.getRotwkHomeDir()
+    val patcherUserDir = UpdaterContext.context.getPatcherUserDir()
 
     val patchScope = rememberCoroutineScope()
     val state by updaterModel.state.subscribeAsState()
@@ -114,13 +118,21 @@ fun UpdaterView(
                         patchScope.launch {
                             runCatching {
                                 withContext(Dispatchers.IO) {
-                                    ProcessUtils.run(
-                                        rotwkHomeDir.resolve("lotrbfme2ep1.exe"),
-                                        when (state.hdEditionEnabled) {
-                                            true -> arrayOf("-mod", UpdaterContext.context.getPatcherUserDir().resolve("HDEdition.big").normalize().toString())
-                                            false -> emptyArray()
-                                        }
-                                    ).waitFor()
+                                    ProcessUtils.runElevated(
+                                        patcherUserDir.resolve(PatchConstants.UPDATER_IFEO_NAME),
+                                        buildList {
+                                            add("filelog")
+                                            add("run")
+
+                                            val gameExecutablePath = rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize().absolutePathString()
+                                            add(Base64.getEncoder().encodeToString(gameExecutablePath.toByteArray()))
+
+                                            if (state.hdEditionEnabled) {
+                                                val hdEditionPath = patcherUserDir.resolve("HDEdition.big").normalize().absolutePathString()
+                                                add(Base64.getEncoder().encodeToString("-mod \"$hdEditionPath\"".toByteArray()))
+                                            }
+                                        }.toTypedArray()
+                                    ).waitFor() // FIXME: currently does not wait for the game process to exit because the IFEO tool is started via cmd
                                 }
                             }.also {
                                 updaterModel.setGameRunning(false)

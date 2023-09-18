@@ -23,7 +23,7 @@ object UpdaterContext {
     init {
         context = when (applicationHome.isRegularFile()) {
             true -> getProductionContext()
-            false -> getTestContext()
+            false -> getProductionContext()
         }
     }
 
