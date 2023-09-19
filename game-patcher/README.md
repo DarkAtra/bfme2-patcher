@@ -8,9 +8,8 @@ gradlew clean build
 
 This will generate a `game-patcher.dll` file in `build/lib/main/debug`. The file needs to be injected into the game process.
 
-To regenerate the `detours.lib`, checkout [microsoft/detours](https://github.com/microsoft/detours) and build it using an x86 Native Tools Command Prompt.
-See [here](https://github.com/microsoft/detours/wiki/FAQ#compiling-with-detours-code) for more information. The `user32.lib` comes from the windows dev kit
-10.0.22000.0 in `C:\Program Files (x86)\Windows Kits\10\Lib\10.0.22000.0\um\x86`.
+The `EasyHook32.lib` comes from [here](https://easyhook.github.io/tutorials/nativemanuallyaddref.html), `user32.lib` and `WS2_32.Lib` come from the windows dev
+kit 10.0.22000.0 (`C:\Program Files (x86)\Windows Kits\10\Lib\10.0.22000.0\um\x86`).
 
 ## Patches
 

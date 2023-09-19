@@ -10,6 +10,6 @@ library {
     )
 
     binaries.configureEach(CppSharedLibrary::class.java) {
-        linkTask.get().libs.from("${projectDir}/libs/detours.lib", "${projectDir}/libs/user32.lib")
+        linkTask.get().libs.from("${projectDir}/libs/EasyHook32.lib", "${projectDir}/libs/user32.lib", "${projectDir}/libs/WS2_32.Lib")
     }
 }

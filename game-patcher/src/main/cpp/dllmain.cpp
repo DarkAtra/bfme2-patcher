@@ -1,6 +1,5 @@
-#include <windows.h>
-#include <winsock.h>
-#include "detours.h"
+#include <winsock2.h>
+#include <easyhook.h>
 
 using namespace std;
 
@@ -12,91 +11,93 @@ static wchar_t* charToWChar(const char* text)
     return wText;
 }
 
-typedef hostent *(__stdcall *Real_gethostbyname)(const char *a0);
+// See: https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-gethostbyname
+// hostent *WSAAPI gethostbyname(
+//   const char *name
+// );
+hostent *WSAAPI Hooked_gethostbyname(const char *name);
 
-static Real_gethostbyname Orig_gethostbyname = NULL;
-
-hostent *Hooked_gethostbyname(const char *name) {
+hostent *WSAAPI Hooked_gethostbyname(const char *name) {
 
     MessageBoxW(NULL, L"Test", L"Test", MB_OK);
 
     if (strcmp("gpcm.gamespy.com", name) == 0) {
-        return Orig_gethostbyname("gpcm.server.cnc-online.net");
+        return gethostbyname("gpcm.server.cnc-online.net");
     } else if (strcmp("peerchat.gamespy.com", name) == 0) {
-        return Orig_gethostbyname("peerchat.server.cnc-online.net");
+        return gethostbyname("peerchat.server.cnc-online.net");
     } else if (strcmp("psweb.gamespy.com", name) == 0) {
-        return Orig_gethostbyname("server.cnc-online.net");
+        return gethostbyname("server.cnc-online.net");
     } else if (strcmp("arenasdk.gamespy.com", name) == 0) {
-        return Orig_gethostbyname("server.cnc-online.net");
+        return gethostbyname("server.cnc-online.net");
     } else if (strcmp("lotrbfme.arenasdk.gamespy.com", name) == 0) {
-        return Orig_gethostbyname("server.cnc-online.net");
+        return gethostbyname("server.cnc-online.net");
     } else if (strcmp("ingamead.gamespy.com", name) == 0) {
-        return Orig_gethostbyname("server.cnc-online.net");
+        return gethostbyname("server.cnc-online.net");
     } else if (strcmp("master.gamespy.com", name) == 0) {
-        return Orig_gethostbyname("master.server.cnc-online.net");
+        return gethostbyname("master.server.cnc-online.net");
     } else if (strcmp("lotrbme.available.gamespy.com", name) == 0) {
-        return Orig_gethostbyname("master.server.cnc-online.net");
+        return gethostbyname("master.server.cnc-online.net");
     } else if (strcmp("lotrbme.master.gamespy.com", name) == 0) {
-        return Orig_gethostbyname("master.server.cnc-online.net");
+        return gethostbyname("master.server.cnc-online.net");
     } else if (strcmp("lotrbme.ms13.gamespy.com", name) == 0) {
-        return Orig_gethostbyname("master.server.cnc-online.net");
+        return gethostbyname("master.server.cnc-online.net");
     } else if (strcmp("lotrbme2r.available.gamespy.com", name) == 0) {
-        return Orig_gethostbyname("master.server.cnc-online.net");
+        return gethostbyname("master.server.cnc-online.net");
     } else if (strcmp("lotrbme2r.master.gamespy.com", name) == 0) {
-        return Orig_gethostbyname("master.server.cnc-online.net");
+        return gethostbyname("master.server.cnc-online.net");
     } else if (strcmp("lotrbme2r.ms9.gamespy.com", name) == 0) {
-        return Orig_gethostbyname("master.server.cnc-online.net");
+        return gethostbyname("master.server.cnc-online.net");
     } else if (strcmp("gamestats.gamespy.com", name) == 0) {
-        return Orig_gethostbyname("gamestats2.server.cnc-online.net");
+        return gethostbyname("gamestats2.server.cnc-online.net");
     } else if (strcmp("lotrbme.gamestats.gamespy.com", name) == 0) {
-        return Orig_gethostbyname("gamestats2.server.cnc-online.net");
+        return gethostbyname("gamestats2.server.cnc-online.net");
     } else if (strcmp("lotrbme2r.gamestats.gamespy.com", name) == 0) {
-        return Orig_gethostbyname("gamestats2.server.cnc-online.net");
+        return gethostbyname("gamestats2.server.cnc-online.net");
     } else if (strcmp("lotrbme2wk.gamestats.gamespy.com", name) == 0) {
-        return Orig_gethostbyname("gamestats2.server.cnc-online.net");
+        return gethostbyname("gamestats2.server.cnc-online.net");
     } else if (strcmp("servserv.generals.ea.com", name) == 0) {
-        return Orig_gethostbyname("http.server.cnc-online.net");
+        return gethostbyname("http.server.cnc-online.net");
     } else if (strcmp("na.llnet.eadownloads.ea.com", name) == 0) {
-        return Orig_gethostbyname("http.server.cnc-online.net");
+        return gethostbyname("http.server.cnc-online.net");
     } else if (strcmp("bfme.fesl.ea.com", name) == 0) {
-        return Orig_gethostbyname("login.server.cnc-online.net");
+        return gethostbyname("login.server.cnc-online.net");
     } else if (strcmp("bfme2.fesl.ea.com", name) == 0) {
-        return Orig_gethostbyname("login.server.cnc-online.net");
+        return gethostbyname("login.server.cnc-online.net");
     } else if (strcmp("bfme2-ep1-pc.fesl.ea.com", name) == 0) {
-        return Orig_gethostbyname("login.server.cnc-online.net");
+        return gethostbyname("login.server.cnc-online.net");
     }
 
-    return Orig_gethostbyname(name);
+    return gethostbyname(name);
 }
 
-bool __stdcall DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+HOOK_TRACE_INFO hHook = { NULL }; // keep track of our hook
 
-    if (DetourIsHelperProcess()) {
-        return true;
-    }
+BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 
     if (fdwReason == DLL_PROCESS_ATTACH) {
 
         MessageBoxW(NULL, L"Hello", L"Hello", MB_OK);
 
-        DetourRestoreAfterWith();
-
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-
-        Orig_gethostbyname = (Real_gethostbyname)GetProcAddress(GetModuleHandleW(L"ws2_32"), "gethostbyname");
-
-        DetourAttach(&(PVOID &) Orig_gethostbyname, Hooked_gethostbyname);
-        if(DetourTransactionCommit() == NO_ERROR) {
-            MessageBoxW(NULL, L"Hooked", L"Hooked", MB_OK);
+        NTSTATUS result = LhInstallHook(
+            GetProcAddress(LoadLibraryA("Ws2_32.dll"), "gethostbyname"),
+            Hooked_gethostbyname,
+            NULL,
+            &hHook
+        );
+        if (FAILED(result)) {
+            // Hook could not be installed, see RtlGetLastErrorString() for details
+            MessageBoxW(NULL, L"Error", L"Error", MB_OK);
+            return true;
         }
+
+        ULONG ACLEntries[1] = { 0 };
+        LhSetExclusiveACL(ACLEntries, 1, &hHook);
+
+        MessageBoxW(NULL, L"Hooked", L"Hooked", MB_OK);
+
     } else if (fdwReason == DLL_PROCESS_DETACH) {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourDetach(&(PVOID &) Orig_gethostbyname, Hooked_gethostbyname);
-        if(DetourTransactionCommit() == NO_ERROR) {
-            MessageBoxW(NULL, L"Unhooked", L"Unhooked", MB_OK);
-        }
+        LhUninstallHook(&hHook);
+        MessageBoxW(NULL, L"Unhooked", L"Unhooked", MB_OK);
     }
 
     return true;
