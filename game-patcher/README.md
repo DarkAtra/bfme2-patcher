@@ -13,8 +13,8 @@ kit 10.0.22000.0 (`C:\Program Files (x86)\Windows Kits\10\Lib\10.0.22000.0\um\x8
 
 ## Patches
 
-This dll uses [microsoft/detours](https://github.com/microsoft/detours) to patch the `gethostbyname` function in `ws2_32.dll` and modifies the result for the
-following Gamespy and EA addresses:
+This dll uses [EasyHook](https://easyhook.github.io/) to patch the `gethostbyname` function in `ws2_32.dll` and modifies the result for the following Gamespy
+and EA addresses:
 
 - `gpcm.gamespy.com` -> gpcm.server.cnc-online.net
 - `peerchat.gamespy.com` -> peerchat.server.cnc-online.net
