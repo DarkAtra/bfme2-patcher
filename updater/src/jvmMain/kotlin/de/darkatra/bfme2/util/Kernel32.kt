@@ -1,4 +1,4 @@
-package de.darkatra.patcher.ifeo
+package de.darkatra.bfme2.util
 
 import com.sun.jna.Native
 import com.sun.jna.Structure.*

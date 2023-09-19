@@ -14,7 +14,6 @@ import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.FrameWindowScope
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import de.darkatra.bfme2.UpdaterContext
-import de.darkatra.bfme2.patch.PatchConstants
 import de.darkatra.bfme2.patch.PatchService
 import de.darkatra.bfme2.selfupdate.SelfUpdateService
 import de.darkatra.bfme2.util.ProcessUtils
@@ -22,7 +21,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Duration
-import java.util.Base64
 import kotlin.io.path.absolutePathString
 
 private val imagePaths = arrayOf(
@@ -118,21 +116,17 @@ fun UpdaterView(
                         patchScope.launch {
                             runCatching {
                                 withContext(Dispatchers.IO) {
-                                    ProcessUtils.runElevated(
-                                        patcherUserDir.resolve(PatchConstants.UPDATER_IFEO_NAME),
-                                        buildList {
-                                            add("filelog")
-                                            add("run")
+                                    ProcessUtils.runBypassingDebuggerAndWait(
+                                        rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize(),
+                                        when (state.hdEditionEnabled) {
+                                            true -> arrayOf(
+                                                "-mod",
+                                                "\"${patcherUserDir.resolve("HDEdition.big").normalize().absolutePathString()}\""
+                                            )
 
-                                            val gameExecutablePath = rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize().absolutePathString()
-                                            add(Base64.getEncoder().encodeToString(gameExecutablePath.toByteArray()))
-
-                                            if (state.hdEditionEnabled) {
-                                                val hdEditionPath = patcherUserDir.resolve("HDEdition.big").normalize().absolutePathString()
-                                                add(Base64.getEncoder().encodeToString("-mod \"$hdEditionPath\"".toByteArray()))
-                                            }
-                                        }.toTypedArray()
-                                    ).waitFor() // FIXME: currently does not wait for the game process to exit because the IFEO tool is started via cmd
+                                            false -> emptyArray()
+                                        }
+                                    )
                                 }
                             }.also {
                                 updaterModel.setGameRunning(false)
