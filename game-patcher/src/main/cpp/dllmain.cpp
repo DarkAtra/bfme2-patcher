@@ -3,14 +3,6 @@
 
 using namespace std;
 
-static wchar_t* charToWChar(const char* text)
-{
-    const size_t size = strlen(text) + 1;
-    wchar_t* wText = new wchar_t[size];
-    mbstowcs(wText, text, size);
-    return wText;
-}
-
 // See: https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-gethostbyname
 // hostent *WSAAPI gethostbyname(
 //   const char *name
@@ -97,6 +89,7 @@ BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 
     } else if (fdwReason == DLL_PROCESS_DETACH) {
         LhUninstallHook(&hHook);
+        LhWaitForPendingRemovals();
         MessageBoxW(NULL, L"Unhooked", L"Unhooked", MB_OK);
     }
 
