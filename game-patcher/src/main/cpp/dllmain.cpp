@@ -79,7 +79,7 @@ BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
         MessageBoxW(NULL, L"Hello", L"Hello", MB_OK);
 
         NTSTATUS result = LhInstallHook(
-            GetProcAddress(LoadLibraryA("Ws2_32.dll"), "gethostbyname"),
+            GetProcAddress(GetModuleHandle(TEXT("ws2_32")), "gethostbyname"),
             Hooked_gethostbyname,
             NULL,
             &hHook
