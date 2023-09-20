@@ -116,7 +116,7 @@ fun UpdaterView(
                         patchScope.launch {
                             runCatching {
                                 withContext(Dispatchers.IO) {
-                                    ProcessUtils.runBypassingDebuggerAndWait(
+                                    ProcessUtils.run( // ProcessUtils.runBypassingDebuggerAndWait(
                                         rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize(),
                                         when (state.hdEditionEnabled) {
                                             true -> arrayOf(
