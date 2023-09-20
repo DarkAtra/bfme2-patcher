@@ -48,6 +48,9 @@ object RegistryService {
     }
 
     fun hasExpansionDebugger(): Boolean {
+        if (!Advapi32Util.registryValueExists(HKEY_LOCAL_MACHINE, HOOK_REGISTRY_KEY, "Debugger")) {
+            return false
+        }
         return Advapi32Util.registryGetStringValue(HKEY_LOCAL_MACHINE, HOOK_REGISTRY_KEY, "Debugger") != ""
     }
 }
