@@ -25,11 +25,14 @@ import kotlin.io.path.absolutePathString
 
 private val imagePaths = arrayOf(
     "/images/splash2_1920x1080.jpg",
+    "/images/splash23_1192x670.jpg",
     "/images/splash8_2560x1600.jpg",
-    "/images/splash13_1920x1080.jpg",
+    "/images/splash20_1262x633.jpg",
     "/images/splash14_1920x1080.jpg",
+    "/images/splash22_2069x1260.png",
     "/images/splash15_1920x1080.jpg",
-    "/images/splash19_1500x1200.jpg"
+    "/images/splash19_1500x1200.jpg",
+    "/images/splash21_1920x1080.jpg"
 )
 
 @Composable

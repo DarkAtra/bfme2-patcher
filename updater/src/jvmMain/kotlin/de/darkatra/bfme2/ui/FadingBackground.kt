@@ -15,16 +15,25 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import kotlinx.coroutines.delay
 import java.time.Duration
+import kotlin.random.Random
 
 @Composable
 fun FadingBackground(
     imagePaths: Array<String>,
     transitionDelay: Duration,
     transitionDuration: Duration,
+    randomizeStartingImage: Boolean = true,
     content: @Composable BoxScope.() -> Unit
 ) {
 
-    val (currentImage, setCurrentImage) = remember { mutableStateOf(0) }
+    val (currentImage, setCurrentImage) = remember {
+        mutableStateOf(
+            when (randomizeStartingImage) {
+                true -> Random.nextInt(imagePaths.size)
+                false -> 0
+            }
+        )
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Crossfade(
