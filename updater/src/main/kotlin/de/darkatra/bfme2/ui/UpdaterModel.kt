@@ -1,7 +1,7 @@
 package de.darkatra.bfme2.ui
 
 import com.arkivanov.decompose.value.MutableValue
-import com.arkivanov.decompose.value.reduce
+import com.arkivanov.decompose.value.update
 import de.darkatra.bfme2.patch.PatchProgress
 import de.darkatra.bfme2.patch.PatchProgressListener
 import de.darkatra.bfme2.persistence.PersistenceService
@@ -50,45 +50,45 @@ class UpdaterModel : PatchProgressListener {
     }
 
     fun setVisible(isVisible: Boolean) {
-        state.reduce { it.copy(isVisible = isVisible) }
+        state.update { it.copy(isVisible = isVisible) }
     }
 
     fun setNewVersionAvailable(newVersionAvailable: Boolean) {
-        state.reduce { it.copy(newVersionAvailable = newVersionAvailable) }
+        state.update { it.copy(newVersionAvailable = newVersionAvailable) }
     }
 
     fun setSelfUpdateInProgress(selfUpdateInProgress: Boolean) {
-        state.reduce { it.copy(selfUpdateInProgress = selfUpdateInProgress) }
+        state.update { it.copy(selfUpdateInProgress = selfUpdateInProgress) }
     }
 
     fun setPatchInProgress(patchInProgress: Boolean) {
-        state.reduce { it.copy(patchInProgress = patchInProgress) }
+        state.update { it.copy(patchInProgress = patchInProgress) }
     }
 
     fun setPatchedOnce(patchedOnce: Boolean) {
-        state.reduce { it.copy(patchedOnce = patchedOnce) }
+        state.update { it.copy(patchedOnce = patchedOnce) }
     }
 
     fun setGameRunning(gameRunning: Boolean) {
-        state.reduce { it.copy(gameRunning = gameRunning) }
+        state.update { it.copy(gameRunning = gameRunning) }
     }
 
     fun setProgress(progress: Float, progressText: String) {
-        state.reduce { it.copy(progress = progress, progressText = progressText) }
+        state.update { it.copy(progress = progress, progressText = progressText) }
     }
 
     fun setHdEditionEnabled(hdEditionEnabled: Boolean) {
-        state.reduce { it.copy(hdEditionEnabled = hdEditionEnabled) }
+        state.update { it.copy(hdEditionEnabled = hdEditionEnabled) }
         updatePersistentState()
     }
 
     fun setTrayIconEnabled(trayIconEnabled: Boolean) {
-        state.reduce { it.copy(trayIconEnabled = trayIconEnabled, isVisible = true) }
+        state.update { it.copy(trayIconEnabled = trayIconEnabled, isVisible = true) }
         updatePersistentState()
     }
 
     fun setHookEnabled(hookEnabled: Boolean) {
-        state.reduce { it.copy(hookEnabled = hookEnabled) }
+        state.update { it.copy(hookEnabled = hookEnabled) }
     }
 
     private fun updatePersistentState() {

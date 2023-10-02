@@ -1,6 +1,5 @@
 import edu.sc.seis.launch4j.tasks.DefaultLaunch4jTask
 import org.gradle.jvm.tasks.Jar
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm")
@@ -8,20 +7,14 @@ plugins {
 }
 
 kotlin {
-    sourceSets {
-        val main by getting {
-            dependencies {
-                implementation("net.java.dev.jna:jna-platform:${extra["jna.version"]}")
-            }
-        }
-    }
+    jvmToolchain(11)
+}
+
+dependencies {
+    implementation("net.java.dev.jna:jna-platform:${project.extra["jna.version"]}")
 }
 
 tasks {
-    withType<JavaCompile> {
-        sourceCompatibility = "11"
-        targetCompatibility = "11"
-    }
 
     withType<Jar> {
         manifest {
@@ -31,12 +24,6 @@ tasks {
 
         from(configurations.runtimeClasspath.get().map(::zipTree))
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    }
-
-    withType<KotlinCompile> {
-        kotlinOptions {
-            jvmTarget = "11"
-        }
     }
 
     withType<DefaultLaunch4jTask> {
