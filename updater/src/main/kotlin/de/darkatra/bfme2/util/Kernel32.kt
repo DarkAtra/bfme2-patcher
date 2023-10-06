@@ -19,6 +19,6 @@ interface Kernel32 : com.sun.jna.platform.win32.Kernel32 {
     ): Boolean
 
     companion object {
-        val INSTANCE: Kernel32 = Native.load("kernel32", Kernel32::class.java, W32APIOptions.DEFAULT_OPTIONS);
+        val INSTANCE: Kernel32 = Native.load("kernel32", Kernel32::class.java, W32APIOptions.DEFAULT_OPTIONS)
     }
 }

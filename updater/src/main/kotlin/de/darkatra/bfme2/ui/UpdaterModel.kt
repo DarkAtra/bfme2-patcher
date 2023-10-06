@@ -2,11 +2,11 @@ package de.darkatra.bfme2.ui
 
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.update
+import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.patch.PatchProgress
 import de.darkatra.bfme2.patch.PatchProgressListener
 import de.darkatra.bfme2.persistence.PersistenceService
 import de.darkatra.bfme2.persistence.PersistentState
-import de.darkatra.bfme2.registry.RegistryService
 import de.darkatra.bfme2.util.StringUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -18,7 +18,7 @@ class UpdaterModel : PatchProgressListener {
             State(
                 hdEditionEnabled = it.hdEditionEnabled,
                 trayIconEnabled = it.trayIconEnabled,
-                hookEnabled = RegistryService.hasExpansionDebugger(),
+                hookEnabled = UpdaterContext.hasExpansionDebugger,
                 hookingSupported = false // UpdaterContext.ifeoHome.exists() // FIXME: uncomment when online gameplay is possible with custom gamespy servers
             )
         )
