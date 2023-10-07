@@ -1,6 +1,7 @@
 package de.darkatra.patcher.mapbuilder
 
 import de.darkatra.bfme2.Vector3
+import java.io.File
 import java.io.OutputStream
 import java.util.Locale
 import kotlin.math.max
@@ -143,7 +144,7 @@ data class MapCacheEntry(
     }
 
     private fun getEncodedMapName(mapPath: String): String {
-        return mapPath.split("\\")[1].split(" ").joinToString("").filter {
+        return mapPath.split(File.separatorChar)[1].split(" ").joinToString("").filter {
             it.code in 48..57 || it.code in 65..90 || it.code in 97..122
         }
     }

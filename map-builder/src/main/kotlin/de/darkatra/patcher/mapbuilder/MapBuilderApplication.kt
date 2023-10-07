@@ -4,36 +4,76 @@ import de.darkatra.bfme2.Vector3
 import de.darkatra.bfme2.big.BigArchive
 import de.darkatra.bfme2.big.BigArchiveVersion
 import de.darkatra.bfme2.map.MapFile
+import de.darkatra.bfme2.map.MapFileCompression
 import de.darkatra.bfme2.map.serialization.MapFileReader
+import de.darkatra.bfme2.map.serialization.MapFileWriter
+import de.darkatra.bfme2.map.worldinfo.WorldInfo
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 import java.util.stream.Collectors
 import java.util.zip.CRC32
+import kotlin.io.path.createDirectories
+import kotlin.io.path.deleteIfExists
 import kotlin.io.path.fileSize
 import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.inputStream
 import kotlin.io.path.name
+import kotlin.io.path.outputStream
 import kotlin.io.path.pathString
 
-const val MAP_DIR = "maps-camera-fix"
-const val OUTPUT_FILE_NAME = "update-builder/rotwk/!maps.big"
+const val ORIGINAL_MAPS_DIR = "2.02v9.0.0-maps"
+const val EDITED_MAPS_DIR = "edited-maps"
+const val OUTPUT_FILE_NAME = "!maps.big"
 
 fun main() {
-    MapBuilderApplication.build()
+    MapBuilderApplication.build(true)
 }
 
 object MapBuilderApplication {
 
     private val ZERO = Instant.parse("1601-01-01T00:00:00Z")
+    private val mapFileReader = MapFileReader()
+    private val mapFieWriter = MapFileWriter()
 
-    fun build() {
+    fun build(skipEditingMaps: Boolean) {
 
         println("Building map archive...")
 
-        val inputDir = Path.of(MAP_DIR)
-        println("Reading files from: ${inputDir.pathString}")
+        val originalMapsDir = Path.of(ORIGINAL_MAPS_DIR)
+        println("Reading maps from: ${originalMapsDir.pathString}")
+
+        val editedMapsDir = Path.of(EDITED_MAPS_DIR)
+        println("Writing edited maps to: ${editedMapsDir.pathString}")
+
+        println("* Editing Maps (skip=${skipEditingMaps})")
+        if (!skipEditingMaps) {
+            readFilesInDirectory(originalMapsDir)
+                .filter { file -> file.name.endsWith(".map") }
+                .forEach { file ->
+                    println("** Editing map: ${originalMapsDir.relativize(file).pathString}")
+
+                    val map = mapFileReader.read(file)
+                    val editedMap = map.copy(
+                        // set the max camera height to 800
+                        worldInfo = WorldInfo(
+                            map.worldInfo.properties
+                                .filter { property -> property.key.name != "cameraMaxHeight" }
+                                .toMutableList()
+                                .apply {
+                                    add(map.worldInfo["cameraMaxHeight"]!!.copy(value = 800f))
+                                }
+                        )
+                    )
+
+                    val editedMapOutPath = editedMapsDir.resolve(originalMapsDir.relativize(file))
+                    editedMapOutPath.parent.createDirectories()
+                    editedMapOutPath.deleteIfExists()
+                    println("** Writing edited map to: ${editedMapOutPath.pathString}")
+                    mapFieWriter.write(editedMapOutPath.outputStream(), editedMap, MapFileCompression.ZLIB)
+                }
+        }
 
         val outFile = Path.of(OUTPUT_FILE_NAME)
         outFile.toFile().also {
@@ -45,19 +85,19 @@ object MapBuilderApplication {
 
         println("* Map archive: ${outFile.pathString}")
         val bigArchive = BigArchive(BigArchiveVersion.BIG_F, outFile)
-        readFilesInDirectory(inputDir)
+        readFilesInDirectory(editedMapsDir)
             .filter { file -> !file.name.endsWith(".map.uncompressed") }
             .forEach { file ->
-                println("** Adding file to archive: ${inputDir.relativize(file).pathString}")
-                bigArchive.createEntry(Path.of("maps").resolve(inputDir.relativize(file)).toString()).outputStream().use {
+                println("** Adding file to archive: ${editedMapsDir.relativize(file).pathString}")
+                bigArchive.createEntry(Path.of("maps").resolve(editedMapsDir.relativize(file)).toString()).outputStream().use {
                     it.write(Files.readAllBytes(file))
                 }
 
                 if (file.name.endsWith(".map")) {
-                    println("** Adding map cache entry for: ${inputDir.relativize(file).pathString}")
-                    val map = MapFileReader().read(file)
+                    println("** Adding map cache entry for: ${editedMapsDir.relativize(file).pathString}")
+                    val map = mapFileReader.read(file)
                     mapCache.add(MapCacheEntry(
-                        mapPath = Path.of("maps").resolve(inputDir.relativize(file)).toString(),
+                        mapPath = Path.of("maps").resolve(editedMapsDir.relativize(file)).toString(),
                         fileSize = file.fileSize(),
                         fileCRC = generateCRC(file),
                         timestampLo = winFileTimeFromInstant(file.getLastModifiedTime().toInstant()).toInt(),

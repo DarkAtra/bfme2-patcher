@@ -5,11 +5,8 @@ The `bfme2-patcher` consists of the following applications:
 - **game-patcher**:
   The `game-patcher` aims to patch certain aspects of the original game to allow proper online gameplay. Currently work in progress.
 - **map-builder**:
-  The `map-builder` is an application that helps with building the `!map.big` archive. It takes all the necessary files for each map, generates
-  the `mapcache.ini`
+  The `map-builder` is an application that helps with building the `!map.big` archive. It adjusts the camera settings for each map, generates the `mapcache.ini`
   and creates the final big archive.
-- **map-compressor**:
-  The `map-compressor` is an application that compresses all maps in a given folder using the `deflate` compression format.
 - **mod-builder**:
   The `mod-builder` is an application that helps with bundling a new version of the mod. It basically takes the necessary files and puts them in dedicated big
   archives for release.
