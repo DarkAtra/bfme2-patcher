@@ -23,12 +23,12 @@ import kotlin.io.path.name
 import kotlin.io.path.outputStream
 import kotlin.io.path.pathString
 
-const val ORIGINAL_MAPS_DIR = "2.02v9.0.0-maps"
+const val ORIGINAL_MAPS_DIR = "original-maps"
 const val EDITED_MAPS_DIR = "edited-maps"
 const val OUTPUT_FILE_NAME = "!maps.big"
 
-fun main() {
-    MapBuilderApplication.build(true)
+fun main(args: Array<String>) {
+    MapBuilderApplication.build("skipEditingMaps" in args)
 }
 
 object MapBuilderApplication {
@@ -56,13 +56,13 @@ object MapBuilderApplication {
 
                     val map = mapFileReader.read(file)
                     val editedMap = map.copy(
-                        // set the max camera height to 800
+                        // set the max camera height to 700
                         worldInfo = WorldInfo(
                             map.worldInfo.properties
                                 .filter { property -> property.key.name != "cameraMaxHeight" }
                                 .toMutableList()
                                 .apply {
-                                    add(map.worldInfo["cameraMaxHeight"]!!.copy(value = 800f))
+                                    add(map.worldInfo["cameraMaxHeight"]!!.copy(value = 700f))
                                 }
                         )
                     )

@@ -31,7 +31,7 @@ git clone git@github.com:DarkAtra/bfme2-patcher.git
 Build the project using the following command:
 
 ```
-gradlew clean test createExe
+gradlew clean test jar createExe
 ```
 
 The jar and exe files are located in the `build` folders of the respective applications.

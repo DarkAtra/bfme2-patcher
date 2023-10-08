@@ -18,7 +18,6 @@ enum class Directory(
      * B:\Electronic Arts\Aufstieg des Hexenkönigs\
      */
     ROTWK_DIR_NAME("rotwk", "\${rotwkHomeDir}"),
-    ROTWK_PATCH_202_DIR_NAME("patch-202", "\${rotwkHomeDir}"),
 
     /**
      * B:\Electronic Arts\Aufstieg des Hexenkönigs\.patcher\

@@ -44,7 +44,7 @@ object UpdateBuilderNoUI {
         var added = 0
         var archived = 0
         val packets = mutableSetOf<Packet>()
-        for (directory in Directory.values()) {
+        for (directory in Directory.entries) {
             val basePath = Path.of("./" + directory.dirName)
             for (filePath in readFilesInDirectory(basePath)) {
                 println("* Adding file: ${filePath.pathString}")
