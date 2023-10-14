@@ -71,7 +71,9 @@ object MapBuilderApplication {
                     editedMapOutPath.parent.createDirectories()
                     editedMapOutPath.deleteIfExists()
                     println("** Writing edited map to: ${editedMapOutPath.pathString}")
-                    mapFieWriter.write(editedMapOutPath.outputStream(), editedMap, MapFileCompression.ZLIB)
+                    editedMapOutPath.outputStream().use {
+                        mapFieWriter.write(it, editedMap, MapFileCompression.UNCOMPRESSED)
+                    }
                 }
         }
 
