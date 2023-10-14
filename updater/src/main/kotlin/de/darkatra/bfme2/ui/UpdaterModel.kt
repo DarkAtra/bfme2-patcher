@@ -39,7 +39,8 @@ class UpdaterModel : PatchProgressListener {
     override suspend fun onPatchProgress(patchProgress: PatchProgress) = withContext(Dispatchers.Main.immediate) {
         setProgress(
             patchProgress.currentDisk.toFloat() / patchProgress.totalDisk.toFloat(),
-            "${StringUtils.humanReadableSize(patchProgress.currentNetwork)}/${StringUtils.humanReadableSize(patchProgress.totalNetwork)}"
+            "${StringUtils.humanReadableSize(patchProgress.currentNetwork)}/${StringUtils.humanReadableSize(patchProgress.totalNetwork)}" +
+                " (${StringUtils.humanReadableSize(patchProgress.currentDisk)}/${StringUtils.humanReadableSize(patchProgress.totalDisk)})"
         )
     }
 

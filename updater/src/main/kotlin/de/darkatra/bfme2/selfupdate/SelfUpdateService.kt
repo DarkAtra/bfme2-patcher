@@ -178,8 +178,7 @@ object SelfUpdateService {
         DownloadService.download(
             URI.create(PatchConstants.UPDATER_URL).toURL(),
             updaterTempLocation,
-            Compression.NONE,
-            null
+            Compression.NONE
         )
     }
 
