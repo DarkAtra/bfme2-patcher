@@ -61,10 +61,10 @@ object DownloadService {
                             countNetwork = networkInputStream.byteCount
                         )
                     )
-                }
 
-                diskInputStream.resetByteCount()
-                networkInputStream.resetByteCount()
+                    diskInputStream.resetByteCount()
+                    networkInputStream.resetByteCount()
+                }
             }
         }
     }

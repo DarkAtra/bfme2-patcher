@@ -20,7 +20,6 @@ import kotlin.io.path.fileSize
 import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.inputStream
 import kotlin.io.path.name
-import kotlin.io.path.outputStream
 import kotlin.io.path.pathString
 
 const val ORIGINAL_MAPS_DIR = "original-maps"
@@ -71,9 +70,7 @@ object MapBuilderApplication {
                     editedMapOutPath.parent.createDirectories()
                     editedMapOutPath.deleteIfExists()
                     println("** Writing edited map to: ${editedMapOutPath.pathString}")
-                    editedMapOutPath.outputStream().use {
-                        mapFieWriter.write(it, editedMap, MapFileCompression.UNCOMPRESSED)
-                    }
+                    mapFieWriter.write(editedMapOutPath, editedMap, MapFileCompression.ZLIB)
                 }
         }
 

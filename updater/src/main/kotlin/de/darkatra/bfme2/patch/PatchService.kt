@@ -50,6 +50,8 @@ object PatchService {
 
         val differences = calculateDifferences(patch)
 
+        var currentNetwork = 0L
+        var currentDisk = 0L
         val totalNetwork = differences.compressedSize
         val totalDisk = differences.size
 
@@ -64,11 +66,14 @@ object PatchService {
             val dest = Path.of(packet.dest)
             DownloadService.download(URL(packet.src), dest, packet.compression) { downloadProgress ->
 
+                currentNetwork += downloadProgress.countNetwork
+                currentDisk += downloadProgress.countDisk
+
                 launch(Dispatchers.Main.immediate) {
                     progressListener?.onPatchProgress(
                         PatchProgress(
-                            currentNetwork = downloadProgress.countNetwork,
-                            currentDisk = downloadProgress.countDisk,
+                            currentNetwork = currentNetwork,
+                            currentDisk = currentDisk,
                             totalNetwork = totalNetwork,
                             totalDisk = totalDisk
                         )
@@ -78,7 +83,6 @@ object PatchService {
 
             ensureActive()
 
-            // TODO: add listener for checksum calculation (to allow displaying more infos for big files)
             if (packet.checksum != HashingService.calculateSha3Checksum(dest.inputStream())) {
                 error("The checksum of local file '${dest.pathString}' does not match the servers checksum.")
             }
