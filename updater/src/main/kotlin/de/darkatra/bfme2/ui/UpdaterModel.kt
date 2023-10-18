@@ -55,7 +55,14 @@ class UpdaterModel : PatchProgressListener {
     }
 
     fun setNewVersionAvailable(newVersionAvailable: Boolean) {
-        state.update { it.copy(newVersionAvailable = newVersionAvailable) }
+        state.update {
+            it.copy(
+                newVersionAvailable = when (newVersionAvailable) {
+                    true -> State.SelfUpdateState.OUTDATED
+                    false -> State.SelfUpdateState.UP_TO_DATE
+                }
+            )
+        }
     }
 
     fun setSelfUpdateInProgress(selfUpdateInProgress: Boolean) {
@@ -104,7 +111,7 @@ class UpdaterModel : PatchProgressListener {
     data class State(
         val isVisible: Boolean = true,
 
-        val newVersionAvailable: Boolean = false,
+        val newVersionAvailable: SelfUpdateState = SelfUpdateState.UNKNOWN,
         val selfUpdateInProgress: Boolean = false,
 
         val patchInProgress: Boolean = false,
@@ -118,5 +125,12 @@ class UpdaterModel : PatchProgressListener {
         val trayIconEnabled: Boolean = false,
         val hookEnabled: Boolean = false,
         val hookingSupported: Boolean = false
-    )
+    ) {
+
+        enum class SelfUpdateState {
+            UNKNOWN,
+            UP_TO_DATE,
+            OUTDATED
+        }
+    }
 }

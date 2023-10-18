@@ -64,7 +64,7 @@ fun UpdaterView(
     Toolbar(updaterModel, frameWindowScope, onCheckForUpdates = {
         patchScope.launch {
             updaterModel.setNewVersionAvailable(SelfUpdateService.isNewVersionAvailable())
-            if (state.newVersionAvailable) {
+            if (state.newVersionAvailable == UpdaterModel.State.SelfUpdateState.OUTDATED) {
                 setSelfUpdateDialogVisible(true)
             }
             // TODO: display message if no update is available
@@ -79,8 +79,8 @@ fun UpdaterView(
 
         UpdaterViewLayout(
             actionsSlot = {
-                if (state.newVersionAvailable) {
-                    SmallButton(
+                when (state.newVersionAvailable) {
+                    UpdaterModel.State.SelfUpdateState.OUTDATED -> SmallButton(
                         enabled = !state.gameRunning && !state.selfUpdateInProgress && !state.patchInProgress,
                         onClick = {
                             performSelfUpdate()
@@ -88,6 +88,12 @@ fun UpdaterView(
                     ) {
                         Text(text = "Update available", fontSize = 14.sp, fontWeight = FontWeight.W400)
                     }
+
+                    UpdaterModel.State.SelfUpdateState.UP_TO_DATE -> SmallSurface {
+                        Text(text = "✔ Up to Date", fontSize = 14.sp, fontWeight = FontWeight.W400)
+                    }
+
+                    else -> Unit
                 }
             },
             progressBarSlot = {
@@ -147,8 +153,8 @@ fun UpdaterView(
     }
 
     if (isSelfUpdateDialogVisible) {
-        if (state.newVersionAvailable) {
-            ConfirmationDialog(
+        when (state.newVersionAvailable) {
+            UpdaterModel.State.SelfUpdateState.OUTDATED -> ConfirmationDialog(
                 title = "Update available",
                 text = "Do you want to proceed and update to the latest version?",
                 onConfirm = {
@@ -160,14 +166,16 @@ fun UpdaterView(
                     setSelfUpdateDialogVisible(false)
                 }
             )
-        } else {
-            MessageDialog(
+
+            UpdaterModel.State.SelfUpdateState.UP_TO_DATE -> MessageDialog(
                 title = "No Update available.",
                 text = "You're already using the latest version of the updater. Good Job!",
                 onConfirm = {
                     setSelfUpdateDialogVisible(false)
                 }
             )
+
+            else -> Unit
         }
     }
 
