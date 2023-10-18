@@ -64,10 +64,9 @@ fun UpdaterView(
     Toolbar(updaterModel, frameWindowScope, onCheckForUpdates = {
         patchScope.launch {
             updaterModel.setNewVersionAvailable(SelfUpdateService.isNewVersionAvailable())
-            if (state.newVersionAvailable == UpdaterModel.State.SelfUpdateState.OUTDATED) {
+            if (state.newVersionAvailable == UpdaterModel.State.SelfUpdateState.OUTDATED || state.newVersionAvailable == UpdaterModel.State.SelfUpdateState.UP_TO_DATE) {
                 setSelfUpdateDialogVisible(true)
             }
-            // TODO: display message if no update is available
         }
     })
 
