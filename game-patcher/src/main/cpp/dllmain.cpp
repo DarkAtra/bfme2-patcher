@@ -11,8 +11,6 @@ hostent *WSAAPI Hooked_gethostbyname(const char *name);
 
 hostent *WSAAPI Hooked_gethostbyname(const char *name) {
 
-    MessageBoxW(NULL, L"Test", L"Test", MB_OK);
-
     if (strcmp("gpcm.gamespy.com", name) == 0) {
         return gethostbyname("gpcm.server.cnc-online.net");
     } else if (strcmp("peerchat.gamespy.com", name) == 0) {
