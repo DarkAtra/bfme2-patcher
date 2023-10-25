@@ -9,6 +9,15 @@ import kotlin.io.path.name
 
 object ProcessUtils {
 
+    fun findProcessId(name: String, ignoreCase: Boolean = true): Long? {
+        return ProcessHandle.allProcesses()
+            .filter { process -> process.info().command().isPresent }
+            .filter { process -> process.info().command().get().endsWith(name, ignoreCase = ignoreCase) }
+            .findFirst()
+            .map { process -> process.pid() }
+            .orElse(null)
+    }
+
     fun runBypassingDebuggerAndWait(executable: Path, args: Array<String> = emptyArray()) {
 
         // we need to use jna here to set the DEBUG_ONLY_THIS_PROCESS flag when we create the process
