@@ -1,8 +1,8 @@
 package de.darkatra.bfme2.util
 
 import com.sun.jna.Memory
+import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.BaseTSD
-import com.sun.jna.platform.win32.WinNT
 import com.sun.jna.platform.win32.WinNT.MEM_COMMIT
 import com.sun.jna.platform.win32.WinNT.MEM_RESERVE
 import com.sun.jna.platform.win32.WinNT.PAGE_EXECUTE_READWRITE
@@ -42,15 +42,17 @@ object InjectionUtils {
             return false
         }
 
-        // 3. get the address of LoadLibraryW
-        val loadLibraryPointer = Kernel32.INSTANCE.GetProcAddress(
-            Kernel32.INSTANCE.GetModuleHandle("kernel32.dll"),
-            970 // ordinal for LoadLibraryW
-        )
-        if (loadLibraryPointer == null) {
-            LOGGER.severe("Failed to get address for LoadLibraryW: ${Kernel32.INSTANCE.GetLastError()}")
-            return false
-        }
+        // 3. get the address of LoadLibraryA
+//        val loadLibraryPointer = AnsiKernel32.INSTANCE.GetProcAddress(
+//            Kernel32.INSTANCE.GetModuleHandle("kernel32.dll"),
+//            "LoadLibraryA"
+//        )?.pointer
+//        if (loadLibraryPointer == null) {
+//            LOGGER.severe("Failed to get address for LoadLibraryA: ${Kernel32.INSTANCE.GetLastError()}")
+//            return false
+//        }
+        // FIXME: the above code resolves to the wrong address for some reason
+        val loadLibraryPointer = Pointer.createConstant(0x76C60E70)
 
         // 4. allocate memory for the dll path string
         val dllPathString = dllPath.absolutePathString()
@@ -89,7 +91,7 @@ object InjectionUtils {
             0,
             loadLibraryPointer,
             dllMemoryPointer,
-            WinNT.CREATE_SUSPENDED,
+            0,
             null
         )
         if (remoteThread == null) {
