@@ -16,9 +16,12 @@ import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.patch.PatchService
 import de.darkatra.bfme2.selfupdate.SelfUpdateService
+import de.darkatra.bfme2.util.InjectionUtils
 import de.darkatra.bfme2.util.ProcessUtils
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.time.withTimeoutOrNull
 import kotlinx.coroutines.withContext
 import java.time.Duration
 import kotlin.io.path.absolutePathString
@@ -124,7 +127,7 @@ fun UpdaterView(
                         patchScope.launch {
                             runCatching {
                                 withContext(Dispatchers.IO) {
-                                    ProcessUtils.run( // ProcessUtils.runBypassingDebuggerAndWait(
+                                    val successful = ProcessUtils.runBypassingDebugger(
                                         rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize(),
                                         when (state.hdEditionEnabled) {
                                             true -> arrayOf(
@@ -135,6 +138,23 @@ fun UpdaterView(
                                             false -> emptyArray()
                                         }
                                     )
+
+                                    if (successful) {
+                                        val gameProcess = withTimeoutOrNull(Duration.ofSeconds(5)) {
+                                            var gameProcess: ProcessHandle?
+                                            while (ProcessUtils.findProcess("game.dat").also { gameProcess = it } == null) {
+                                                delay(500)
+                                            }
+                                            return@withTimeoutOrNull gameProcess
+                                        }
+
+                                        if (gameProcess != null) {
+                                            InjectionUtils.injectDll(gameProcess.pid(), rotwkHomeDir.resolve("game-patcher.dll").normalize())
+                                            gameProcess.onExit().get()
+                                        } else {
+                                            // TODO: show error message
+                                        }
+                                    }
                                 }
                             }.also {
                                 updaterModel.setGameRunning(false)

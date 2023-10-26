@@ -38,3 +38,9 @@ addresses:
 - `bfme.fesl.ea.com` -> `login.server.cnc-online.net`
 - `bfme2.fesl.ea.com` -> `login.server.cnc-online.net`
 - `bfme2-ep1-pc.fesl.ea.com` -> `login.server.cnc-online.net`
+
+Also modifies the game to skip certificate validation by patching the game memory at `0x00a8d096` from `83 7D 88 08` to `EB 46 90 90`.
+
+## References
+
+- https://github.com/Aim4kill/Bug_OldProtoSSL

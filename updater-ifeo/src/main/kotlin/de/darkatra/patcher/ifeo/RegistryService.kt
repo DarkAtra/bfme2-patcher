@@ -19,6 +19,11 @@ object RegistryService {
     private const val HOOK_REGISTRY_KEY = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\lotrbfme2ep1.exe"
 
     fun setExpansionDebugger(path: Path) {
+
+        if (!Advapi32Util.registryValueExists(HKEY_LOCAL_MACHINE, HOOK_REGISTRY_KEY, "Debugger")) {
+            Advapi32Util.registryCreateKey(HKEY_LOCAL_MACHINE, HOOK_REGISTRY_KEY)
+        }
+
         Advapi32Util.registrySetStringValue(HKEY_LOCAL_MACHINE, HOOK_REGISTRY_KEY, "Debugger", path.absolutePathString())
     }
 

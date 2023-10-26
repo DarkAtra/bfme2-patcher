@@ -9,16 +9,15 @@ import kotlin.io.path.name
 
 object ProcessUtils {
 
-    fun findProcessId(name: String, ignoreCase: Boolean = true): Long? {
+    fun findProcess(name: String, ignoreCase: Boolean = true): ProcessHandle? {
         return ProcessHandle.allProcesses()
             .filter { process -> process.info().command().isPresent }
             .filter { process -> process.info().command().get().endsWith(name, ignoreCase = ignoreCase) }
             .findFirst()
-            .map { process -> process.pid() }
             .orElse(null)
     }
 
-    fun runBypassingDebuggerAndWait(executable: Path, args: Array<String> = emptyArray()) {
+    fun runBypassingDebugger(executable: Path, args: Array<String> = emptyArray()): Boolean {
 
         // we need to use jna here to set the DEBUG_ONLY_THIS_PROCESS flag when we create the process
         val startupInfo = WinBase.STARTUPINFO()
@@ -43,15 +42,16 @@ object ProcessUtils {
 
         if (!successful) {
             LOGGER.severe("Could not run '${executable.absolutePathString()}', error code: ${Kernel32.INSTANCE.GetLastError()}")
-            return
+            return false
         }
 
         // stop debugging the new process (it will be suspended otherwise)
         Kernel32.INSTANCE.DebugActiveProcessStop(processInformation.dwProcessId)
 
-        Kernel32.INSTANCE.WaitForSingleObject(processInformation.hProcess, WinBase.INFINITE)
-        Kernel32.INSTANCE.CloseHandle(processInformation.hProcess)
         Kernel32.INSTANCE.CloseHandle(processInformation.hThread)
+        Kernel32.INSTANCE.CloseHandle(processInformation.hProcess)
+
+        return true
     }
 
     fun run(executable: Path, args: Array<String> = emptyArray()): Process {

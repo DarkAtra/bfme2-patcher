@@ -3,6 +3,7 @@ package de.darkatra.bfme2.util
 import com.sun.jna.Memory
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.BaseTSD
+import com.sun.jna.platform.win32.WinNT.HANDLE
 import com.sun.jna.platform.win32.WinNT.MEM_COMMIT
 import com.sun.jna.platform.win32.WinNT.MEM_RESERVE
 import com.sun.jna.platform.win32.WinNT.PAGE_EXECUTE_READWRITE
@@ -11,7 +12,6 @@ import com.sun.jna.platform.win32.WinNT.PROCESS_QUERY_INFORMATION
 import com.sun.jna.platform.win32.WinNT.PROCESS_VM_OPERATION
 import com.sun.jna.platform.win32.WinNT.PROCESS_VM_READ
 import com.sun.jna.platform.win32.WinNT.PROCESS_VM_WRITE
-import com.sun.jna.ptr.IntByReference
 import de.darkatra.bfme2.LOGGER
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
@@ -19,68 +19,37 @@ import kotlin.io.path.absolutePathString
 
 object InjectionUtils {
 
-    // TODO: split up into functions per operation
-    fun injectDll(processName: String, dllPath: Path): Boolean {
+    fun injectDll(processId: Long, dllPath: Path): Boolean {
 
-        // get the process id by name
-        val processId = ProcessUtils.findProcessId(processName)
-        if (processId == null) {
-            LOGGER.severe("Could not find process for name '$processName'")
-            return false
-        }
+        val dllPathString = dllPath.absolutePathString()
 
         // get the handle to the process
-        val handle = Kernel32.INSTANCE.OpenProcess(
-            PROCESS_CREATE_THREAD or
-                PROCESS_QUERY_INFORMATION or
-                PROCESS_VM_OPERATION or
-                PROCESS_VM_READ or
-                PROCESS_VM_WRITE,
-            false,
-            Math.toIntExact(processId)
-        )
+        val handle = openHandleToProcess(processId)
         if (handle == null) {
             LOGGER.severe("Could not OpenProcess with pid '${processId}': ${Kernel32.INSTANCE.GetLastError()}")
             return false
         }
 
-        // get the address of LoadLibraryA
-//        val loadLibraryPointer = AnsiKernel32.INSTANCE.GetProcAddress(
-//            Kernel32.INSTANCE.GetModuleHandle("kernel32.dll"),
-//            "LoadLibraryA"
-//        )?.pointer
-//        if (loadLibraryPointer == null) {
-//            LOGGER.severe("Failed to get address for LoadLibraryA: ${Kernel32.INSTANCE.GetLastError()}")
-//            return false
-//        }
-        // FIXME: the above code resolves to the wrong address for some reason
+        // val loadLibraryPointer = AnsiKernel32.INSTANCE.GetProcAddress(
+        //     Kernel32.INSTANCE.GetModuleHandle("kernel32.dll"),
+        //     "LoadLibraryA"
+        // )?.pointer
+        // if (loadLibraryPointer == null) {
+        //     LOGGER.severe("Failed to get address for LoadLibraryA: ${Kernel32.INSTANCE.GetLastError()}")
+        //     return false
+        // }
+        // FIXME: resolve the address to LoadLibraryA dynamically (something similar to the code above)
         val loadLibraryPointer = Pointer.createConstant(0x76C60E70)
 
         // allocate memory for the dll path string
-        val dllPathString = dllPath.absolutePathString()
-        val dllPathStringLength = dllPath.absolutePathString().length + 1L
-        val dllMemoryPointer = Kernel32.INSTANCE.VirtualAllocEx(
-            handle,
-            null,
-            BaseTSD.SIZE_T(dllPathStringLength),
-            MEM_RESERVE or MEM_COMMIT,
-            PAGE_EXECUTE_READWRITE
-        )
+        val dllMemoryPointer = allocateMemoryForString(handle, dllPathString)
         if (dllMemoryPointer == null) {
             LOGGER.severe("Failed to allocate memory: ${Kernel32.INSTANCE.GetLastError()}")
             return false
         }
 
         // write the dll path string to the allocated memory
-        val writeToMemorySuccessful = Kernel32.INSTANCE.WriteProcessMemory(
-            handle,
-            dllMemoryPointer,
-            Memory(dllPathStringLength).apply {
-                setString(0, dllPathString, StandardCharsets.UTF_8.name())
-            },
-            Math.toIntExact(dllPathStringLength),
-            null
-        )
+        val writeToMemorySuccessful = writeStringToMemory(handle, dllMemoryPointer, dllPathString)
         if (!writeToMemorySuccessful) {
             LOGGER.severe("Failed to write to memory: ${Kernel32.INSTANCE.GetLastError()}")
             return false
@@ -109,36 +78,46 @@ object InjectionUtils {
         LOGGER.info("Remote thread id: $remoteThreadId")
 
         Kernel32.INSTANCE.CloseHandle(remoteThread)
-
-        // TODO: move this to a separate function
-        val certPatchAddress = Pointer.createConstant(0x00a8d096)
-        val bytesToWrite = byteArrayOf(0xEB.toByte(), 0x46.toByte(), 0x90.toByte(), 0x90.toByte())
-        val certPatchSuccessful = Kernel32.INSTANCE.WriteProcessMemory(
-            handle,
-            certPatchAddress,
-            Memory(bytesToWrite.size.toLong()).apply {
-                bytesToWrite.forEachIndexed { index, byte ->
-                    setByte(index.toLong(), byte)
-                }
-            },
-            4,
-            IntByReference()
-        )
-        if (!certPatchSuccessful) {
-            LOGGER.severe("Failed to patch cert validation: ${Kernel32.INSTANCE.GetLastError()}")
-            return false
-        }
-
         Kernel32.INSTANCE.CloseHandle(handle)
 
         return true
     }
-}
 
-// FIXME: remove me
-fun main() {
+    private fun openHandleToProcess(processId: Long): HANDLE? {
 
-    println(
-        InjectionUtils.injectDll("game.dat", Path.of("C:\\Users\\DarkAtra\\Desktop\\defender-excluded\\bfme\\game-patcher.dll"))
-    )
+        return Kernel32.INSTANCE.OpenProcess(
+            PROCESS_CREATE_THREAD or
+                PROCESS_QUERY_INFORMATION or
+                PROCESS_VM_OPERATION or
+                PROCESS_VM_READ or
+                PROCESS_VM_WRITE,
+            false,
+            Math.toIntExact(processId)
+        )
+    }
+
+    private fun allocateMemoryForString(handle: HANDLE, string: String): Pointer? {
+
+        return Kernel32.INSTANCE.VirtualAllocEx(
+            handle,
+            null,
+            BaseTSD.SIZE_T(string.length + 1L),
+            MEM_RESERVE or MEM_COMMIT,
+            PAGE_EXECUTE_READWRITE
+        )
+    }
+
+    private fun writeStringToMemory(handle: HANDLE, memoryPointer: Pointer, string: String): Boolean {
+
+        val stringLength = string.length + 1L
+        return Kernel32.INSTANCE.WriteProcessMemory(
+            handle,
+            memoryPointer,
+            Memory(stringLength).apply {
+                setString(0, string, StandardCharsets.UTF_8.name())
+            },
+            Math.toIntExact(stringLength),
+            null
+        )
+    }
 }

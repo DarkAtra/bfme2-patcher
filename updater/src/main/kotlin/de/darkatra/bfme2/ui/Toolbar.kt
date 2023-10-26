@@ -89,6 +89,7 @@ fun Toolbar(
                                 UpdaterContext.ifeoHome,
                                 when (hookEnabled) {
                                     true -> arrayOf(
+                                        "filelog",
                                         "set",
                                         Base64.getEncoder().encodeToString(UpdaterContext.applicationHome.absolutePathString().toByteArray())
                                     )

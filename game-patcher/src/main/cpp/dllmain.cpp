@@ -66,8 +66,6 @@ BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 
     if (fdwReason == DLL_PROCESS_ATTACH) {
 
-        MessageBoxW(NULL, L"Hello", L"Hello", MB_OK);
-
         NTSTATUS result = LhInstallHook(
             GetProcAddress(GetModuleHandle(TEXT("ws2_32")), "gethostbyname"),
             Hooked_gethostbyname,
@@ -76,19 +74,29 @@ BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
         );
         if (FAILED(result)) {
             // Hook could not be installed, see RtlGetLastErrorString() for details
-            MessageBoxW(NULL, L"Error", L"Error", MB_OK);
+            MessageBoxW(NULL, L"Failed to hook gethostbyname. Online gameplay might not be possible.", L"Error", MB_OK);
             return true;
         }
 
         ULONG ACLEntries[1] = { 0 };
         LhSetExclusiveACL(ACLEntries, 1, &hHook);
 
-        MessageBoxW(NULL, L"Hooked", L"Hooked", MB_OK);
+        HANDLE currentProcess = GetCurrentProcess();
+        // FIXME: don't hardcode the address
+        LPVOID addressToModify = (LPVOID)0x00a8d096;
+        BYTE bytesToWrite[] = { 0xEB, 0x46, 0x90, 0x90 };
+
+        SIZE_T bytesWritten;
+        // FIXME: read and validate the bytes at addressToModify before writing
+        bool certPatchSuccessful = WriteProcessMemory(currentProcess, addressToModify, bytesToWrite, sizeof(bytesToWrite), &bytesWritten);
+        if(!certPatchSuccessful) {
+            MessageBoxW(NULL, L"Failed to patch certificate. Online gameplay might not be possible.", L"Error", MB_OK);
+            return true;
+        }
 
     } else if (fdwReason == DLL_PROCESS_DETACH) {
         LhUninstallHook(&hHook);
         LhWaitForPendingRemovals();
-        MessageBoxW(NULL, L"Unhooked", L"Unhooked", MB_OK);
     }
 
     return true;
