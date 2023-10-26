@@ -38,8 +38,3 @@ addresses:
 - `bfme.fesl.ea.com` -> `login.server.cnc-online.net`
 - `bfme2.fesl.ea.com` -> `login.server.cnc-online.net`
 - `bfme2-ep1-pc.fesl.ea.com` -> `login.server.cnc-online.net`
-
-## References
-
-- https://aluigi.altervista.org/papers.htm#gsproto
-- https://aluigi.altervista.org/patches/fesl.lpatch

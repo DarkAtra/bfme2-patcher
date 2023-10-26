@@ -11,6 +11,7 @@ import com.sun.jna.platform.win32.WinNT.PROCESS_QUERY_INFORMATION
 import com.sun.jna.platform.win32.WinNT.PROCESS_VM_OPERATION
 import com.sun.jna.platform.win32.WinNT.PROCESS_VM_READ
 import com.sun.jna.platform.win32.WinNT.PROCESS_VM_WRITE
+import com.sun.jna.ptr.IntByReference
 import de.darkatra.bfme2.LOGGER
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
@@ -18,16 +19,17 @@ import kotlin.io.path.absolutePathString
 
 object InjectionUtils {
 
+    // TODO: split up into functions per operation
     fun injectDll(processName: String, dllPath: Path): Boolean {
 
-        // 1. get the process id by name
+        // get the process id by name
         val processId = ProcessUtils.findProcessId(processName)
         if (processId == null) {
             LOGGER.severe("Could not find process for name '$processName'")
             return false
         }
 
-        // 2. get the handle to the process
+        // get the handle to the process
         val handle = Kernel32.INSTANCE.OpenProcess(
             PROCESS_CREATE_THREAD or
                 PROCESS_QUERY_INFORMATION or
@@ -42,7 +44,7 @@ object InjectionUtils {
             return false
         }
 
-        // 3. get the address of LoadLibraryA
+        // get the address of LoadLibraryA
 //        val loadLibraryPointer = AnsiKernel32.INSTANCE.GetProcAddress(
 //            Kernel32.INSTANCE.GetModuleHandle("kernel32.dll"),
 //            "LoadLibraryA"
@@ -54,7 +56,7 @@ object InjectionUtils {
         // FIXME: the above code resolves to the wrong address for some reason
         val loadLibraryPointer = Pointer.createConstant(0x76C60E70)
 
-        // 4. allocate memory for the dll path string
+        // allocate memory for the dll path string
         val dllPathString = dllPath.absolutePathString()
         val dllPathStringLength = dllPath.absolutePathString().length + 1L
         val dllMemoryPointer = Kernel32.INSTANCE.VirtualAllocEx(
@@ -69,8 +71,8 @@ object InjectionUtils {
             return false
         }
 
-        // 5. write the dll path string to the allocated memory
-        val successful = Kernel32.INSTANCE.WriteProcessMemory(
+        // write the dll path string to the allocated memory
+        val writeToMemorySuccessful = Kernel32.INSTANCE.WriteProcessMemory(
             handle,
             dllMemoryPointer,
             Memory(dllPathStringLength).apply {
@@ -79,12 +81,12 @@ object InjectionUtils {
             Math.toIntExact(dllPathStringLength),
             null
         )
-        if (!successful) {
+        if (!writeToMemorySuccessful) {
             LOGGER.severe("Failed to write to memory: ${Kernel32.INSTANCE.GetLastError()}")
             return false
         }
 
-        // 6. load the dll via remote thread
+        // load the dll via remote thread
         val remoteThread = Kernel32.INSTANCE.CreateRemoteThread(
             handle,
             null,
@@ -106,13 +108,34 @@ object InjectionUtils {
         }
         LOGGER.info("Remote thread id: $remoteThreadId")
 
-        Kernel32.INSTANCE.CloseHandle(handle)
         Kernel32.INSTANCE.CloseHandle(remoteThread)
+
+        // TODO: move this to a separate function
+        val certPatchAddress = Pointer.createConstant(0x00a8d096)
+        val bytesToWrite = byteArrayOf(0xEB.toByte(), 0x46.toByte(), 0x90.toByte(), 0x90.toByte())
+        val certPatchSuccessful = Kernel32.INSTANCE.WriteProcessMemory(
+            handle,
+            certPatchAddress,
+            Memory(bytesToWrite.size.toLong()).apply {
+                bytesToWrite.forEachIndexed { index, byte ->
+                    setByte(index.toLong(), byte)
+                }
+            },
+            4,
+            IntByReference()
+        )
+        if (!certPatchSuccessful) {
+            LOGGER.severe("Failed to patch cert validation: ${Kernel32.INSTANCE.GetLastError()}")
+            return false
+        }
+
+        Kernel32.INSTANCE.CloseHandle(handle)
 
         return true
     }
 }
 
+// FIXME: remove me
 fun main() {
 
     println(
