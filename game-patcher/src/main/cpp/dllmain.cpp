@@ -3,6 +3,53 @@
 
 using namespace std;
 
+__forceinline static BYTE* findPattern(BYTE* srcStart, BYTE* srcEnd, BYTE* patternStart, BYTE* patternEnd) {
+
+    BYTE *pos, *end, *s1, *p1;
+    end = srcEnd - (patternEnd - patternStart);
+
+    for (pos = srcStart; pos <= end; pos++) {
+        s1 = pos - 1;
+        p1 = patternStart - 1;
+
+        while (*++s1 == *++p1) {
+            if (p1 == patternEnd) {
+                return pos;
+            }
+        }
+    }
+
+    return srcEnd;
+}
+
+__forceinline static BYTE* findPatternInProcessMemory(BYTE* search, BYTE* search_end) {
+
+    // start searching from the beginning of the process's memory
+    ULONG_PTR baseAddress = (ULONG_PTR) GetModuleHandleA(0);
+
+    MEMORY_BASIC_INFORMATION memoryInfo;
+    BYTE* res;
+
+    while (VirtualQuery((void*) baseAddress, &memoryInfo, sizeof(memoryInfo))) {
+
+        // skip noncommitted and guard pages, nonreadable or nonexecutable pages
+        if ((memoryInfo.State & MEM_COMMIT) && (memoryInfo.Protect == ((memoryInfo.Protect & ~(PAGE_NOACCESS | PAGE_GUARD)) & (memoryInfo.Protect & (PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY))))) {
+
+            res = findPattern((BYTE*) memoryInfo.BaseAddress, (BYTE*) memoryInfo.BaseAddress + memoryInfo.RegionSize, search, search_end);
+            if (res != (BYTE*) memoryInfo.BaseAddress + memoryInfo.RegionSize && res != search) {
+                // found
+                return res;
+            }
+        }
+
+        // move to the next region
+        baseAddress = (ULONG_PTR) ((ULONG_PTR) memoryInfo.BaseAddress + (ULONG_PTR) memoryInfo.RegionSize);
+    }
+
+    // not found
+    return nullptr;
+}
+
 // See: https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-gethostbyname
 // hostent *WSAAPI gethostbyname(
 //   const char *name
@@ -82,17 +129,21 @@ BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
         LhSetExclusiveACL(ACLEntries, 1, &hHook);
 
         HANDLE currentProcess = GetCurrentProcess();
-        // FIXME: don't hardcode the address
-        LPVOID addressToModify = (LPVOID)0x00a8d096;
-        BYTE bytesToWrite[] = { 0xEB, 0x46, 0x90, 0x90 };
 
-        SIZE_T bytesWritten;
-        // FIXME: read and validate the bytes at addressToModify before writing
-        bool certPatchSuccessful = WriteProcessMemory(currentProcess, addressToModify, bytesToWrite, sizeof(bytesToWrite), &bytesWritten);
-        if(!certPatchSuccessful) {
-            MessageBoxW(NULL, L"Failed to patch certificate. Online gameplay might not be possible.", L"Error", MB_OK);
-            return true;
+        BYTE search[] = { 0x89, 0x55, 0x88, 0x83, 0x7D, 0x88, 0x08, 0x74, 0x08 };
+        BYTE patch[] = { 0xEB, 0x46, 0x90, 0x90 };
+
+        BYTE* addressToModify = findPatternInProcessMemory(search, search + 8);
+        if(addressToModify) {
+
+            SIZE_T bytesWritten;
+            bool certPatchSuccessful = WriteProcessMemory(currentProcess, addressToModify + 3, patch, sizeof(patch), &bytesWritten);
+            if(certPatchSuccessful) {
+                return true;
+            }
         }
+
+        MessageBoxW(NULL, L"Failed to patch certificate. Online gameplay might not be possible.", L"Error", MB_OK);
 
     } else if (fdwReason == DLL_PROCESS_DETACH) {
         LhUninstallHook(&hHook);
