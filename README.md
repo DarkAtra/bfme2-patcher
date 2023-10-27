@@ -3,7 +3,9 @@
 The `bfme2-patcher` consists of the following applications:
 
 - **game-patcher**:
-  The `game-patcher` aims to patch certain aspects of the original game executable to allow proper online gameplay. Currently work in progress.
+  The `game-patcher` aims to patch certain aspects of the original game executable to allow proper online gameplay. It redirects DNS queries for GameSpy and EA
+  specific hosts to server that are maintained by the community ([t3a:online](https://t3aonline.net/)). It also disables the games SSL certificate verification
+  so that a connection to the community servers can be established.
 - **map-builder**:
   The `map-builder` is an application that helps with building the `!map.big` archive. It adjusts the camera settings for each map, generates the `mapcache.ini`
   and creates the final big archive.

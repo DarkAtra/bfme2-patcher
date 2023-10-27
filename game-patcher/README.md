@@ -13,7 +13,7 @@ kit 10.0.22000.0 (`C:\Program Files (x86)\Windows Kits\10\Lib\10.0.22000.0\um\x8
 
 ## Patches
 
-Uses [EasyHook](https://easyhook.github.io/) to patch the `gethostbyname` function in `ws2_32.dll` and modifies the result for the following Gamespy and EA
+Uses [EasyHook](https://easyhook.github.io/) to patch the `gethostbyname` function and modifies the result for the following GameSpy and EA
 addresses:
 
 - `gpcm.gamespy.com` -> `gpcm.server.cnc-online.net`
@@ -39,7 +39,7 @@ addresses:
 - `bfme2.fesl.ea.com` -> `login.server.cnc-online.net`
 - `bfme2-ep1-pc.fesl.ea.com` -> `login.server.cnc-online.net`
 
-Also modifies the game to skip certificate validation by patching the game memory at `0x00a8d096` from `83 7D 88 08` to `EB 46 90 90`.
+Also modifies the game to skip certificate validation to allow connections to custom FESL servers.
 
 ## References
 
