@@ -23,6 +23,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.time.withTimeoutOrNull
 import kotlinx.coroutines.withContext
+import java.nio.file.Path
 import java.time.Duration
 import kotlin.io.path.absolutePathString
 
@@ -126,35 +127,9 @@ fun UpdaterView(
                         updaterModel.setGameRunning(true)
                         patchScope.launch {
                             runCatching {
-                                withContext(Dispatchers.IO) {
-                                    val successful = ProcessUtils.runBypassingDebugger(
-                                        rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize(),
-                                        when (state.hdEditionEnabled) {
-                                            true -> arrayOf(
-                                                "-mod",
-                                                "\"${patcherUserDir.resolve("HDEdition.big").normalize().absolutePathString()}\""
-                                            )
-
-                                            false -> emptyArray()
-                                        }
-                                    )
-
-                                    if (successful) {
-                                        val gameProcess = withTimeoutOrNull(Duration.ofSeconds(5)) {
-                                            var gameProcess: ProcessHandle?
-                                            while (ProcessUtils.findProcess("game.dat").also { gameProcess = it } == null) {
-                                                delay(500)
-                                            }
-                                            return@withTimeoutOrNull gameProcess
-                                        }
-
-                                        if (gameProcess != null) {
-                                            InjectionUtils.injectDll(gameProcess.pid(), rotwkHomeDir.resolve("game-patcher.dll").normalize())
-                                            gameProcess.onExit().get()
-                                        } else {
-                                            // TODO: show error message
-                                        }
-                                    }
+                                when (state.hookingSupported && state.hookEnabled) {
+                                    true -> launchGameBypassingDebugger(rotwkHomeDir, patcherUserDir, state.hdEditionEnabled)
+                                    false -> launchGame(rotwkHomeDir, patcherUserDir, state.hdEditionEnabled)
                                 }
                             }.also {
                                 updaterModel.setGameRunning(false)
@@ -201,4 +176,51 @@ fun UpdaterView(
     LaunchedEffect(Unit) {
         updaterModel.setNewVersionAvailable(SelfUpdateService.isNewVersionAvailable())
     }
+}
+
+private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, patcherUserDir: Path, hdEditionEnabled: Boolean): Boolean = withContext(Dispatchers.IO) {
+
+    val successful = ProcessUtils.runBypassingDebugger(
+        rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize(),
+        when (hdEditionEnabled) {
+            true -> arrayOf(
+                "-mod",
+                "\"${patcherUserDir.resolve("HDEdition.big").normalize().absolutePathString()}\""
+            )
+
+            false -> emptyArray()
+        }
+    )
+
+    if (successful) {
+        val gameProcess = withTimeoutOrNull(Duration.ofSeconds(5)) {
+            var gameProcess: ProcessHandle?
+            while (ProcessUtils.findProcess("game.dat").also { gameProcess = it } == null) {
+                delay(500)
+            }
+            return@withTimeoutOrNull gameProcess
+        } ?: return@withContext false
+
+        InjectionUtils.injectDll(gameProcess.pid(), rotwkHomeDir.resolve("game-patcher.dll").normalize())
+        gameProcess.onExit().get()
+    }
+
+    return@withContext true
+}
+
+private fun launchGame(rotwkHomeDir: Path, patcherUserDir: Path, hdEditionEnabled: Boolean) {
+
+    val gameProcess = ProcessUtils.run(
+        rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize(),
+        when (hdEditionEnabled) {
+            true -> arrayOf(
+                "-mod",
+                "\"${patcherUserDir.resolve("HDEdition.big").normalize().absolutePathString()}\""
+            )
+
+            false -> emptyArray()
+        }
+    )
+
+    gameProcess.waitFor()
 }

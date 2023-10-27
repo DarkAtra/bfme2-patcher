@@ -10,7 +10,6 @@ import de.darkatra.bfme2.persistence.PersistentState
 import de.darkatra.bfme2.util.StringUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlin.io.path.exists
 
 class UpdaterModel : PatchProgressListener {
 
@@ -20,7 +19,7 @@ class UpdaterModel : PatchProgressListener {
                 hdEditionEnabled = it.hdEditionEnabled,
                 trayIconEnabled = it.trayIconEnabled,
                 hookEnabled = UpdaterContext.hasExpansionDebugger,
-                hookingSupported = UpdaterContext.ifeoHome.exists()
+                hookingSupported = false // UpdaterContext.ifeoHome.exists()
             )
         )
     }
