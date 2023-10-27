@@ -1,10 +1,8 @@
 package de.darkatra.bfme2.util
 
 import com.sun.jna.Native
-import com.sun.jna.Pointer
 import com.sun.jna.Structure.*
 import com.sun.jna.platform.win32.WinDef.DWORD
-import com.sun.jna.platform.win32.WinDef.HMODULE
 import com.sun.jna.platform.win32.WinNT.HANDLE
 import com.sun.jna.win32.W32APIOptions
 
@@ -20,19 +18,6 @@ interface Kernel32 : com.sun.jna.platform.win32.Kernel32 {
     fun DebugActiveProcessStop(
         dwProcessId: DWORD
     ): Boolean
-
-    /**
-     * See: https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-getprocaddress
-     *
-     * FARPROC GetProcAddress(
-     *   [in] HMODULE hModule,
-     *   [in] LPCSTR  lpProcName
-     * );
-     */
-    fun GetProcAddress(
-        hModule: HMODULE,
-        lpProcName: Pointer
-    ): Pointer?
 
     /**
      * See: https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getthreadid
