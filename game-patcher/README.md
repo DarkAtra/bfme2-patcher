@@ -43,4 +43,5 @@ Also modifies the game to skip certificate validation to allow connections to cu
 
 ## References
 
+- https://darkatra.dev/2023/10/28/fixing-online-gameplay-for-bfme2.html
 - https://github.com/Aim4kill/Bug_OldProtoSSL
