@@ -208,7 +208,7 @@ private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, patcherUserD
     return@withContext true
 }
 
-private fun launchGame(rotwkHomeDir: Path, patcherUserDir: Path, hdEditionEnabled: Boolean) {
+private suspend fun launchGame(rotwkHomeDir: Path, patcherUserDir: Path, hdEditionEnabled: Boolean) = withContext(Dispatchers.IO) {
 
     val gameProcess = ProcessUtils.run(
         rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize(),
