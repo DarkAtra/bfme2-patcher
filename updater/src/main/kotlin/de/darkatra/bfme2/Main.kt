@@ -5,7 +5,6 @@ import androidx.compose.material.lightColors
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
@@ -30,7 +29,6 @@ import kotlin.io.path.absolutePathString
 val LOGGER: Logger = Logger.getLogger("updater")
 private const val ICON_PATH = "/images/icon.png"
 
-@ExperimentalComposeUiApi
 fun main(args: Array<String>) {
 
     if ("filelog" in args) {

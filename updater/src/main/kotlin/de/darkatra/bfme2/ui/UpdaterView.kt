@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.FrameWindowScope
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
+import de.darkatra.bfme2.LOGGER
 import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.patch.PatchService
 import de.darkatra.bfme2.selfupdate.SelfUpdateService
@@ -180,6 +181,8 @@ fun UpdaterView(
 
 private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, patcherUserDir: Path, hdEditionEnabled: Boolean): Boolean = withContext(Dispatchers.IO) {
 
+    LOGGER.info("Launching game with game-patcher.")
+
     val successful = ProcessUtils.runBypassingDebugger(
         rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize(),
         when (hdEditionEnabled) {
@@ -193,6 +196,8 @@ private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, patcherUserD
     )
 
     if (successful) {
+        LOGGER.info("Injecting patches via game-patcher.")
+
         val gameProcess = withTimeoutOrNull(Duration.ofSeconds(5)) {
             var gameProcess: ProcessHandle?
             while (ProcessUtils.findProcess("game.dat").also { gameProcess = it } == null) {
@@ -209,6 +214,8 @@ private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, patcherUserD
 }
 
 private suspend fun launchGame(rotwkHomeDir: Path, patcherUserDir: Path, hdEditionEnabled: Boolean) = withContext(Dispatchers.IO) {
+
+    LOGGER.info("Launching game without game-patcher.")
 
     val gameProcess = ProcessUtils.run(
         rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize(),
