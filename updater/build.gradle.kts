@@ -19,6 +19,7 @@ dependencies {
     implementation("commons-io:commons-io:${project.extra["commons-io.version"]}")
     implementation("net.java.dev.jna:jna-platform:${project.extra["jna.version"]}")
     implementation("com.github.vatbub:mslinks:${project.extra["mslinks.version"]}")
+    implementation("de.darkatra.injector:kotlin-dll-injector-common:${project.extra["kotlin-dll-injector.version"]}")
 
     testImplementation(kotlin("test"))
     testImplementation("org.assertj:assertj-core:${project.extra["assertj.version"]}")

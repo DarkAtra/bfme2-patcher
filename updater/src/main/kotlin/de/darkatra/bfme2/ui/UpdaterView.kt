@@ -17,8 +17,8 @@ import de.darkatra.bfme2.LOGGER
 import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.patch.PatchService
 import de.darkatra.bfme2.selfupdate.SelfUpdateService
-import de.darkatra.bfme2.util.InjectionUtils
 import de.darkatra.bfme2.util.ProcessUtils
+import de.darkatra.injector.Injector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -206,7 +206,7 @@ private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, patcherUserD
             return@withTimeoutOrNull gameProcess
         } ?: return@withContext false
 
-        InjectionUtils.injectDll(gameProcess.pid(), rotwkHomeDir.resolve("game-patcher.dll").normalize())
+        Injector.injectDll(gameProcess.pid(), rotwkHomeDir.resolve("game-patcher.dll").normalize())
         gameProcess.onExit().get()
     }
 
