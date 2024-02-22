@@ -1,5 +1,11 @@
 package de.darkatra.bfme2.ui
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -8,7 +14,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.FrameWindowScope
@@ -17,6 +25,7 @@ import de.darkatra.bfme2.LOGGER
 import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.patch.PatchService
 import de.darkatra.bfme2.selfupdate.SelfUpdateService
+import de.darkatra.bfme2.ui.UpdaterModel.State.SelfUpdateState
 import de.darkatra.bfme2.util.ProcessUtils
 import de.darkatra.injector.Injector
 import kotlinx.coroutines.Dispatchers
@@ -68,8 +77,12 @@ fun UpdaterView(
 
     Toolbar(updaterModel, frameWindowScope, onCheckForUpdates = {
         patchScope.launch {
-            updaterModel.setNewVersionAvailable(SelfUpdateService.isNewVersionAvailable())
-            if (state.newVersionAvailable == UpdaterModel.State.SelfUpdateState.OUTDATED || state.newVersionAvailable == UpdaterModel.State.SelfUpdateState.UP_TO_DATE) {
+            updaterModel.setSelfUpdateState(SelfUpdateState.UNKNOWN)
+            when (SelfUpdateService.isNewVersionAvailable()) {
+                true -> updaterModel.setSelfUpdateState(SelfUpdateState.OUTDATED)
+                false -> updaterModel.setSelfUpdateState(SelfUpdateState.UP_TO_DATE)
+            }
+            if (state.selfUpdateState == SelfUpdateState.OUTDATED || state.selfUpdateState == SelfUpdateState.UP_TO_DATE) {
                 setSelfUpdateDialogVisible(true)
             }
         }
@@ -83,8 +96,8 @@ fun UpdaterView(
 
         UpdaterViewLayout(
             actionsSlot = {
-                when (state.newVersionAvailable) {
-                    UpdaterModel.State.SelfUpdateState.OUTDATED -> SmallButton(
+                when (state.selfUpdateState) {
+                    SelfUpdateState.OUTDATED -> SmallButton(
                         enabled = !state.gameRunning && !state.selfUpdateInProgress && !state.patchInProgress,
                         onClick = {
                             performSelfUpdate()
@@ -93,11 +106,25 @@ fun UpdaterView(
                         Text(text = "Update available", fontSize = 14.sp, fontWeight = FontWeight.W400)
                     }
 
-                    UpdaterModel.State.SelfUpdateState.UP_TO_DATE -> SmallSurface {
+                    SelfUpdateState.UP_TO_DATE -> SmallSurface {
                         Text(text = "✔ Up to Date", fontSize = 14.sp, fontWeight = FontWeight.W400)
                     }
 
-                    else -> Unit
+                    SelfUpdateState.UNKNOWN -> SmallSurface {
+                        Row {
+
+                            CircularProgressIndicator(
+                                modifier = Modifier.height(20.dp).width(20.dp),
+                                strokeWidth = 3.dp,
+                                color = Color.Gray,
+                                backgroundColor = MaterialTheme.colors.surface,
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Text(text = "Checking for Updates...", fontSize = 14.sp, fontWeight = FontWeight.W400)
+                        }
+                    }
                 }
             },
             progressBarSlot = {
@@ -148,8 +175,8 @@ fun UpdaterView(
     }
 
     if (isSelfUpdateDialogVisible) {
-        when (state.newVersionAvailable) {
-            UpdaterModel.State.SelfUpdateState.OUTDATED -> ConfirmationDialog(
+        when (state.selfUpdateState) {
+            SelfUpdateState.OUTDATED -> ConfirmationDialog(
                 title = "Update available",
                 text = "Do you want to proceed and update to the latest version?",
                 onConfirm = {
@@ -162,7 +189,7 @@ fun UpdaterView(
                 }
             )
 
-            UpdaterModel.State.SelfUpdateState.UP_TO_DATE -> MessageDialog(
+            SelfUpdateState.UP_TO_DATE -> MessageDialog(
                 title = "No Update available.",
                 text = "You're already using the latest version of the updater. Good Job!",
                 onConfirm = {
@@ -175,7 +202,11 @@ fun UpdaterView(
     }
 
     LaunchedEffect(Unit) {
-        updaterModel.setNewVersionAvailable(SelfUpdateService.isNewVersionAvailable())
+        updaterModel.setSelfUpdateState(SelfUpdateState.UNKNOWN)
+        when (SelfUpdateService.isNewVersionAvailable()) {
+            true -> updaterModel.setSelfUpdateState(SelfUpdateState.OUTDATED)
+            false -> updaterModel.setSelfUpdateState(SelfUpdateState.UP_TO_DATE)
+        }
     }
 }
 

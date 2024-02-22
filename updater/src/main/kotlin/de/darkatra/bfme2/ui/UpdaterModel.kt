@@ -7,6 +7,7 @@ import de.darkatra.bfme2.patch.PatchProgress
 import de.darkatra.bfme2.patch.PatchProgressListener
 import de.darkatra.bfme2.persistence.PersistenceService
 import de.darkatra.bfme2.persistence.PersistentState
+import de.darkatra.bfme2.ui.UpdaterModel.State.SelfUpdateState
 import de.darkatra.bfme2.util.StringUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -55,15 +56,8 @@ class UpdaterModel : PatchProgressListener {
         state.update { it.copy(isVisible = isVisible) }
     }
 
-    fun setNewVersionAvailable(newVersionAvailable: Boolean) {
-        state.update {
-            it.copy(
-                newVersionAvailable = when (newVersionAvailable) {
-                    true -> State.SelfUpdateState.OUTDATED
-                    false -> State.SelfUpdateState.UP_TO_DATE
-                }
-            )
-        }
+    fun setSelfUpdateState(selfUpdateState: SelfUpdateState) {
+        state.update { it.copy(selfUpdateState = selfUpdateState) }
     }
 
     fun setSelfUpdateInProgress(selfUpdateInProgress: Boolean) {
@@ -112,7 +106,7 @@ class UpdaterModel : PatchProgressListener {
     data class State(
         val isVisible: Boolean = true,
 
-        val newVersionAvailable: SelfUpdateState = SelfUpdateState.UNKNOWN,
+        val selfUpdateState: SelfUpdateState = SelfUpdateState.UNKNOWN,
         val selfUpdateInProgress: Boolean = false,
 
         val patchInProgress: Boolean = false,
