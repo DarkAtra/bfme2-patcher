@@ -69,6 +69,13 @@ fun Toolbar(
                         updaterModel.setHdEditionEnabled(hdEditionEnabled)
                     }
                 )
+                CheckboxItem(
+                    text = "Mod",
+                    checked = state.modEnabled,
+                    onCheckedChange = { modEnabled ->
+                        updaterModel.setModEnabled(modEnabled)
+                    }
+                )
             }
 
             Menu(text = "Updater Settings") {

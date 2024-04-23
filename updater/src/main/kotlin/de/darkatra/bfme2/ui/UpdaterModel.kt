@@ -19,6 +19,7 @@ class UpdaterModel : PatchProgressListener {
         MutableValue(
             State(
                 hdEditionEnabled = it.hdEditionEnabled,
+                modEnabled = it.modEnabled,
                 trayIconEnabled = it.trayIconEnabled,
                 hookEnabled = UpdaterContext.hasExpansionDebugger,
                 hookingSupported = UpdaterContext.ifeoHome.exists()
@@ -85,6 +86,11 @@ class UpdaterModel : PatchProgressListener {
         updatePersistentState()
     }
 
+    fun setModEnabled(modEnabled: Boolean) {
+        state.update { it.copy(modEnabled = modEnabled) }
+        updatePersistentState()
+    }
+
     fun setTrayIconEnabled(trayIconEnabled: Boolean) {
         state.update { it.copy(trayIconEnabled = trayIconEnabled, isVisible = true) }
         updatePersistentState()
@@ -98,6 +104,7 @@ class UpdaterModel : PatchProgressListener {
         PersistenceService.savePersistentState(
             PersistentState(
                 hdEditionEnabled = state.value.hdEditionEnabled,
+                modEnabled = state.value.modEnabled,
                 trayIconEnabled = state.value.trayIconEnabled,
             )
         )
@@ -117,6 +124,7 @@ class UpdaterModel : PatchProgressListener {
         val progressText: String = "Waiting for user input.",
 
         val hdEditionEnabled: Boolean = false,
+        val modEnabled: Boolean = true,
         val trayIconEnabled: Boolean = false,
         val hookEnabled: Boolean = false,
         val hookingSupported: Boolean = false

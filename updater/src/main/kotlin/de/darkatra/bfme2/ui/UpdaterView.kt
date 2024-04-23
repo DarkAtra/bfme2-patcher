@@ -36,6 +36,8 @@ import kotlinx.coroutines.withContext
 import java.nio.file.Path
 import java.time.Duration
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.exists
+import kotlin.io.path.moveTo
 
 private val imagePaths = arrayOf(
     "/images/splash2_1920x1080.jpg",
@@ -139,6 +141,7 @@ fun UpdaterView(
                     modifier = Modifier.weight(1f),
                     onClick = {
                         updaterModel.setPatchInProgress(true)
+                        enableMod(rotwkHomeDir)
                         patchScope.launch {
                             PatchService.patch(updaterModel)
                         }
@@ -153,6 +156,10 @@ fun UpdaterView(
                     modifier = Modifier.weight(1f),
                     onClick = {
                         updaterModel.setGameRunning(true)
+                        when {
+                            state.modEnabled -> enableMod(rotwkHomeDir)
+                            else -> disableMod(rotwkHomeDir)
+                        }
                         patchScope.launch {
                             runCatching {
                                 when (state.hookingSupported && state.hookEnabled) {
@@ -207,6 +214,24 @@ fun UpdaterView(
             true -> updaterModel.setSelfUpdateState(SelfUpdateState.OUTDATED)
             false -> updaterModel.setSelfUpdateState(SelfUpdateState.UP_TO_DATE)
         }
+    }
+}
+
+private fun enableMod(rotwkHomeDir: Path) {
+    renameFileIfExists(rotwkHomeDir.resolve("!mod.big.bak"), "!mod.big")
+    renameFileIfExists(rotwkHomeDir.resolve("lang/englishstringsmod.big.bak"), "englishstringsmod.big")
+    renameFileIfExists(rotwkHomeDir.resolve("lang/germanstringsmod.big.bak"), "germanstringsmod.big")
+}
+
+private fun disableMod(rotwkHomeDir: Path) {
+    renameFileIfExists(rotwkHomeDir.resolve("!mod.big"), "!mod.big.bak")
+    renameFileIfExists(rotwkHomeDir.resolve("lang/englishstringsmod.big"), "englishstringsmod.big.bak")
+    renameFileIfExists(rotwkHomeDir.resolve("lang/germanstringsmod.big"), "germanstringsmod.big.bak")
+}
+
+private fun renameFileIfExists(file: Path, newName: String) {
+    if (file.exists()) {
+        file.moveTo(file.parent.resolve(newName), true)
     }
 }
 
