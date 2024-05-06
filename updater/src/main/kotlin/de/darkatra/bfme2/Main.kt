@@ -19,11 +19,14 @@ import de.darkatra.bfme2.selfupdate.SelfUpdateService
 import de.darkatra.bfme2.ui.UpdaterModel
 import de.darkatra.bfme2.ui.UpdaterView
 import org.jetbrains.skiko.setSystemLookAndFeel
+import java.awt.Color.WHITE
 import java.util.logging.FileHandler
 import java.util.logging.Level
 import java.util.logging.Logger
 import java.util.logging.SimpleFormatter
 import javax.swing.JOptionPane
+import javax.swing.UIManager
+import javax.swing.border.LineBorder
 import kotlin.io.path.absolutePathString
 
 val LOGGER: Logger = Logger.getLogger("updater")
@@ -49,6 +52,8 @@ fun main(args: Array<String>) {
     )
 
     setSystemLookAndFeel()
+    UIManager.put("MenuBar.border", LineBorder(WHITE, 0))
+    UIManager.put("PopupMenu.border", LineBorder(WHITE, 0))
 
     if (!UpdaterContext.context.isValid()) {
         LOGGER.info("Updater context is invalid.")
