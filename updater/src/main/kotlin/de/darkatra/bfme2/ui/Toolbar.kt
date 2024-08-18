@@ -1,12 +1,12 @@
 package de.darkatra.bfme2.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.MenuBar
-import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import de.darkatra.bfme2.LOGGER
 import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.game.Game
@@ -24,7 +24,7 @@ fun Toolbar(
     onCheckForUpdates: () -> Unit
 ) {
 
-    val state by updaterModel.state.subscribeAsState()
+    val state by updaterModel.state.collectAsState()
 
     val (gameToFix, setGameToFix) = remember { mutableStateOf<Game?>(null) }
     val (isFixConfirmationDialogVisible, setFixConfirmationDialogVisible) = remember { mutableStateOf(false) }

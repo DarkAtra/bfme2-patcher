@@ -2,29 +2,28 @@ import edu.sc.seis.launch4j.tasks.DefaultLaunch4jTask
 import org.gradle.jvm.tasks.Jar
 
 plugins {
-    kotlin("jvm")
-    id("org.jetbrains.compose")
-    id("edu.sc.seis.launch4j")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.compose)
+    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.launch4j)
 }
 
 dependencies {
     implementation(compose.desktop.currentOs)
-    implementation("com.arkivanov.decompose:decompose:${project.extra["decompose.version"]}")
-    implementation("com.arkivanov.decompose:extensions-compose-jetbrains:${project.extra["decompose.version"]}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["kotlin-coroutine.version"]}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:${project.extra["kotlin-coroutine.version"]}")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${project.extra["jackson.version"]}")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${project.extra["jackson.version"]}")
-    implementation("org.bouncycastle:bcprov-jdk18on:${project.extra["bouncycastle.version"]}")
-    implementation("commons-io:commons-io:${project.extra["commons-io.version"]}")
-    implementation("net.java.dev.jna:jna-platform:${project.extra["jna.version"]}")
-    implementation("com.github.vatbub:mslinks:${project.extra["mslinks.version"]}")
-    implementation("de.darkatra.injector:kotlin-dll-injector-common:${project.extra["kotlin-dll-injector.version"]}")
+    implementation(libs.coroutines.core)
+    implementation(libs.coroutines.swing)
+    implementation(libs.jackson.kotlin.module)
+    implementation(libs.jackson.datatype.jsr310)
+    implementation(libs.bouncycastle)
+    implementation(libs.commons.io)
+    implementation(libs.jna.platform)
+    implementation(libs.mslinks)
+    implementation(libs.kotlin.dll.injector)
 
     testImplementation(kotlin("test"))
-    testImplementation("org.assertj:assertj-core:${project.extra["assertj.version"]}")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${project.extra["kotlin-coroutine.version"]}")
-    testImplementation("com.github.tomakehurst:wiremock-jre8:${project.extra["wiremock.version"]}")
+    testImplementation(libs.assertj)
+    testImplementation(libs.coroutines.test)
+    testImplementation(libs.wiremock)
 }
 
 kotlin {
@@ -34,7 +33,6 @@ kotlin {
     sourceSets {
         all {
             languageSettings.apply {
-                optIn("kotlin.RequiresOptIn")
                 progressiveMode = true
             }
         }

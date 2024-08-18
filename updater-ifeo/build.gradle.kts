@@ -2,8 +2,8 @@ import edu.sc.seis.launch4j.tasks.DefaultLaunch4jTask
 import org.gradle.jvm.tasks.Jar
 
 plugins {
-    kotlin("jvm")
-    id("edu.sc.seis.launch4j")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.launch4j)
 }
 
 kotlin {
@@ -11,7 +11,7 @@ kotlin {
 }
 
 dependencies {
-    implementation("net.java.dev.jna:jna-platform:${project.extra["jna.version"]}")
+    implementation(libs.jna.platform)
 }
 
 tasks {

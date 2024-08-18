@@ -2,6 +2,7 @@ package de.darkatra.bfme2
 
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.lightColors
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -14,7 +15,6 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import de.darkatra.bfme2.selfupdate.SelfUpdateService
 import de.darkatra.bfme2.ui.UpdaterModel
 import de.darkatra.bfme2.ui.UpdaterView
@@ -110,7 +110,7 @@ fun main(args: Array<String>) {
     application {
 
         val updaterModel = remember { UpdaterModel() }
-        val state by updaterModel.state.subscribeAsState()
+        val state by updaterModel.state.collectAsState()
 
         val windowState = rememberWindowState(
             position = WindowPosition(alignment = Alignment.Center),

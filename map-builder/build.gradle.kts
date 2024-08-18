@@ -1,7 +1,7 @@
 import org.gradle.jvm.tasks.Jar
 
 plugins {
-    kotlin("jvm")
+    alias(libs.plugins.kotlin.jvm)
 }
 
 kotlin {
@@ -9,8 +9,8 @@ kotlin {
 }
 
 dependencies {
-    implementation("de.darkatra.bfme2:big:${project.extra["bfme2-modding-utils.version"]}")
-    implementation("de.darkatra.bfme2:map:${project.extra["bfme2-modding-utils.version"]}")
+    implementation(libs.bfme2.modding.utils.big)
+    implementation(libs.bfme2.modding.utils.map)
 }
 
 tasks {

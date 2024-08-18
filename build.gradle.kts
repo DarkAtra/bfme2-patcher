@@ -1,6 +1,6 @@
 allprojects {
     group = "de.darkatra.bfme2"
-    version = "0.16.1"
+    version = "0.17.0"
 
     repositories {
         mavenCentral()
@@ -17,7 +17,8 @@ allprojects {
 }
 
 plugins {
-    kotlin("jvm").apply(false)
-    id("org.jetbrains.compose").apply(false)
-    id("edu.sc.seis.launch4j").apply(false)
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.compose) apply false
+    alias(libs.plugins.compose.compiler) apply false
+    alias(libs.plugins.launch4j) apply false
 }

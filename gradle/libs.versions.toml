@@ -1,0 +1,37 @@
+[versions]
+kotlin = "2.0.10"
+compose = "1.6.11"
+kotlin-coroutine = "1.8.1"
+jackson = "2.17.2"
+bouncycastle = "1.78.1"
+commons-io = "2.16.1"
+jna = "5.14.0"
+mslinks = "1.0.6.2"
+bfme2-modding-utils = "1.0.18"
+kotlin-dll-injector = "1.0.8"
+assertj = "3.26.3"
+wiremock = "3.9.1"
+launch4j = "3.0.6"
+
+[libraries]
+coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlin-coroutine" }
+coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlin-coroutine" }
+bfme2-modding-utils-big = { module = "de.darkatra.bfme2:big", version.ref = "bfme2-modding-utils" }
+bfme2-modding-utils-map = { module = "de.darkatra.bfme2:map", version.ref = "bfme2-modding-utils" }
+jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
+jackson-kotlin-module = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
+jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
+bouncycastle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
+mslinks = { module = "com.github.vatbub:mslinks", version.ref = "mslinks" }
+kotlin-dll-injector = { module = "de.darkatra.injector:kotlin-dll-injector-common", version.ref = "kotlin-dll-injector" }
+
+assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlin-coroutine" }
+wiremock = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremock" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+compose = { id = "org.jetbrains.compose", version.ref = "compose" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+launch4j = { id = "edu.sc.seis.launch4j", version.ref = "launch4j" }

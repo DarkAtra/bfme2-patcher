@@ -9,10 +9,12 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -20,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.FrameWindowScope
-import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import de.darkatra.bfme2.LOGGER
 import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.patch.PatchService
@@ -62,7 +63,7 @@ fun UpdaterView(
     val patcherUserDir = UpdaterContext.context.getPatcherUserDir()
 
     val patchScope = rememberCoroutineScope()
-    val state by updaterModel.state.subscribeAsState()
+    val state by updaterModel.state.collectAsState()
 
     val (isSelfUpdateDialogVisible, setSelfUpdateDialogVisible) = remember { mutableStateOf(false) }
 
@@ -113,7 +114,7 @@ fun UpdaterView(
                     }
 
                     SelfUpdateState.UNKNOWN -> SmallSurface {
-                        Row {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
 
                             CircularProgressIndicator(
                                 modifier = Modifier.height(20.dp).width(20.dp),

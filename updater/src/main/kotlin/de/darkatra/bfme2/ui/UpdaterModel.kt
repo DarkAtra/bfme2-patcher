@@ -1,7 +1,5 @@
 package de.darkatra.bfme2.ui
 
-import com.arkivanov.decompose.value.MutableValue
-import com.arkivanov.decompose.value.update
 import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.patch.PatchProgress
 import de.darkatra.bfme2.patch.PatchProgressListener
@@ -10,13 +8,16 @@ import de.darkatra.bfme2.persistence.PersistentState
 import de.darkatra.bfme2.ui.UpdaterModel.State.SelfUpdateState
 import de.darkatra.bfme2.util.StringUtils
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlin.io.path.exists
 
 class UpdaterModel : PatchProgressListener {
 
-    val state = PersistenceService.loadPersistentState().let {
-        MutableValue(
+    private val _state = PersistenceService.loadPersistentState().let {
+        MutableStateFlow(
             State(
                 hdEditionEnabled = it.hdEditionEnabled,
                 modEnabled = it.modEnabled,
@@ -26,6 +27,7 @@ class UpdaterModel : PatchProgressListener {
             )
         )
     }
+    val state = _state.asStateFlow()
 
     override suspend fun onPatchStarted() = withContext(Dispatchers.Main.immediate) {
         setProgress(INDETERMINATE_PROGRESS, "Downloading patchlist...")
@@ -54,58 +56,58 @@ class UpdaterModel : PatchProgressListener {
     }
 
     fun setVisible(isVisible: Boolean) {
-        state.update { it.copy(isVisible = isVisible) }
+        _state.update { it.copy(isVisible = isVisible) }
     }
 
     fun setSelfUpdateState(selfUpdateState: SelfUpdateState) {
-        state.update { it.copy(selfUpdateState = selfUpdateState) }
+        _state.update { it.copy(selfUpdateState = selfUpdateState) }
     }
 
     fun setSelfUpdateInProgress(selfUpdateInProgress: Boolean) {
-        state.update { it.copy(selfUpdateInProgress = selfUpdateInProgress) }
+        _state.update { it.copy(selfUpdateInProgress = selfUpdateInProgress) }
     }
 
     fun setPatchInProgress(patchInProgress: Boolean) {
-        state.update { it.copy(patchInProgress = patchInProgress) }
+        _state.update { it.copy(patchInProgress = patchInProgress) }
     }
 
     fun setPatchedOnce(patchedOnce: Boolean) {
-        state.update { it.copy(patchedOnce = patchedOnce) }
+        _state.update { it.copy(patchedOnce = patchedOnce) }
     }
 
     fun setGameRunning(gameRunning: Boolean) {
-        state.update { it.copy(gameRunning = gameRunning) }
+        _state.update { it.copy(gameRunning = gameRunning) }
     }
 
     fun setProgress(progress: Float, progressText: String) {
-        state.update { it.copy(progress = progress, progressText = progressText) }
+        _state.update { it.copy(progress = progress, progressText = progressText) }
     }
 
     fun setHdEditionEnabled(hdEditionEnabled: Boolean) {
-        state.update { it.copy(hdEditionEnabled = hdEditionEnabled) }
+        _state.update { it.copy(hdEditionEnabled = hdEditionEnabled) }
         updatePersistentState()
     }
 
     fun setModEnabled(modEnabled: Boolean) {
-        state.update { it.copy(modEnabled = modEnabled) }
+        _state.update { it.copy(modEnabled = modEnabled) }
         updatePersistentState()
     }
 
     fun setTrayIconEnabled(trayIconEnabled: Boolean) {
-        state.update { it.copy(trayIconEnabled = trayIconEnabled, isVisible = true) }
+        _state.update { it.copy(trayIconEnabled = trayIconEnabled, isVisible = true) }
         updatePersistentState()
     }
 
     fun setHookEnabled(hookEnabled: Boolean) {
-        state.update { it.copy(hookEnabled = hookEnabled) }
+        _state.update { it.copy(hookEnabled = hookEnabled) }
     }
 
     private fun updatePersistentState() {
         PersistenceService.savePersistentState(
             PersistentState(
-                hdEditionEnabled = state.value.hdEditionEnabled,
-                modEnabled = state.value.modEnabled,
-                trayIconEnabled = state.value.trayIconEnabled,
+                hdEditionEnabled = _state.value.hdEditionEnabled,
+                modEnabled = _state.value.modEnabled,
+                trayIconEnabled = _state.value.trayIconEnabled,
             )
         )
     }
