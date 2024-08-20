@@ -15,6 +15,11 @@ enum class Directory(
     BMFE2_DIR_NAME("bfme2", "\${bfme2HomeDir}"),
 
     /**
+     * Same as ROTWK_DIR_NAME. Intended to be used for files that don't really belong to the mod itself (e.g. patch 2.01 and 2.02).
+     */
+    ROTWK_BASELINE_DIR_NAME("rotwk-baseline/patches", "\${rotwkHomeDir}"),
+
+    /**
      * B:\Electronic Arts\Aufstieg des Hexenkönigs\
      */
     ROTWK_DIR_NAME("rotwk", "\${rotwkHomeDir}"),
