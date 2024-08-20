@@ -121,7 +121,7 @@ object UpdateBuilderNoUI {
             }
         }
 
-        val base64EncodedFilePath = Base64.UrlSafe.encode(Path.of(directory.dirName).relativize(Path.of("$filePath.gz")).normalize().toString().toByteArray())
+        val base64EncodedFilePath = Base64.UrlSafe.encode(Path.of(directory.dirName).relativize(filePath).normalize().toString().toByteArray()) + ".gz"
         val output = Path.of("./output/", base64EncodedFilePath)
         val outputExists: Boolean = output.exists()
         val archive: Boolean = fileChanged || !outputExists
