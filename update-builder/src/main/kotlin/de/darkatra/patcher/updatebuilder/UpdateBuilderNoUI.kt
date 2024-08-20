@@ -3,15 +3,19 @@ package de.darkatra.patcher.updatebuilder
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonMapperBuilder
-import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.time.Instant
 import java.util.stream.Collectors
 import java.util.zip.GZIPOutputStream
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.io.path.createParentDirectories
 import kotlin.io.path.exists
+import kotlin.io.path.fileSize
 import kotlin.io.path.inputStream
+import kotlin.io.path.outputStream
 import kotlin.io.path.pathString
 
 fun main() {
@@ -76,6 +80,7 @@ object UpdateBuilderNoUI {
 
         var deletedEmptyFolders = 0
         readFoldersInDirectory(Path.of("./output"))
+            .reversed()
             .filter { folder -> folder.toFile().list()?.isEmpty() ?: false }
             .forEach { folder ->
                 deletedEmptyFolders += deleteFolder(Path.of("./output"), folder)
@@ -95,6 +100,7 @@ object UpdateBuilderNoUI {
         println("Success! Took: ${(endTime - startTime) / 1000000}ms")
     }
 
+    @OptIn(ExperimentalEncodingApi::class)
     private fun addFilesToPatch(packets: MutableSet<Packet>, lastPatch: Patch?, directory: Directory, filePath: Path): Boolean {
 
         // creating the archive takes a lot of time, check if it's really necessary by comparing checksums
@@ -115,35 +121,34 @@ object UpdateBuilderNoUI {
             }
         }
 
-        val output = File(Path.of("./output/", Path.of(directory.dirName).relativize(filePath).toString()).normalize().toString() + ".gz")
+        val base64EncodedFilePath = Base64.UrlSafe.encode(Path.of(directory.dirName).relativize(Path.of("$filePath.gz")).normalize().toString().toByteArray())
+        val output = Path.of("./output/", base64EncodedFilePath)
         val outputExists: Boolean = output.exists()
         val archive: Boolean = fileChanged || !outputExists
         if (archive) {
-            println("** Archiving file (changed: $fileChanged, exists: $outputExists): ${output.path}")
+            println("** Archiving file (changed: $fileChanged, exists: $outputExists): ${output.pathString}")
             createGzipArchive(filePath, output)
         }
 
         packets.add(
             Packet(
-                src = Path.of("\${serverUrl}/bfmemod2/").resolve(
-                    Path.of(directory.dirName).relativize(Path.of("$filePath.gz"))
-                ).normalize().toString().replace("\\", "/"),
+                src = Path.of("\${serverUrl}/bfmemod2/").resolve(base64EncodedFilePath).normalize().toString().replace("\\", "/"),
                 dest = dest,
                 packetSize = filePath.toFile().length(),
-                compressedSize = output.length(),
+                compressedSize = output.fileSize(),
                 dateTime = Instant.now(),
                 checksum = checksum,
                 backupExisting = filesRequireBackup.contains(filePath.toFile().name),
                 compression = Compression.ZIP,
-                gzipPath = output.toPath()
+                gzipPath = output
             )
         )
 
         return archive
     }
 
-    private fun createGzipArchive(input: Path, output: File) {
-        output.parentFile.mkdirs()
+    private fun createGzipArchive(input: Path, output: Path) {
+        output.createParentDirectories()
         input.inputStream().use { inputStream ->
             GZIPOutputStream(output.outputStream()).use { outputStream ->
                 inputStream.transferTo(outputStream)
@@ -180,7 +185,11 @@ object UpdateBuilderNoUI {
         if (topLevelDir != currentPath && currentPath.startsWith(topLevelDir)) {
             val parent = currentPath.parent
             Files.delete(currentPath)
-            deleted += 1 + deleteFolder(topLevelDir, parent)
+            deleted += 1 + if (!Files.list(parent).findAny().isPresent) {
+                deleteFolder(topLevelDir, parent)
+            } else {
+                0
+            }
         }
         return deleted
     }
