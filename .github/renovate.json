@@ -15,5 +15,15 @@
             "matchPackagePatterns": "*",
             "allowedVersions": "!/-.+\\.[0-9]+$/"
         }
+    ],
+    "hostRules": [
+        {
+            "hostType": "maven",
+            "matchHost": "https://maven.pkg.github.com/DarkAtra/",
+            "authType": "Bearer",
+            "encrypted": {
+                "token": "wcFMA/xDdHCJBTolAQ/8Cjb5km6Gv8/QLtqDG9cUuMHKLpXCfTYL6uGyyR1sJ2fcr7JNLJVaESN9Bil4Bh8r1klquZREBYvCy9jcO3LmRxCWMKOr449gLVOhD0+HjFjA+1yDLUQYq24xlE8ilcI3nMk+7N5eWMA1ET6TtvMFgLkvJ1fAgKug6XOT6a82wfIr4QrTNv2+rfxMXVrJfELjllPLjz+e5eKZeop4vRXdGjYotJLBuTufygd9IuES2ESBm1SB7LMuLc+6IRUv725HpknKskUnZN4CNT4UUZk9x6j8dVl+EXJObDDxboF1JZv3nDRLxBzDtsYqfkRCzvbvsELDmrHFpyb+I/XB8A+HwvMr9AQIOx4/vcmTVvqVTfFrjfhKwG1Qcn7s9p57mCFD+V5aNMgw9CPgTWVvmve4EQkwkJQfUETpB5HS8hbM9G53bs5tsS1ZzlPs3w/O8vBfyD/h6/tHR3OhKsdVIxsJyTkni9WYmC9lOrjsrRfmwYBuDkHYMHK/j8Vrdvu40oqjBJH7U6bKGZ1EdNzWE9IbK28RENfGlhKrfMHJE+6TI/a42v9A/PVd8BL+ZVw2j683BRX6WNox6pjdvgITAIkPyXhq1sRjN3T5xJEunKPkBeEKGTJnMEqXZclyEZV5QZIuI4wiUJr4NfwyMubtu2Rt+ACts+9zO2HuHFw21m6FutvSdwHMnPigF3GoPJ0SWPWxj7WnbsvV44PQyST55pGM+3ZPfNxK4h1YTAN7PNcxMPKF5NX5wA1Zy7BIPn1s4XjYO8O0WaOFU4pBd5h5xxsz6s62bsixLOrGUh04SGuhPWiIpI4FnY0Q27GYW/BIbnGwfmY2HPGUwvgL"
+            }
+        }
     ]
 }
