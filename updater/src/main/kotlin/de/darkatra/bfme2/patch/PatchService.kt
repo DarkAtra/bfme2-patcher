@@ -14,14 +14,18 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import kotlin.io.path.deleteExisting
+import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
+import kotlin.io.path.moveTo
 import kotlin.io.path.name
 import kotlin.io.path.pathString
 
+private const val DISABLED_FEATURE_SUFFIX = ".bak"
+
 object PatchService {
 
-    suspend fun patch(progressListener: PatchProgressListener?) = withContext(Dispatchers.IO) {
+    suspend fun patch(progressListener: PatchProgressListener?, features: Set<Feature> = emptySet()) = withContext(Dispatchers.IO) {
 
         progressListener?.onPatchStarted()
 
@@ -31,6 +35,18 @@ object PatchService {
         patch.applyContext(UpdaterContext.context)
 
         ensureActive()
+
+        progressListener?.onRestoringFiles()
+
+        patch.obsoleteFiles.forEach { obsoleteFile ->
+            val dest = Path.of(obsoleteFile.dest)
+            restoreDisabledFile(dest)
+        }
+
+        patch.packets.forEach { packet ->
+            val dest = Path.of(packet.dest)
+            restoreDisabledFile(dest)
+        }
 
         progressListener?.onDeletingObsoleteFiles()
 
@@ -90,6 +106,14 @@ object PatchService {
             ensureActive()
         }
 
+        progressListener?.onApplyFeatures()
+
+        patch.packets.forEach { packet ->
+            if (packet.feature != null && !features.contains(packet.feature)) {
+                Path.of(packet.dest).moveTo(Path.of(packet.dest + DISABLED_FEATURE_SUFFIX))
+            }
+        }
+
         progressListener?.onPatchFinished()
     }
 
@@ -121,6 +145,14 @@ object PatchService {
                 pathToFile,
                 Path.of(pathToFile.parent.pathString, String.format("%s-%s.bak", pathToFile.name, Instant.now().toString().replace(":", "-")))
             )
+        }
+    }
+
+    private fun restoreDisabledFile(dest: Path) {
+        val disabledDest = Path.of(dest.pathString + DISABLED_FEATURE_SUFFIX)
+        if (disabledDest.exists()) {
+            dest.deleteIfExists()
+            disabledDest.moveTo(dest)
         }
     }
 }

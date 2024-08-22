@@ -64,13 +64,23 @@ fun Toolbar(
             Menu(text = "Game Settings") {
                 CheckboxItem(
                     text = "HD Edition",
+                    enabled = !state.patchInProgress,
                     checked = state.hdEditionEnabled,
                     onCheckedChange = { hdEditionEnabled ->
                         updaterModel.setHdEditionEnabled(hdEditionEnabled)
                     }
                 )
                 CheckboxItem(
+                    text = "Timer",
+                    enabled = !state.patchInProgress,
+                    checked = state.timerEnabled,
+                    onCheckedChange = { timerEnabled ->
+                        updaterModel.setTimerEnabled(timerEnabled)
+                    }
+                )
+                CheckboxItem(
                     text = "Mod",
+                    enabled = !state.patchInProgress,
                     checked = state.modEnabled,
                     onCheckedChange = { modEnabled ->
                         updaterModel.setModEnabled(modEnabled)

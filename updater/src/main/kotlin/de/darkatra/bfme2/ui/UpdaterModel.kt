@@ -20,6 +20,7 @@ class UpdaterModel : PatchProgressListener {
         MutableStateFlow(
             State(
                 hdEditionEnabled = it.hdEditionEnabled,
+                timerEnabled = it.timerEnabled,
                 modEnabled = it.modEnabled,
                 trayIconEnabled = it.trayIconEnabled,
                 hookEnabled = UpdaterContext.hasExpansionDebugger,
@@ -31,6 +32,10 @@ class UpdaterModel : PatchProgressListener {
 
     override suspend fun onPatchStarted() = withContext(Dispatchers.Main.immediate) {
         setProgress(INDETERMINATE_PROGRESS, "Downloading patchlist...")
+    }
+
+    override suspend fun onRestoringFiles() = withContext(Dispatchers.Main.immediate) {
+        setProgress(INDETERMINATE_PROGRESS, "Restoring inactive features...")
     }
 
     override suspend fun onDeletingObsoleteFiles() = withContext(Dispatchers.Main.immediate) {
@@ -47,6 +52,10 @@ class UpdaterModel : PatchProgressListener {
             "${StringUtils.humanReadableSize(patchProgress.currentNetwork)}/${StringUtils.humanReadableSize(patchProgress.totalNetwork)}" +
                 " (${StringUtils.humanReadableSize(patchProgress.currentDisk)}/${StringUtils.humanReadableSize(patchProgress.totalDisk)})"
         )
+    }
+
+    override suspend fun onApplyFeatures() {
+        setProgress(INDETERMINATE_PROGRESS, "Applying active features...")
     }
 
     override suspend fun onPatchFinished() = withContext(Dispatchers.Main.immediate) {
@@ -84,12 +93,17 @@ class UpdaterModel : PatchProgressListener {
     }
 
     fun setHdEditionEnabled(hdEditionEnabled: Boolean) {
-        _state.update { it.copy(hdEditionEnabled = hdEditionEnabled) }
+        _state.update { it.copy(hdEditionEnabled = hdEditionEnabled, patchedOnce = false) }
+        updatePersistentState()
+    }
+
+    fun setTimerEnabled(timerEnabled: Boolean) {
+        _state.update { it.copy(timerEnabled = timerEnabled, patchedOnce = false) }
         updatePersistentState()
     }
 
     fun setModEnabled(modEnabled: Boolean) {
-        _state.update { it.copy(modEnabled = modEnabled) }
+        _state.update { it.copy(modEnabled = modEnabled, patchedOnce = false) }
         updatePersistentState()
     }
 
@@ -106,6 +120,7 @@ class UpdaterModel : PatchProgressListener {
         PersistenceService.savePersistentState(
             PersistentState(
                 hdEditionEnabled = _state.value.hdEditionEnabled,
+                timerEnabled = _state.value.timerEnabled,
                 modEnabled = _state.value.modEnabled,
                 trayIconEnabled = _state.value.trayIconEnabled,
             )
@@ -126,6 +141,7 @@ class UpdaterModel : PatchProgressListener {
         val progressText: String = "Waiting for user input.",
 
         val hdEditionEnabled: Boolean = false,
+        val timerEnabled: Boolean = false,
         val modEnabled: Boolean = true,
         val trayIconEnabled: Boolean = false,
         val hookEnabled: Boolean = false,

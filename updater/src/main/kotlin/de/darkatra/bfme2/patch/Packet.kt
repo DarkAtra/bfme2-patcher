@@ -15,7 +15,8 @@ data class Packet(
     val checksum: String,
     val backupExisting: Boolean,
     @JsonDeserialize(converter = CompressionDeserializer::class)
-    val compression: Compression
+    val compression: Compression,
+    val feature: Feature? = null
 ) : ContextAware {
 
     /**

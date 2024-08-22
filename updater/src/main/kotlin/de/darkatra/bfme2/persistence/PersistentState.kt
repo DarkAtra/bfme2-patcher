@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class PersistentState(
     val hdEditionEnabled: Boolean = false,
+    val timerEnabled: Boolean = false,
     val modEnabled: Boolean = true,
     val trayIconEnabled: Boolean = false
 )
