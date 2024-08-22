@@ -13,6 +13,7 @@ data class Packet(
     val checksum: String,
     val backupExisting: Boolean,
     val compression: Compression,
+    val feature: Feature? = null,
     @JsonIgnore
     val gzipPath: Path? = null
 )

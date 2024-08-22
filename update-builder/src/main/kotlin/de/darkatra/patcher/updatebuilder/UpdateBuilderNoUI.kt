@@ -26,6 +26,7 @@ object UpdateBuilderNoUI {
 
     private val objectMapper: ObjectMapper = jacksonMapperBuilder().addModule(JavaTimeModule()).build()
     private val obsoleteFilesPath = Path.of("./obsolete-files.json")
+    private val featuresPath = Path.of("./features.json")
     private val filesRequireBackup = setOf("asset.dat", "game.dat")
     private val hashingService = HashingService
 
@@ -45,6 +46,9 @@ object UpdateBuilderNoUI {
         println("Applying obsolete files from: ${obsoleteFilesPath.toFile().path}")
         val obsoleteFiles: Set<ObsoleteFile> = objectMapper.readValue(obsoleteFilesPath.toFile(), Array<ObsoleteFile>::class.java).toSet()
 
+        println("Applying features from: ${featuresPath.toFile().path}")
+        val featureFiles: Set<FeatureFile> = objectMapper.readValue(featuresPath.toFile(), Array<FeatureFile>::class.java).toSet()
+
         var added = 0
         var archived = 0
         val packets = mutableSetOf<Packet>()
@@ -52,7 +56,7 @@ object UpdateBuilderNoUI {
             val basePath = Path.of("./" + directory.dirName)
             for (filePath in readFilesInDirectory(basePath)) {
                 println("* Adding file: ${filePath.pathString}")
-                if (addFilesToPatch(packets, lastPatch, directory, filePath)) {
+                if (addFilesToPatch(packets, lastPatch, directory, filePath, featureFiles)) {
                     archived++
                 }
                 added++
@@ -101,7 +105,7 @@ object UpdateBuilderNoUI {
     }
 
     @OptIn(ExperimentalEncodingApi::class)
-    private fun addFilesToPatch(packets: MutableSet<Packet>, lastPatch: Patch?, directory: Directory, filePath: Path): Boolean {
+    private fun addFilesToPatch(packets: MutableSet<Packet>, lastPatch: Patch?, directory: Directory, filePath: Path, featureFiles: Set<FeatureFile>): Boolean {
 
         // creating the archive takes a lot of time, check if it's really necessary by comparing checksums
         // this only compares the checksum of the source file and will not ensure that the archive is identical!
@@ -130,6 +134,7 @@ object UpdateBuilderNoUI {
             createGzipArchive(filePath, output)
         }
 
+        val feature = featureFiles.find { featureFile -> featureFile.dest == dest }?.feature
         packets.add(
             Packet(
                 src = Path.of("\${serverUrl}/bfmemod2/").resolve(base64EncodedFilePath).normalize().toString().replace("\\", "/"),
@@ -140,6 +145,7 @@ object UpdateBuilderNoUI {
                 checksum = checksum,
                 backupExisting = filesRequireBackup.contains(filePath.toFile().name),
                 compression = Compression.ZIP,
+                feature = feature,
                 gzipPath = output
             )
         )
