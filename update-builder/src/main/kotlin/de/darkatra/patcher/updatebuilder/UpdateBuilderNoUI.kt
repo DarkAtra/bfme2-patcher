@@ -15,6 +15,7 @@ import kotlin.io.path.createParentDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.fileSize
 import kotlin.io.path.inputStream
+import kotlin.io.path.name
 import kotlin.io.path.outputStream
 import kotlin.io.path.pathString
 
@@ -125,7 +126,7 @@ object UpdateBuilderNoUI {
             }
         }
 
-        val base64EncodedFilePath = Base64.UrlSafe.encode(Path.of(directory.dirName).relativize(filePath).normalize().toString().toByteArray()) + ".gz"
+        val base64EncodedFilePath = Base64.UrlSafe.encode(dest.toByteArray()) + ".gz"
         val output = Path.of("./output/", base64EncodedFilePath)
         val outputExists: Boolean = output.exists()
         val archive: Boolean = fileChanged || !outputExists
@@ -166,7 +167,7 @@ object UpdateBuilderNoUI {
         return when (directory.exists()) {
             true -> Files.walk(directory).use { stream ->
                 stream
-                    .filter { path: Path -> Files.isRegularFile(path) }
+                    .filter { path: Path -> Files.isRegularFile(path) && path.name != ".DS_Store" }
                     .collect(Collectors.toSet())
             }
 
