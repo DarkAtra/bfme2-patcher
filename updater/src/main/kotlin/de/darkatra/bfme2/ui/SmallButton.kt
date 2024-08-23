@@ -19,9 +19,7 @@ fun SmallButton(
     modifier = Modifier.height(32.dp).then(modifier),
     contentPadding = PaddingValues(
         start = 8.dp,
-        end = 8.dp,
-        top = 0.dp,
-        bottom = 0.dp
+        end = 8.dp
     ),
     enabled = enabled,
     content = content
