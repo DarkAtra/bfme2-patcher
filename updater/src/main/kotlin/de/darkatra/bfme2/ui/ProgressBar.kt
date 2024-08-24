@@ -1,7 +1,8 @@
 package de.darkatra.bfme2.ui
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.LinearProgressIndicator
@@ -22,11 +23,13 @@ fun ProgressBar(
     text: String,
 ) {
 
-    Box {
+    Box(
+        modifier = Modifier.height(30.dp)
+    ) {
 
         val color = MaterialTheme.colors.secondary
         val backgroundColor = MaterialTheme.colors.primary
-        val modifiers = Modifier.fillMaxWidth().height(28.dp).clip(RoundedCornerShape(4.dp))
+        val modifiers = Modifier.fillMaxSize().clip(RoundedCornerShape(4.dp))
 
         if (progress == INDETERMINATE_PROGRESS) {
             LinearProgressIndicator(
@@ -43,6 +46,6 @@ fun ProgressBar(
             )
         }
 
-        Text(text = text, fontSize = 14.sp, modifier = Modifier.align(Alignment.Center))
+        Text(text = text, fontSize = 14.sp, modifier = Modifier.fillMaxHeight().align(Alignment.Center))
     }
 }

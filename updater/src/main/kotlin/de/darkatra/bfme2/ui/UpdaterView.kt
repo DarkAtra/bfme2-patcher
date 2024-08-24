@@ -110,7 +110,11 @@ fun UpdaterView(
                     }
 
                     SelfUpdateState.UP_TO_DATE -> SmallSurface {
-                        Icon(Icons.Rounded.Check, null)
+                        Icon(
+                            imageVector = Icons.Rounded.Check,
+                            contentDescription = null,
+                            tint = MaterialTheme.colors.secondary
+                        )
 
                         Spacer(modifier = Modifier.width(8.dp))
 
