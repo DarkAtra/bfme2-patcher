@@ -255,7 +255,7 @@ private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, patcherUserD
 
         val gameProcess = withTimeoutOrNull(Duration.ofSeconds(5)) {
             var gameProcess: ProcessHandle?
-            while (ProcessUtils.findProcess("game.dat").also { gameProcess = it } == null) {
+            while (ProcessUtils.findProcess("lotrbfme2ep1.exe").also { gameProcess = it } == null) {
                 delay(500)
             }
             return@withTimeoutOrNull gameProcess
