@@ -38,6 +38,7 @@ import kotlinx.coroutines.time.withTimeoutOrNull
 import kotlinx.coroutines.withContext
 import java.nio.file.Path
 import java.time.Duration
+import kotlin.io.path.absolutePathString
 
 private val imagePaths = arrayOf(
     "/images/splash2_1920x1080.jpg",
@@ -179,8 +180,8 @@ fun UpdaterView(
                         patchScope.launch {
                             runCatching {
                                 when (state.hookingSupported && state.hookEnabled) {
-                                    true -> launchGameBypassingDebugger(rotwkHomeDir)
-                                    false -> launchGame(rotwkHomeDir)
+                                    true -> launchGameBypassingDebugger(rotwkHomeDir, patcherUserDir, state.hdEditionEnabled)
+                                    false -> launchGame(rotwkHomeDir, patcherUserDir, state.hdEditionEnabled)
                                 }
                             }.also {
                                 updaterModel.setGameRunning(false)
@@ -233,12 +234,20 @@ fun UpdaterView(
     }
 }
 
-private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path): Boolean = withContext(Dispatchers.IO) {
+private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, patcherUserDir: Path, hdEditionEnabled: Boolean): Boolean = withContext(Dispatchers.IO) {
 
     LOGGER.info("Launching game with game-patcher.")
 
     val successful = ProcessUtils.runBypassingDebugger(
-        rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize()
+        rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize(),
+        when (hdEditionEnabled) {
+            true -> arrayOf(
+                "-mod",
+                "\"${patcherUserDir.resolve("HDEdition.big").normalize().absolutePathString()}\""
+            )
+
+            false -> emptyArray()
+        }
     )
 
     if (successful) {
@@ -259,12 +268,20 @@ private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path): Boolean = w
     return@withContext true
 }
 
-private suspend fun launchGame(rotwkHomeDir: Path) = withContext(Dispatchers.IO) {
+private suspend fun launchGame(rotwkHomeDir: Path, patcherUserDir: Path, hdEditionEnabled: Boolean) = withContext(Dispatchers.IO) {
 
     LOGGER.info("Launching game without game-patcher.")
 
     val gameProcess = ProcessUtils.run(
-        rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize()
+        rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize(),
+        when (hdEditionEnabled) {
+            true -> arrayOf(
+                "-mod",
+                "\"${patcherUserDir.resolve("HDEdition.big").normalize().absolutePathString()}\""
+            )
+
+            false -> emptyArray()
+        }
     )
 
     gameProcess.waitFor()
