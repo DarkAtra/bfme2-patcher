@@ -180,8 +180,8 @@ fun UpdaterView(
                         patchScope.launch {
                             runCatching {
                                 when (state.hookingSupported && state.hookEnabled) {
-                                    true -> launchGameBypassingDebugger(rotwkHomeDir, patcherUserDir, state.hdEditionEnabled)
-                                    false -> launchGame(rotwkHomeDir, patcherUserDir, state.hdEditionEnabled)
+                                    true -> launchGameBypassingDebugger(rotwkHomeDir, state.hdEditionEnabled)
+                                    false -> launchGame(rotwkHomeDir, state.hdEditionEnabled)
                                 }
                             }.also {
                                 updaterModel.setGameRunning(false)
@@ -234,7 +234,7 @@ fun UpdaterView(
     }
 }
 
-private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, patcherUserDir: Path, hdEditionEnabled: Boolean): Boolean = withContext(Dispatchers.IO) {
+private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, hdEditionEnabled: Boolean): Boolean = withContext(Dispatchers.IO) {
 
     LOGGER.info("Launching game with game-patcher.")
 
@@ -243,7 +243,7 @@ private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, patcherUserD
         when (hdEditionEnabled) {
             true -> arrayOf(
                 "-mod",
-                "\"${patcherUserDir.resolve("HDEdition.big").normalize().absolutePathString()}\""
+                "\"${rotwkHomeDir.resolve("__HDROTWK.V.0.9.big").normalize().absolutePathString()}\""
             )
 
             false -> emptyArray()
@@ -268,7 +268,7 @@ private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, patcherUserD
     return@withContext true
 }
 
-private suspend fun launchGame(rotwkHomeDir: Path, patcherUserDir: Path, hdEditionEnabled: Boolean) = withContext(Dispatchers.IO) {
+private suspend fun launchGame(rotwkHomeDir: Path, hdEditionEnabled: Boolean) = withContext(Dispatchers.IO) {
 
     LOGGER.info("Launching game without game-patcher.")
 
@@ -277,7 +277,7 @@ private suspend fun launchGame(rotwkHomeDir: Path, patcherUserDir: Path, hdEditi
         when (hdEditionEnabled) {
             true -> arrayOf(
                 "-mod",
-                "\"${patcherUserDir.resolve("HDEdition.big").normalize().absolutePathString()}\""
+                "\"${rotwkHomeDir.resolve("__HDROTWK.V.0.9.big").normalize().absolutePathString()}\""
             )
 
             false -> emptyArray()

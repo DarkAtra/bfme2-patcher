@@ -134,6 +134,8 @@ class UpdaterModel : PatchProgressListener {
             PersistentState(
                 hdEditionEnabled = _state.value.hdEditionEnabled,
                 timerEnabled = _state.value.timerEnabled,
+                skipIntroEnabled = _state.value.skipIntroEnabled,
+                newMusicEnabled = _state.value.newMusicEnabled,
                 modEnabled = _state.value.modEnabled,
                 trayIconEnabled = _state.value.trayIconEnabled,
             )
