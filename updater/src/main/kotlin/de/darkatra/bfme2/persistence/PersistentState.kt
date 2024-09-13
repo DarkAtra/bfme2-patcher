@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 data class PersistentState(
     val hdEditionEnabled: Boolean = false,
     val timerEnabled: Boolean = false,
+    val skipIntroEnabled: Boolean = false,
+    val newMusicEnabled: Boolean = false,
     val modEnabled: Boolean = true,
     val trayIconEnabled: Boolean = false
 )

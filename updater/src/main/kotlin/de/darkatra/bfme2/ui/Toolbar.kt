@@ -79,6 +79,22 @@ fun Toolbar(
                     }
                 )
                 CheckboxItem(
+                    text = "New Music",
+                    enabled = !state.patchInProgress,
+                    checked = state.newMusicEnabled,
+                    onCheckedChange = { newMusicEnabled ->
+                        updaterModel.setNewMusicEnabled(newMusicEnabled)
+                    }
+                )
+                CheckboxItem(
+                    text = "Skip Intro",
+                    enabled = !state.patchInProgress,
+                    checked = state.skipIntroEnabled,
+                    onCheckedChange = { skipIntroEnabled ->
+                        updaterModel.setSkipIntroEnabled(skipIntroEnabled)
+                    }
+                )
+                CheckboxItem(
                     text = "Mod",
                     enabled = !state.patchInProgress,
                     checked = state.modEnabled,

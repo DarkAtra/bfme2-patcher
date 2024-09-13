@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import kotlin.Boolean
 import kotlin.io.path.exists
 
 class UpdaterModel : PatchProgressListener {
@@ -21,6 +22,8 @@ class UpdaterModel : PatchProgressListener {
             State(
                 hdEditionEnabled = it.hdEditionEnabled,
                 timerEnabled = it.timerEnabled,
+                skipIntroEnabled = it.skipIntroEnabled,
+                newMusicEnabled = it.newMusicEnabled,
                 modEnabled = it.modEnabled,
                 trayIconEnabled = it.trayIconEnabled,
                 hookEnabled = UpdaterContext.hasExpansionDebugger,
@@ -102,6 +105,16 @@ class UpdaterModel : PatchProgressListener {
         updatePersistentState()
     }
 
+    fun setSkipIntroEnabled(skipIntroEnabled: Boolean) {
+        _state.update { it.copy(skipIntroEnabled = skipIntroEnabled, patchedOnce = false) }
+        updatePersistentState()
+    }
+
+    fun setNewMusicEnabled(newMusicEnabled: Boolean) {
+        _state.update { it.copy(newMusicEnabled = newMusicEnabled, patchedOnce = false) }
+        updatePersistentState()
+    }
+
     fun setModEnabled(modEnabled: Boolean) {
         _state.update { it.copy(modEnabled = modEnabled, patchedOnce = false) }
         updatePersistentState()
@@ -142,7 +155,10 @@ class UpdaterModel : PatchProgressListener {
 
         val hdEditionEnabled: Boolean = false,
         val timerEnabled: Boolean = false,
+        val skipIntroEnabled: Boolean = false,
+        val newMusicEnabled: Boolean = false,
         val modEnabled: Boolean = true,
+
         val trayIconEnabled: Boolean = false,
         val hookEnabled: Boolean = false,
         val hookingSupported: Boolean = false

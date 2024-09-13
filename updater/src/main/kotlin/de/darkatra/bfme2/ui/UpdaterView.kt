@@ -155,6 +155,12 @@ fun UpdaterView(
                                 if (state.timerEnabled) {
                                     add(Feature.TIMER)
                                 }
+                                if (state.newMusicEnabled) {
+                                    add(Feature.NEW_MUSIC)
+                                }
+                                if (state.skipIntroEnabled) {
+                                    add(Feature.SKIP_INTRO)
+                                }
                                 if (state.modEnabled) {
                                     add(Feature.MOD)
                                 }
