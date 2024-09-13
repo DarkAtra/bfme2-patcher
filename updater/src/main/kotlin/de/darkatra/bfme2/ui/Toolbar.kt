@@ -64,7 +64,7 @@ fun Toolbar(
             Menu(text = "Game Settings") {
                 CheckboxItem(
                     text = "HD Edition",
-                    enabled = !state.patchInProgress,
+                    enabled = false, // !state.patchInProgress,
                     checked = state.hdEditionEnabled,
                     onCheckedChange = { hdEditionEnabled ->
                         updaterModel.setHdEditionEnabled(hdEditionEnabled)

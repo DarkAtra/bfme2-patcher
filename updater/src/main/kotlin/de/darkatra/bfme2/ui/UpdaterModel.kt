@@ -20,7 +20,7 @@ class UpdaterModel : PatchProgressListener {
     private val _state = PersistenceService.loadPersistentState().let {
         MutableStateFlow(
             State(
-                hdEditionEnabled = it.hdEditionEnabled,
+                hdEditionEnabled = false,
                 timerEnabled = it.timerEnabled,
                 skipIntroEnabled = it.skipIntroEnabled,
                 newMusicEnabled = it.newMusicEnabled,
