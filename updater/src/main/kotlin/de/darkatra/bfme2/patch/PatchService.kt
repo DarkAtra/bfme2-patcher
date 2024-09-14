@@ -25,9 +25,17 @@ private const val DISABLED_FEATURE_SUFFIX = ".bak"
 
 object PatchService {
 
-    suspend fun patch(progressListener: PatchProgressListener?, features: Set<Feature> = emptySet()) = withContext(Dispatchers.IO) {
+    suspend fun patch(progressListener: PatchProgressListener?, updaterVersion: String, features: Set<Feature> = emptySet()) = withContext(Dispatchers.IO) {
 
         progressListener?.onPatchStarted()
+
+        ensureActive()
+
+        val requirements = DownloadService.getContent(URI.create(PatchConstants.REQUIREMENTS_URL).toURL(), Requirements::class)
+        if (requirements.minUpdaterVersion != null && SemanticVersion.ofString(requirements.minUpdaterVersion) > SemanticVersion.ofString(updaterVersion)) {
+            progressListener?.onRequirementsNotMet()
+            return@withContext
+        }
 
         ensureActive()
 

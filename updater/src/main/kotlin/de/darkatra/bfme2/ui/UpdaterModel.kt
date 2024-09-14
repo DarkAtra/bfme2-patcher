@@ -37,6 +37,12 @@ class UpdaterModel : PatchProgressListener {
         setProgress(INDETERMINATE_PROGRESS, "Downloading patchlist...")
     }
 
+    override suspend fun onRequirementsNotMet() = withContext(Dispatchers.Main.immediate) {
+        setProgress(0f, "Unsupported version '${UpdaterContext.applicationVersion}'. Please update the launcher.")
+        _state.update { it.copy(requirementsMet = false) }
+        setPatchInProgress(false)
+    }
+
     override suspend fun onRestoringFiles() = withContext(Dispatchers.Main.immediate) {
         setProgress(INDETERMINATE_PROGRESS, "Restoring inactive features...")
     }
@@ -148,6 +154,7 @@ class UpdaterModel : PatchProgressListener {
         val selfUpdateState: SelfUpdateState = SelfUpdateState.UNKNOWN,
         val selfUpdateInProgress: Boolean = false,
 
+        val requirementsMet: Boolean = true,
         val patchInProgress: Boolean = false,
         val patchedOnce: Boolean = false,
         val gameRunning: Boolean = false,

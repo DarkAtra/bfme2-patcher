@@ -11,6 +11,7 @@ import java.util.stream.Collectors
 import java.util.zip.GZIPOutputStream
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.io.path.copyTo
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.fileSize
@@ -28,6 +29,7 @@ object UpdateBuilderNoUI {
     private val objectMapper: ObjectMapper = jacksonMapperBuilder().addModule(JavaTimeModule()).build()
     private val obsoleteFilesPath = Path.of("./obsolete-files.json")
     private val featuresPath = Path.of("./features.json")
+    private val requirementsPath = Path.of("./requirements.json")
     private val filesRequireBackup = setOf("asset.dat", "game.dat")
     private val hashingService = HashingService
 
@@ -91,6 +93,9 @@ object UpdateBuilderNoUI {
                 deletedEmptyFolders += deleteFolder(Path.of("./output"), folder)
             }
         println("Files deleted: $deleted, empty Folders deleted: $deletedEmptyFolders")
+
+        println("Copying requirements.json...")
+        requirementsPath.copyTo(Path.of("./output/requirements.json"), overwrite = true)
 
         println("Writing version.json...")
         Files.writeString(

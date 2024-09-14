@@ -143,12 +143,12 @@ fun UpdaterView(
             },
             leftButtonSlot = {
                 SmallButton(
-                    enabled = !state.gameRunning && !state.selfUpdateInProgress && !state.patchInProgress,
+                    enabled = state.requirementsMet && !state.gameRunning && !state.selfUpdateInProgress && !state.patchInProgress,
                     modifier = Modifier.weight(1f),
                     onClick = {
                         updaterModel.setPatchInProgress(true)
                         patchScope.launch {
-                            PatchService.patch(updaterModel, buildSet {
+                            PatchService.patch(updaterModel, UpdaterContext.applicationVersion, buildSet {
                                 if (state.hdEditionEnabled) {
                                     add(Feature.HD_EDITION)
                                 }
@@ -173,7 +173,7 @@ fun UpdaterView(
             },
             rightButtonSlot = {
                 SmallButton(
-                    enabled = !state.gameRunning && !state.selfUpdateInProgress && !state.patchInProgress && state.patchedOnce,
+                    enabled = state.requirementsMet && !state.gameRunning && !state.selfUpdateInProgress && !state.patchInProgress && state.patchedOnce,
                     modifier = Modifier.weight(1f),
                     onClick = {
                         updaterModel.setGameRunning(true)

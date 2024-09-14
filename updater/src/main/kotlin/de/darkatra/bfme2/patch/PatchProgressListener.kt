@@ -4,6 +4,8 @@ interface PatchProgressListener {
 
     suspend fun onPatchStarted()
 
+    suspend fun onRequirementsNotMet()
+
     suspend fun onRestoringFiles()
 
     suspend fun onDeletingObsoleteFiles()
