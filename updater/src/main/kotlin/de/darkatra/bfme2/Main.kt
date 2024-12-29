@@ -32,7 +32,6 @@ import javax.swing.border.LineBorder
 import kotlin.io.path.absolutePathString
 
 val LOGGER: Logger = Logger.getLogger("updater")
-private const val ICON_PATH = "/images/icon.png"
 
 fun main(args: Array<String>) {
 
