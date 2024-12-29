@@ -7,7 +7,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
@@ -18,6 +17,9 @@ import androidx.compose.ui.window.rememberWindowState
 import de.darkatra.bfme2.selfupdate.SelfUpdateService
 import de.darkatra.bfme2.ui.UpdaterModel
 import de.darkatra.bfme2.ui.UpdaterView
+import de.darkatra.bfme2.updater.generated.resources.Res
+import de.darkatra.bfme2.updater.generated.resources.icon
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.skiko.setSystemLookAndFeel
 import java.awt.Color.WHITE
 import java.util.logging.FileHandler
@@ -119,7 +121,7 @@ fun main(args: Array<String>) {
 
         if (state.trayIconEnabled) {
             Tray(
-                icon = painterResource(ICON_PATH),
+                icon = painterResource(Res.drawable.icon),
                 tooltip = UpdaterContext.APPLICATION_NAME,
                 onAction = { updaterModel.setVisible(true) },
                 menu = {
@@ -139,7 +141,7 @@ fun main(args: Array<String>) {
         ) {
             Window(
                 title = UpdaterContext.APPLICATION_NAME,
-                icon = painterResource(ICON_PATH),
+                icon = painterResource(Res.drawable.icon),
                 resizable = false,
                 state = windowState,
                 onCloseRequest = {

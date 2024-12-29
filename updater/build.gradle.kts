@@ -10,6 +10,7 @@ plugins {
 
 dependencies {
     implementation(compose.desktop.currentOs)
+    implementation(compose.components.resources)
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.swing)
     implementation(libs.jackson.kotlin.module)
@@ -62,6 +63,15 @@ compose.desktop {
             packageVersion = "${project.version}"
         }
     }
+}
+
+compose.resources {
+    customDirectory(
+        sourceSetName = "main",
+        directoryProvider = provider {
+            layout.projectDirectory.dir("src/main/resources")
+        }
+    )
 }
 
 afterEvaluate {

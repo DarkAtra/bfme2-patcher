@@ -12,14 +12,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
 import java.time.Duration
 import kotlin.random.Random
 
 @Composable
 fun FadingBackground(
-    imagePaths: Array<String>,
+    images: Array<DrawableResource>,
     transitionDelay: Duration,
     transitionDuration: Duration,
     randomizeStartingImage: Boolean = true,
@@ -29,7 +30,7 @@ fun FadingBackground(
     val (currentImage, setCurrentImage) = remember {
         mutableStateOf(
             when (randomizeStartingImage) {
-                true -> Random.nextInt(imagePaths.size)
+                true -> Random.nextInt(images.size)
                 false -> 0
             }
         )
@@ -37,7 +38,7 @@ fun FadingBackground(
 
     Box(modifier = Modifier.fillMaxSize()) {
         Crossfade(
-            targetState = imagePaths[currentImage],
+            targetState = images[currentImage],
             animationSpec = tween(transitionDuration.toMillis().toInt())
         ) { image ->
             Image(
@@ -55,6 +56,6 @@ fun FadingBackground(
 
     LaunchedEffect(currentImage) {
         delay(transitionDelay.toMillis())
-        setCurrentImage((currentImage + 1) % imagePaths.size)
+        setCurrentImage((currentImage + 1) % images.size)
     }
 }

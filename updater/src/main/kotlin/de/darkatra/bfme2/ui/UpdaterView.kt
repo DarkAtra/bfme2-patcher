@@ -29,6 +29,16 @@ import de.darkatra.bfme2.patch.Feature
 import de.darkatra.bfme2.patch.PatchService
 import de.darkatra.bfme2.selfupdate.SelfUpdateService
 import de.darkatra.bfme2.ui.UpdaterModel.State.SelfUpdateState
+import de.darkatra.bfme2.updater.generated.resources.Res
+import de.darkatra.bfme2.updater.generated.resources.splash14_1920x1080
+import de.darkatra.bfme2.updater.generated.resources.splash15_1920x1080
+import de.darkatra.bfme2.updater.generated.resources.splash19_1500x1200
+import de.darkatra.bfme2.updater.generated.resources.splash20_1262x633
+import de.darkatra.bfme2.updater.generated.resources.splash21_1920x1080
+import de.darkatra.bfme2.updater.generated.resources.splash22_2069x1260
+import de.darkatra.bfme2.updater.generated.resources.splash23_1192x670
+import de.darkatra.bfme2.updater.generated.resources.splash2_1920x1080
+import de.darkatra.bfme2.updater.generated.resources.splash8_2560x1600
 import de.darkatra.bfme2.util.ProcessUtils
 import de.darkatra.injector.Injector
 import kotlinx.coroutines.Dispatchers
@@ -41,15 +51,15 @@ import java.time.Duration
 import kotlin.io.path.absolutePathString
 
 private val imagePaths = arrayOf(
-    "/images/splash2_1920x1080.jpg",
-    "/images/splash23_1192x670.jpg",
-    "/images/splash8_2560x1600.jpg",
-    "/images/splash20_1262x633.jpg",
-    "/images/splash14_1920x1080.jpg",
-    "/images/splash22_2069x1260.png",
-    "/images/splash15_1920x1080.jpg",
-    "/images/splash19_1500x1200.jpg",
-    "/images/splash21_1920x1080.jpg"
+    Res.drawable.splash2_1920x1080,
+    Res.drawable.splash23_1192x670,
+    Res.drawable.splash8_2560x1600,
+    Res.drawable.splash20_1262x633,
+    Res.drawable.splash14_1920x1080,
+    Res.drawable.splash22_2069x1260,
+    Res.drawable.splash15_1920x1080,
+    Res.drawable.splash19_1500x1200,
+    Res.drawable.splash21_1920x1080
 )
 
 @Composable
@@ -92,7 +102,7 @@ fun UpdaterView(
     })
 
     FadingBackground(
-        imagePaths = imagePaths,
+        images = imagePaths,
         transitionDelay = Duration.ofSeconds(10),
         transitionDuration = Duration.ofSeconds(2)
     ) {
