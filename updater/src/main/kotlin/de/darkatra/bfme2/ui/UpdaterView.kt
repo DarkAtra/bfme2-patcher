@@ -48,6 +48,7 @@ import kotlinx.coroutines.time.withTimeoutOrNull
 import kotlinx.coroutines.withContext
 import java.nio.file.Path
 import java.time.Duration
+import java.util.logging.Level
 import kotlin.io.path.absolutePathString
 
 private val imagePaths = arrayOf(
@@ -196,8 +197,9 @@ fun UpdaterView(
                             }.also {
                                 updaterModel.setGameRunning(false)
                                 updaterModel.setVisible(true)
-                            }.onFailure {
-                                // TODO: show error message
+                            }.onFailure { e ->
+                                // TODO: display error
+                                LOGGER.log(Level.SEVERE, "An unexpected error occurred launching the game: ${e.message}", e)
                             }
                         }
                     }
