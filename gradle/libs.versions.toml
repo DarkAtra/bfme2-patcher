@@ -1,15 +1,15 @@
 [versions]
 kotlin = "2.1.0"
 compose = "1.8.0+check"
-kotlin-coroutine = "1.9.0"
+kotlin-coroutine = "1.10.1"
 jackson = "2.18.2"
 bouncycastle = "1.79"
 commons-io = "2.18.0"
-jna = "5.15.0"
+jna = "5.16.0"
 mslinks = "1.0.6.2"
 bfme2-modding-utils = "1.0.26"
 kotlin-dll-injector = "1.0.9"
-assertj = "3.26.3"
+assertj = "3.27.0"
 wiremock = "3.10.0"
 launch4j = "3.0.6"
 
