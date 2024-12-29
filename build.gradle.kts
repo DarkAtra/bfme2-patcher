@@ -1,6 +1,6 @@
 allprojects {
     group = "de.darkatra.bfme2"
-    version = "0.18.0"
+    version = "0.18.1"
 
     repositories {
         mavenCentral()
