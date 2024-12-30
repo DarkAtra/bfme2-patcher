@@ -35,9 +35,14 @@ val LOGGER: Logger = Logger.getLogger("updater")
 
 fun main(args: Array<String>) {
 
-    if ("filelog" in args) {
+    if ("filelog" in args || SelfUpdateService.isInCorrectLocation()) {
         LOGGER.addHandler(
-            FileHandler(UpdaterContext.applicationHome.parent.toAbsolutePath().resolve("log-%g.txt").absolutePathString()).apply {
+            FileHandler(
+                UpdaterContext.applicationHome.parent.toAbsolutePath().resolve("log-%g.txt").absolutePathString(),
+                50000,
+                1,
+                true
+            ).apply {
                 formatter = SimpleFormatter()
             }
         )
