@@ -10,7 +10,7 @@ mslinks = "1.0.6.2"
 bfme2-modding-utils = "1.0.27"
 kotlin-dll-injector = "1.0.10"
 assertj = "3.27.3"
-wiremock = "3.11.0"
+wiremock = "3.12.0"
 launch4j = "3.0.6"
 
 [libraries]
