@@ -1,5 +1,6 @@
 package de.darkatra.bfme2.ui
 
+import de.darkatra.bfme2.LOGGER
 import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.patch.PatchProgress
 import de.darkatra.bfme2.patch.PatchProgressListener
@@ -12,7 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
-import kotlin.Boolean
+import java.util.logging.Level
 import kotlin.io.path.exists
 
 class UpdaterModel : PatchProgressListener {
@@ -27,7 +28,8 @@ class UpdaterModel : PatchProgressListener {
                 modEnabled = it.modEnabled,
                 trayIconEnabled = it.trayIconEnabled,
                 hookEnabled = UpdaterContext.hasExpansionDebugger,
-                hookingSupported = UpdaterContext.ifeoHome.exists()
+                hookingSupported = UpdaterContext.ifeoHome.exists(),
+                debugModeEnabled = it.debugModeEnabled
             )
         )
     }
@@ -135,6 +137,14 @@ class UpdaterModel : PatchProgressListener {
         _state.update { it.copy(hookEnabled = hookEnabled) }
     }
 
+    fun setDebugModeEnabled(debugModeEnabled: Boolean) {
+        LOGGER.level = when {
+            debugModeEnabled -> Level.FINE
+            else -> Level.INFO
+        }
+        _state.update { it.copy(debugModeEnabled = debugModeEnabled) }
+    }
+
     private fun updatePersistentState() {
         PersistenceService.savePersistentState(
             PersistentState(
@@ -144,6 +154,7 @@ class UpdaterModel : PatchProgressListener {
                 newMusicEnabled = _state.value.newMusicEnabled,
                 modEnabled = _state.value.modEnabled,
                 trayIconEnabled = _state.value.trayIconEnabled,
+                debugModeEnabled = _state.value.debugModeEnabled
             )
         )
     }
@@ -170,7 +181,8 @@ class UpdaterModel : PatchProgressListener {
 
         val trayIconEnabled: Boolean = false,
         val hookEnabled: Boolean = false,
-        val hookingSupported: Boolean = false
+        val hookingSupported: Boolean = false,
+        val debugModeEnabled: Boolean = false
     ) {
 
         enum class SelfUpdateState {

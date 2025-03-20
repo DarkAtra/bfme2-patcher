@@ -48,11 +48,6 @@ fun main(args: Array<String>) {
         )
     }
 
-    if ("--log-level=debug" in args) {
-        LOGGER.level = Level.FINE
-        LOGGER.info("Debug logging enabled.")
-    }
-
     LOGGER.info(
         """------------------------------
         |Starting Updater with:

@@ -141,6 +141,13 @@ fun Toolbar(
                         }
                     )
                 }
+                CheckboxItem(
+                    text = "Debug Mode",
+                    checked = state.debugModeEnabled,
+                    onCheckedChange = { debugModeEnabled ->
+                        updaterModel.setDebugModeEnabled(debugModeEnabled)
+                    }
+                )
             }
 
             Menu(text = "Version") {

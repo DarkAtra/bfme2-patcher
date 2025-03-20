@@ -9,5 +9,6 @@ data class PersistentState(
     val skipIntroEnabled: Boolean = false,
     val newMusicEnabled: Boolean = false,
     val modEnabled: Boolean = true,
-    val trayIconEnabled: Boolean = false
+    val trayIconEnabled: Boolean = false,
+    val debugModeEnabled: Boolean = false
 )
