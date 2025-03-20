@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.1.10"
-compose = "1.8.0+check"
+compose = "1.7.3"
 kotlin-coroutine = "1.10.1"
 jackson = "2.18.3"
 bouncycastle = "1.80"
