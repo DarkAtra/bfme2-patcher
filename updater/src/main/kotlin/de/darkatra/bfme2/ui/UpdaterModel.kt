@@ -143,6 +143,7 @@ class UpdaterModel : PatchProgressListener {
             else -> Level.INFO
         }
         _state.update { it.copy(debugModeEnabled = debugModeEnabled) }
+        updatePersistentState()
     }
 
     private fun updatePersistentState() {
