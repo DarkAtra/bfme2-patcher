@@ -35,7 +35,7 @@ val LOGGER: Logger = Logger.getLogger("updater")
 
 fun main(args: Array<String>) {
 
-    if ("filelog" in args || SelfUpdateService.isInCorrectLocation()) {
+    if ("--filelog" in args || SelfUpdateService.isInCorrectLocation()) {
         LOGGER.addHandler(
             FileHandler(
                 UpdaterContext.applicationHome.parent.toAbsolutePath().resolve("log-%g.txt").absolutePathString(),
@@ -46,6 +46,11 @@ fun main(args: Array<String>) {
                 formatter = SimpleFormatter()
             }
         )
+    }
+
+    if ("--log-level=debug" in args) {
+        LOGGER.level = Level.FINE
+        LOGGER.info("Debug logging enabled.")
     }
 
     LOGGER.info(

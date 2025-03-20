@@ -39,6 +39,7 @@ import de.darkatra.bfme2.updater.generated.resources.splash22_2069x1260
 import de.darkatra.bfme2.updater.generated.resources.splash23_1192x670
 import de.darkatra.bfme2.updater.generated.resources.splash2_1920x1080
 import de.darkatra.bfme2.updater.generated.resources.splash8_2560x1600
+import de.darkatra.bfme2.util.JavaLogger
 import de.darkatra.bfme2.util.ProcessUtils
 import de.darkatra.injector.Injector
 import kotlinx.coroutines.Dispatchers
@@ -248,7 +249,7 @@ fun UpdaterView(
 
 private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, patcherUserDir: Path, hdEditionEnabled: Boolean): Boolean = withContext(Dispatchers.IO) {
 
-    LOGGER.info("Launching game with game-patcher.")
+    LOGGER.info("Launching game with game-patcher...")
 
     val successful = ProcessUtils.runBypassingDebugger(
         rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize(),
@@ -263,7 +264,7 @@ private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, patcherUserD
     )
 
     if (successful) {
-        LOGGER.info("Injecting patches via game-patcher.")
+        LOGGER.info("Injecting patches via game-patcher...")
 
         val gameProcess = withTimeoutOrNull(Duration.ofSeconds(5)) {
             var gameProcess: ProcessHandle?
@@ -273,7 +274,7 @@ private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, patcherUserD
             return@withTimeoutOrNull gameProcess
         } ?: return@withContext false
 
-        Injector.injectDll(gameProcess.pid(), rotwkHomeDir.resolve("game-patcher.dll").normalize())
+        Injector.injectDll(gameProcess.pid(), rotwkHomeDir.resolve("game-patcher.dll").normalize(), JavaLogger)
         gameProcess.onExit().get()
     }
 
@@ -282,7 +283,7 @@ private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, patcherUserD
 
 private suspend fun launchGame(rotwkHomeDir: Path, patcherUserDir: Path, hdEditionEnabled: Boolean) = withContext(Dispatchers.IO) {
 
-    LOGGER.info("Launching game without game-patcher.")
+    LOGGER.info("Launching game without game-patcher...")
 
     val gameProcess = ProcessUtils.run(
         rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize(),
