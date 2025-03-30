@@ -20,7 +20,7 @@
         {
             "allowedVersions": "!/\\+check$/",
             "matchPackageNames": [
-                "org.jetbrains.compose"
+                "*"
             ]
         }
     ],
