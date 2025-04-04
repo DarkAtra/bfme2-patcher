@@ -32,7 +32,7 @@ object PatchService {
         ensureActive()
 
         val requirements = DownloadService.getContent(URI.create(PatchConstants.REQUIREMENTS_URL).toURL(), Requirements::class)
-        if (requirements.minUpdaterVersion != null && SemanticVersion.ofString(requirements.minUpdaterVersion) > SemanticVersion.ofString(updaterVersion)) {
+        if (!meetsAllRequirements(requirements.minUpdaterVersion, updaterVersion)) {
             progressListener?.onRequirementsNotMet()
             return@withContext
         }
@@ -123,6 +123,15 @@ object PatchService {
         }
 
         progressListener?.onPatchFinished()
+    }
+
+    private fun meetsAllRequirements(minUpdaterVersion: String?, updaterVersion: String): Boolean {
+
+        if (!UpdaterContext.isRunningAsJar() || minUpdaterVersion == null) {
+            return true
+        }
+
+        return SemanticVersion.ofString(minUpdaterVersion) <= SemanticVersion.ofString(updaterVersion)
     }
 
     private suspend fun calculateDifferences(patch: Patch): Patch = withContext(Dispatchers.IO) {
