@@ -98,7 +98,7 @@ object MapBuilderApplication {
                         MapCacheEntry(
                             mapPath = Path.of("maps").resolve(editedMapsDir.relativize(file)).toString(),
                             fileSize = file.fileSize(),
-                            fileCRC = generateCRC(file),
+                            fileCRC = calculateCRC(file),
                             timestampLo = winFileTimeFromInstant(file.getLastModifiedTime().toInstant()).toInt(),
                             timestampHi = (winFileTimeFromInstant(file.getLastModifiedTime().toInstant()) shr 32).toInt(),
                             isOfficial = true,
@@ -147,7 +147,7 @@ object MapBuilderApplication {
     }
 
     // implementation based on https://github.com/electronicarts/CnC_Generals_Zero_Hour/blob/0a05454d8574207440a5fb15241b98ad0b435590/Generals/Code/GameEngine/Source/Common/crc.cpp#L55
-    private fun generateCRC(file: Path): UInt {
+    private fun calculateCRC(file: Path): UInt {
         var crc = 0u
         file.inputStream().buffered().use { inputStream ->
             var byte: UByte
