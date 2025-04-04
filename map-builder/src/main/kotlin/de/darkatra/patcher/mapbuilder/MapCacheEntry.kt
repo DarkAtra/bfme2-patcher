@@ -9,7 +9,7 @@ import kotlin.math.max
 data class MapCacheEntry(
     val mapPath: String,
     val fileSize: Long,
-    val fileCRC: Long,
+    val fileCRC: UInt,
     val timestampLo: Int,
     val timestampHi: Int,
     val isOfficial: Boolean,

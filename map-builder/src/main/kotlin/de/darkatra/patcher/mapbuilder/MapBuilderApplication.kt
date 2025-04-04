@@ -13,7 +13,6 @@ import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 import java.util.stream.Collectors
-import java.util.zip.CRC32
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.fileSize
@@ -95,29 +94,31 @@ object MapBuilderApplication {
                 if (file.name.endsWith(".map")) {
                     println("** Adding map cache entry for: ${editedMapsDir.relativize(file).pathString}")
                     val map = mapFileReader.read(file)
-                    mapCache.add(MapCacheEntry(
-                        mapPath = Path.of("maps").resolve(editedMapsDir.relativize(file)).toString(),
-                        fileSize = file.fileSize(),
-                        fileCRC = generateCRC(file),
-                        timestampLo = winFileTimeFromInstant(file.getLastModifiedTime().toInstant()).toInt(),
-                        timestampHi = (winFileTimeFromInstant(file.getLastModifiedTime().toInstant()) shr 32).toInt(),
-                        isOfficial = true,
-                        isScenarioMP = map.worldInfo["isScenarioMultiplayer"]?.value as Boolean? ?: false,
-                        extentMin = Vector3(0f, 0f, 0f),
-                        // not sure why, but the game multiplies the coordinates by factor 10
-                        extentMax = Vector3(map.heightMap.borders[0].x.toFloat() * 10f, map.heightMap.borders[0].y.toFloat() * 10f, 0f),
-                        player1Start = getWaypointForPlayer(1, map),
-                        player2Start = getWaypointForPlayer(2, map),
-                        player3Start = getWaypointForPlayer(3, map),
-                        player4Start = getWaypointForPlayer(4, map),
-                        player5Start = getWaypointForPlayer(5, map),
-                        player6Start = getWaypointForPlayer(6, map),
-                        player7Start = getWaypointForPlayer(7, map),
-                        player8Start = getWaypointForPlayer(8, map),
-                        initialCameraPosition = map.objects.objects.filter { it.typeName == "*Waypoints/Waypoint" }
-                            .find { it.properties.find { prop -> prop.key.name == "waypointName" }?.value == "InitialCameraPosition" }
-                            ?.position
-                    ))
+                    mapCache.add(
+                        MapCacheEntry(
+                            mapPath = Path.of("maps").resolve(editedMapsDir.relativize(file)).toString(),
+                            fileSize = file.fileSize(),
+                            fileCRC = generateCRC(file),
+                            timestampLo = winFileTimeFromInstant(file.getLastModifiedTime().toInstant()).toInt(),
+                            timestampHi = (winFileTimeFromInstant(file.getLastModifiedTime().toInstant()) shr 32).toInt(),
+                            isOfficial = true,
+                            isScenarioMP = map.worldInfo["isScenarioMultiplayer"]?.value as Boolean? ?: false,
+                            extentMin = Vector3(0f, 0f, 0f),
+                            // not sure why, but the game multiplies the coordinates by factor 10
+                            extentMax = Vector3(map.heightMap.borders[0].x.toFloat() * 10f, map.heightMap.borders[0].y.toFloat() * 10f, 0f),
+                            player1Start = getWaypointForPlayer(1, map),
+                            player2Start = getWaypointForPlayer(2, map),
+                            player3Start = getWaypointForPlayer(3, map),
+                            player4Start = getWaypointForPlayer(4, map),
+                            player5Start = getWaypointForPlayer(5, map),
+                            player6Start = getWaypointForPlayer(6, map),
+                            player7Start = getWaypointForPlayer(7, map),
+                            player8Start = getWaypointForPlayer(8, map),
+                            initialCameraPosition = map.objects.objects.filter { it.typeName == "*Waypoints/Waypoint" }
+                                .find { it.properties.find { prop -> prop.key.name == "waypointName" }?.value == "InitialCameraPosition" }
+                                ?.position
+                        )
+                    )
                 }
             }
         println("** Generating mapcache.ini...")
@@ -145,13 +146,22 @@ object MapBuilderApplication {
         }
     }
 
-    // TODO: this doesn't generate the same CRC as the game
-    private fun generateCRC(file: Path): Long {
-        val crc = CRC32()
-        file.inputStream().buffered().use {
-            crc.update(it.readBytes())
+    // implementation based on https://github.com/electronicarts/CnC_Generals_Zero_Hour/blob/0a05454d8574207440a5fb15241b98ad0b435590/Generals/Code/GameEngine/Source/Common/crc.cpp#L55
+    private fun generateCRC(file: Path): UInt {
+        var crc = 0u
+        file.inputStream().buffered().use { inputStream ->
+            var byte: UByte
+            while (inputStream.read().also { byte = it.toUByte() } != -1) {
+                val highBit = when {
+                    crc and 0x80000000u != 0x0u -> 1u
+                    else -> 0u
+                }
+                crc = crc shl 1
+                crc += byte
+                crc += highBit
+            }
         }
-        return crc.value
+        return crc
     }
 
     private fun getWaypointForPlayer(player: Int, map: MapFile): Vector3? {
@@ -165,4 +175,3 @@ object MapBuilderApplication {
         return duration.seconds * 10000000 + duration.nano / 100
     }
 }
-
