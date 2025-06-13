@@ -7,8 +7,6 @@ import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -30,6 +28,7 @@ import de.darkatra.bfme2.patch.PatchService
 import de.darkatra.bfme2.selfupdate.SelfUpdateService
 import de.darkatra.bfme2.ui.UpdaterModel.State.SelfUpdateState
 import de.darkatra.bfme2.updater.generated.resources.Res
+import de.darkatra.bfme2.updater.generated.resources.check
 import de.darkatra.bfme2.updater.generated.resources.splash14_1920x1080
 import de.darkatra.bfme2.updater.generated.resources.splash15_1920x1080
 import de.darkatra.bfme2.updater.generated.resources.splash19_1500x1200
@@ -47,6 +46,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.time.withTimeoutOrNull
 import kotlinx.coroutines.withContext
+import org.jetbrains.compose.resources.painterResource
 import java.nio.file.Path
 import java.time.Duration
 import java.util.logging.Level
@@ -118,19 +118,19 @@ fun UpdaterView(
                             performSelfUpdate()
                         }
                     ) {
-                        Text(text = "Update available", fontSize = 14.sp, fontWeight = FontWeight.W400)
+                        Text(text = "Update available", fontSize = 15.sp, fontWeight = FontWeight.W400)
                     }
 
                     SelfUpdateState.UP_TO_DATE -> SmallSurface {
                         Icon(
-                            imageVector = Icons.Rounded.Check,
+                            painter = painterResource(Res.drawable.check),
                             contentDescription = null,
                             tint = MaterialTheme.colors.secondary
                         )
 
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
 
-                        Text(text = "Up to Date", fontSize = 14.sp, fontWeight = FontWeight.W400)
+                        Text(text = "Up to Date", fontSize = 15.sp, fontWeight = FontWeight.W400)
                     }
 
                     SelfUpdateState.UNKNOWN -> SmallSurface {
@@ -141,9 +141,9 @@ fun UpdaterView(
                             backgroundColor = MaterialTheme.colors.surface,
                         )
 
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
 
-                        Text(text = "Checking for Updates...", fontSize = 14.sp, fontWeight = FontWeight.W400)
+                        Text(text = "Checking for Updates...", fontSize = 15.sp, fontWeight = FontWeight.W400)
                     }
                 }
             },
@@ -180,7 +180,7 @@ fun UpdaterView(
                         }
                     }
                 ) {
-                    Text(text = "Check for Updates", fontSize = 14.sp, fontWeight = FontWeight.W400)
+                    Text(text = "Check for Updates", fontSize = 15.sp, fontWeight = FontWeight.W400)
                 }
             },
             rightButtonSlot = {
@@ -205,7 +205,7 @@ fun UpdaterView(
                         }
                     }
                 ) {
-                    Text(text = "Start Game", fontSize = 14.sp, fontWeight = FontWeight.W400)
+                    Text(text = "Start Game", fontSize = 15.sp, fontWeight = FontWeight.W400)
                 }
             }
         )

@@ -8,13 +8,13 @@ import java.time.Instant
 data class Packet(
     var src: String,
     var dest: String,
-    @JsonProperty("packetSize")
+    @param:JsonProperty("packetSize")
     val size: Long,
     val compressedSize: Long,
     val dateTime: Instant,
     val checksum: String,
     val backupExisting: Boolean,
-    @JsonDeserialize(converter = CompressionDeserializer::class)
+    @param:JsonDeserialize(converter = CompressionDeserializer::class)
     val compression: Compression,
     val feature: Feature? = null
 ) : ContextAware {

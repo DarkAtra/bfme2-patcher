@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.ProvideTextStyle
@@ -24,7 +25,7 @@ fun SmallSurface(
     shape = MaterialTheme.shapes.small,
     color = ButtonDefaults.buttonColors().backgroundColor(true).value,
     contentColor = ButtonDefaults.buttonColors().contentColor(true).value,
-    modifier = Modifier.height(32.dp).then(modifier),
+    modifier = Modifier.height(32.dp).wrapContentHeight(Alignment.CenterVertically).then(modifier),
     content = {
         ProvideTextStyle(
             value = MaterialTheme.typography.button

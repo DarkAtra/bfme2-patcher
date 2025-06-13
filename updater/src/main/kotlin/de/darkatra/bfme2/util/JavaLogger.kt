@@ -12,6 +12,7 @@ object JavaLogger : Logger {
             when (level) {
                 LogLevel.TRACE -> Level.FINE
                 LogLevel.INFO -> Level.INFO
+                LogLevel.WARN -> Level.WARNING
             },
             message,
             throwable
