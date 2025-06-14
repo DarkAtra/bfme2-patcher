@@ -11,6 +11,7 @@ import de.darkatra.bfme2.LOGGER
 import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.game.Game
 import de.darkatra.bfme2.game.OptionFileService
+import de.darkatra.bfme2.ui.UpdaterModel.State.ErrorDetails
 import de.darkatra.bfme2.util.ProcessUtils
 import java.util.Base64
 import kotlin.io.path.absolutePathString
@@ -57,14 +58,22 @@ fun Toolbar(
         MenuBar {
 
             Menu(text = "Startup Fix") {
-                Item(text = "Fix ${Game.BFME2.displayName}", onClick = { fixGame(Game.BFME2) })
-                Item(text = "Fix ${Game.BFME2EP1.displayName}", onClick = { fixGame(Game.BFME2EP1) })
+                Item(
+                    text = "Fix ${Game.BFME2.displayName}",
+                    enabled = state.errorDetails == null,
+                    onClick = { fixGame(Game.BFME2) }
+                )
+                Item(
+                    text = "Fix ${Game.BFME2EP1.displayName}",
+                    enabled = state.errorDetails == null,
+                    onClick = { fixGame(Game.BFME2EP1) }
+                )
             }
 
             Menu(text = "Game Settings") {
                 CheckboxItem(
                     text = "HD Edition",
-                    enabled = !state.patchInProgress,
+                    enabled = !state.patchInProgress && state.errorDetails == null,
                     checked = state.hdEditionEnabled,
                     onCheckedChange = { hdEditionEnabled ->
                         updaterModel.setHdEditionEnabled(hdEditionEnabled)
@@ -72,7 +81,7 @@ fun Toolbar(
                 )
                 CheckboxItem(
                     text = "Timer",
-                    enabled = !state.patchInProgress,
+                    enabled = !state.patchInProgress && state.errorDetails == null,
                     checked = state.timerEnabled,
                     onCheckedChange = { timerEnabled ->
                         updaterModel.setTimerEnabled(timerEnabled)
@@ -80,7 +89,7 @@ fun Toolbar(
                 )
                 CheckboxItem(
                     text = "New Music",
-                    enabled = !state.patchInProgress,
+                    enabled = !state.patchInProgress && state.errorDetails == null,
                     checked = state.newMusicEnabled,
                     onCheckedChange = { newMusicEnabled ->
                         updaterModel.setNewMusicEnabled(newMusicEnabled)
@@ -88,7 +97,7 @@ fun Toolbar(
                 )
                 CheckboxItem(
                     text = "Skip Intro",
-                    enabled = !state.patchInProgress,
+                    enabled = !state.patchInProgress && state.errorDetails == null,
                     checked = state.skipIntroEnabled,
                     onCheckedChange = { skipIntroEnabled ->
                         updaterModel.setSkipIntroEnabled(skipIntroEnabled)
@@ -96,7 +105,7 @@ fun Toolbar(
                 )
                 CheckboxItem(
                     text = "Mod",
-                    enabled = !state.patchInProgress,
+                    enabled = !state.patchInProgress && state.errorDetails == null,
                     checked = state.modEnabled,
                     onCheckedChange = { modEnabled ->
                         updaterModel.setModEnabled(modEnabled)
@@ -107,6 +116,7 @@ fun Toolbar(
             Menu(text = "Updater Settings") {
                 CheckboxItem(
                     text = "Tray Icon",
+                    enabled = state.errorDetails == null,
                     checked = state.trayIconEnabled,
                     onCheckedChange = { trayIconEnabled ->
                         updaterModel.setTrayIconEnabled(trayIconEnabled)
@@ -115,6 +125,7 @@ fun Toolbar(
                 if (state.hookingSupported) {
                     CheckboxItem(
                         text = "Hook Game",
+                        enabled = state.errorDetails == null,
                         checked = state.hookEnabled,
                         onCheckedChange = { hookEnabled ->
 
@@ -135,14 +146,19 @@ fun Toolbar(
                                 LOGGER.info("Successfully ${if (hookEnabled) "hooked" else "unhooked"}")
                                 updaterModel.setHookEnabled(hookEnabled)
                             } else {
-                                // TODO: display error
                                 LOGGER.severe("Could not run updater-ifeo.exe. Exit code: $exitCode")
+                                updaterModel.setErrorDetails(
+                                    ErrorDetails(
+                                        message = "Could not run updater-ifeo.exe. Exit code: $exitCode",
+                                    )
+                                )
                             }
                         }
                     )
                 }
                 CheckboxItem(
                     text = "Debug Mode",
+                    enabled = state.errorDetails == null,
                     checked = state.debugModeEnabled,
                     onCheckedChange = { debugModeEnabled ->
                         updaterModel.setDebugModeEnabled(debugModeEnabled)
@@ -152,13 +168,16 @@ fun Toolbar(
 
             Menu(text = "Version") {
                 Item(text = "Version ${UpdaterContext.applicationVersion}", onClick = {})
-                Item(text = "Check Updates", onClick = onCheckForUpdates)
+                Item(
+                    text = "Check Updates",
+                    enabled = state.errorDetails == null,
+                    onClick = onCheckForUpdates
+                )
             }
 
             Menu(text = "Credits") {
                 Item(text = "BFME: Reforged for providing the icon for this application.", onClick = {})
             }
-
         }
     }
 

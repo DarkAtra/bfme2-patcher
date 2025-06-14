@@ -6,6 +6,7 @@ import de.darkatra.bfme2.patch.PatchProgress
 import de.darkatra.bfme2.patch.PatchProgressListener
 import de.darkatra.bfme2.persistence.PersistenceService
 import de.darkatra.bfme2.persistence.PersistentState
+import de.darkatra.bfme2.ui.UpdaterModel.State.ErrorDetails
 import de.darkatra.bfme2.ui.UpdaterModel.State.SelfUpdateState
 import de.darkatra.bfme2.util.StringUtils
 import kotlinx.coroutines.Dispatchers
@@ -29,7 +30,7 @@ class UpdaterModel : PatchProgressListener {
                 trayIconEnabled = it.trayIconEnabled,
                 hookEnabled = UpdaterContext.hasExpansionDebugger,
                 hookingSupported = UpdaterContext.ifeoHome.exists(),
-                debugModeEnabled = it.debugModeEnabled
+                debugModeEnabled = it.debugModeEnabled,
             )
         )
     }
@@ -77,6 +78,10 @@ class UpdaterModel : PatchProgressListener {
 
     fun setVisible(isVisible: Boolean) {
         _state.update { it.copy(isVisible = isVisible) }
+    }
+
+    fun setErrorDetails(errorDetails: ErrorDetails?) {
+        _state.update { it.copy(errorDetails = errorDetails) }
     }
 
     fun setSelfUpdateState(selfUpdateState: SelfUpdateState) {
@@ -162,6 +167,7 @@ class UpdaterModel : PatchProgressListener {
 
     data class State(
         val isVisible: Boolean = true,
+        val errorDetails: ErrorDetails? = null,
 
         val selfUpdateState: SelfUpdateState = SelfUpdateState.UNKNOWN,
         val selfUpdateInProgress: Boolean = false,
@@ -183,7 +189,7 @@ class UpdaterModel : PatchProgressListener {
         val trayIconEnabled: Boolean = false,
         val hookEnabled: Boolean = false,
         val hookingSupported: Boolean = false,
-        val debugModeEnabled: Boolean = false
+        val debugModeEnabled: Boolean = false,
     ) {
 
         enum class SelfUpdateState {
@@ -191,5 +197,11 @@ class UpdaterModel : PatchProgressListener {
             UP_TO_DATE,
             OUTDATED
         }
+
+        data class ErrorDetails(
+            val title: String = "Unexpected error",
+            val message: String,
+            val cause: Throwable? = null
+        )
     }
 }

@@ -78,7 +78,7 @@ fun main(args: Array<String>) {
         LOGGER.log(Level.SEVERE, "Ensure required directories failed with: ${e.message}", e)
         JOptionPane.showMessageDialog(
             null,
-            "Could not create required directories. This usually occurs if the Games are installed in their default locations. The ${UpdaterContext.APPLICATION_NAME} does not have write permissions to those directories and thus requires installing the games somewhere else.",
+            "Could not create required directories. This usually occurs if the games are installed in their default locations as the ${UpdaterContext.APPLICATION_NAME} doesn't have write permissions. Please install the games somewhere else and try again.",
             "Error",
             JOptionPane.ERROR_MESSAGE
         )

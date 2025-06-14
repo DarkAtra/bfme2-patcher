@@ -26,6 +26,7 @@ import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.patch.Feature
 import de.darkatra.bfme2.patch.PatchService
 import de.darkatra.bfme2.selfupdate.SelfUpdateService
+import de.darkatra.bfme2.ui.UpdaterModel.State.ErrorDetails
 import de.darkatra.bfme2.ui.UpdaterModel.State.SelfUpdateState
 import de.darkatra.bfme2.updater.generated.resources.Res
 import de.darkatra.bfme2.updater.generated.resources.check
@@ -199,8 +200,13 @@ fun UpdaterView(
                                 updaterModel.setGameRunning(false)
                                 updaterModel.setVisible(true)
                             }.onFailure { e ->
-                                // TODO: display error
                                 LOGGER.log(Level.SEVERE, "An unexpected error occurred launching the game: ${e.message}", e)
+                                updaterModel.setErrorDetails(
+                                    ErrorDetails(
+                                        message = "An unexpected error occurred launching the game: ${e.message}",
+                                        cause = e
+                                    )
+                                )
                             }
                         }
                     }
@@ -236,6 +242,17 @@ fun UpdaterView(
 
             else -> Unit
         }
+    }
+
+    val errorDetails = state.errorDetails
+    if (errorDetails != null) {
+        MessageDialog(
+            title = errorDetails.title,
+            text = errorDetails.message,
+            onConfirm = {
+                updaterModel.setErrorDetails(null)
+            }
+        )
     }
 
     LaunchedEffect(Unit) {
