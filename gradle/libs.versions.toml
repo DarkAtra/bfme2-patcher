@@ -11,7 +11,7 @@ bfme2-modding-utils = "1.0.33"
 kotlin-dll-injector = "1.0.18"
 assertj = "3.27.4"
 wiremock = "3.13.1"
-launch4j = "3.0.7"
+launch4j = "4.0.0"
 
 [libraries]
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlin-coroutine" }
