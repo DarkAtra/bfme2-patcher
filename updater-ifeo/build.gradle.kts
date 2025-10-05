@@ -29,6 +29,6 @@ tasks {
     withType<DefaultLaunch4jTask> {
         outfile.value("${project.name}.exe")
         manifest.value("$projectDir/launch4j.manifest")
-        jreMinVersion.value("11")
+        jreMinVersion.value("17")
     }
 }
