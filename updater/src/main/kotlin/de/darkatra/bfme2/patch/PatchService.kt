@@ -4,6 +4,8 @@ import de.darkatra.bfme2.LOGGER
 import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.checksum.HashingService
 import de.darkatra.bfme2.download.DownloadService
+import de.darkatra.bfme2.registry.RegistryService
+import de.darkatra.bfme2.util.ProcessUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
@@ -13,6 +15,7 @@ import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
+import java.util.Base64
 import kotlin.io.path.deleteExisting
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
@@ -28,6 +31,8 @@ object PatchService {
     suspend fun patch(progressListener: PatchProgressListener?, updaterVersion: String, features: Set<Feature> = emptySet()) = withContext(Dispatchers.IO) {
 
         progressListener?.onPatchStarted()
+
+        updateRegistryVersionIfNecessary()
 
         ensureActive()
 
@@ -170,6 +175,35 @@ object PatchService {
         if (disabledDest.exists()) {
             dest.deleteIfExists()
             disabledDest.moveTo(dest)
+        }
+    }
+
+    /**
+     * This is required so that the game doesn't ask you to install the latest official patch in order to play online.
+     * The patcher already takes care of installing it, and now it also updates the appropriate registry key.
+     * Writing to the registry requires elevated permissions so we delegate to `updater-ifeo.exe`.
+     */
+    private fun updateRegistryVersionIfNecessary() {
+
+        val latestOfficialPatchVersion = 0x20001
+        if (RegistryService.getExpansionVersion() == latestOfficialPatchVersion) {
+            LOGGER.info("Registry version is already up to date. No changes required.")
+            return
+        }
+
+        LOGGER.info("Setting registry version to latest official patch version: $latestOfficialPatchVersion")
+        val exitCode = ProcessUtils.runElevated(
+            UpdaterContext.ifeoHome,
+            arrayOf(
+                "filelog",
+                "setVersion",
+                Base64.getEncoder().encodeToString(latestOfficialPatchVersion.toString().toByteArray())
+            )
+        ).waitFor()
+
+        when (exitCode) {
+            0 -> LOGGER.info("Successfully updated registry version for the expansion. New value: $latestOfficialPatchVersion")
+            else -> error("Could not update registry version for the expansion. Exit code: $exitCode")
         }
     }
 }

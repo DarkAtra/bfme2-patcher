@@ -161,23 +161,33 @@ fun UpdaterView(
                     onClick = {
                         updaterModel.setPatchInProgress(true)
                         patchScope.launch {
-                            PatchService.patch(updaterModel, UpdaterContext.applicationVersion, buildSet {
-                                if (state.hdEditionEnabled) {
-                                    add(Feature.HD_EDITION)
-                                }
-                                if (state.timerEnabled) {
-                                    add(Feature.TIMER)
-                                }
-                                if (state.newMusicEnabled) {
-                                    add(Feature.NEW_MUSIC)
-                                }
-                                if (state.skipIntroEnabled) {
-                                    add(Feature.SKIP_INTRO)
-                                }
-                                if (state.modEnabled) {
-                                    add(Feature.MOD)
-                                }
-                            })
+                            runCatching {
+                                PatchService.patch(updaterModel, UpdaterContext.applicationVersion, buildSet {
+                                    if (state.hdEditionEnabled) {
+                                        add(Feature.HD_EDITION)
+                                    }
+                                    if (state.timerEnabled) {
+                                        add(Feature.TIMER)
+                                    }
+                                    if (state.newMusicEnabled) {
+                                        add(Feature.NEW_MUSIC)
+                                    }
+                                    if (state.skipIntroEnabled) {
+                                        add(Feature.SKIP_INTRO)
+                                    }
+                                    if (state.modEnabled) {
+                                        add(Feature.MOD)
+                                    }
+                                })
+                            }.onFailure { e ->
+                                updaterModel.setPatchInProgress(false)
+                                updaterModel.setErrorDetails(
+                                    ErrorDetails(
+                                        message = "An unexpected error occurred updating the game: ${e.message}",
+                                        cause = e
+                                    )
+                                )
+                            }
                         }
                     }
                 ) {

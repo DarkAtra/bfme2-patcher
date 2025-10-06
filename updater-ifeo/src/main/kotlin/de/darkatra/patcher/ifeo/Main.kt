@@ -8,13 +8,18 @@ import java.util.logging.SimpleFormatter
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.notExists
 
-val LOGGER: Logger = Logger.getLogger("updater")
+val LOGGER: Logger = Logger.getLogger("updater-ifeo")
 
 fun main(args: Array<String>) {
 
     if ("filelog" in args) {
         LOGGER.addHandler(
-            FileHandler(ApplicationHome.parent.toAbsolutePath().resolve("ifeo-log-%g.txt").absolutePathString()).apply {
+            FileHandler(
+                ApplicationHome.parent.toAbsolutePath().resolve("ifeo-log-%g.txt").absolutePathString(),
+                50000,
+                1,
+                true
+            ).apply {
                 formatter = SimpleFormatter()
             }
         )
@@ -43,6 +48,19 @@ fun main(args: Array<String>) {
         "reset" in args -> {
             LOGGER.info("Resetting Debugger")
             RegistryService.resetExpansionDebugger()
+        }
+
+        "setVersion" in args -> {
+            val versionIndex = args.indexOf("setVersion") + 1
+            if (versionIndex >= args.size) {
+                LOGGER.info("The setVersion operation expects one argument.")
+                return
+            }
+
+            val version = String(Base64.getDecoder().decode(args[versionIndex])).toInt()
+
+            LOGGER.info("Updating expansion version in registry to ${version.toHexString()}")
+            RegistryService.updateExpansionVersion(version)
         }
     }
 }

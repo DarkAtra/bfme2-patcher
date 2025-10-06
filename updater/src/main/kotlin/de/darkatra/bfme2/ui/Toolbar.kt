@@ -138,7 +138,7 @@ fun Toolbar(
                                         Base64.getEncoder().encodeToString(UpdaterContext.applicationHome.absolutePathString().toByteArray())
                                     )
 
-                                    false -> arrayOf("reset")
+                                    false -> arrayOf("filelog", "reset")
                                 }
                             ).waitFor()
 

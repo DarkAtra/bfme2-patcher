@@ -52,4 +52,8 @@ object RegistryService {
         }
         return Advapi32Util.registryGetStringValue(HKEY_LOCAL_MACHINE, HOOK_REGISTRY_KEY, "Debugger") != ""
     }
+
+    fun getExpansionVersion(): Int {
+        return Advapi32Util.registryGetIntValue(HKEY_LOCAL_MACHINE, EXPANSION_REGISTRY_KEY, "Version")
+    }
 }
