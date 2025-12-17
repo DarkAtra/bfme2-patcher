@@ -4,7 +4,6 @@ compose = "1.9.3"
 kotlin-coroutine = "1.10.2"
 jackson = "2.20.1"
 bouncycastle = "1.82"
-commons-io = "2.21.0"
 jna = "5.18.1"
 mslinks = "1.0.6.2"
 bfme2-modding-utils = "1.0.36"
@@ -12,6 +11,8 @@ kotlin-dll-injector = "1.0.23"
 assertj = "3.27.6"
 wiremock = "3.13.2"
 launch4j = "4.0.0"
+graalvm-library = "25.0.1"
+graalvm-hint = "1.2.0"
 
 [libraries]
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlin-coroutine" }
@@ -22,9 +23,12 @@ jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 jackson-kotlin-module = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
 bouncycastle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
-commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
 mslinks = { module = "com.github.vatbub:mslinks", version.ref = "mslinks" }
 kotlin-dll-injector = { module = "de.darkatra.injector:kotlin-dll-injector-common", version.ref = "kotlin-dll-injector" }
+
+graalvm-library-support = { module = "org.graalvm.nativeimage:library-support", version.ref = "graalvm-library" }
+graalvm-hint-processor = { module = "io.goodforgod:graalvm-hint-processor", version.ref = "graalvm-hint" }
+graalvm-hint-annotations = { module = "io.goodforgod:graalvm-hint-annotations", version.ref = "graalvm-hint" }
 
 assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlin-coroutine" }
@@ -32,6 +36,8 @@ wiremock = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremoc
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kapt = { id = "org.jetbrains.kotlin.kapt" }
 compose = { id = "org.jetbrains.compose", version.ref = "compose" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 launch4j = { id = "edu.sc.seis.launch4j", version.ref = "launch4j" }
+graalvm-native = { id = "org.graalvm.buildtools.native", version = "0.11.1" }

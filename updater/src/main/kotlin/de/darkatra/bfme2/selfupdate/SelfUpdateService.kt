@@ -15,11 +15,11 @@ import mslinks.ShellLink
 import java.net.URI
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.copyTo
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 import kotlin.io.path.moveTo
-import kotlin.io.path.outputStream
 
 object SelfUpdateService {
 
@@ -46,11 +46,7 @@ object SelfUpdateService {
             return
         }
 
-        UpdaterContext.applicationHome.inputStream().use { input ->
-            currentUpdaterLocation.outputStream().use { output ->
-                input.copyTo(output)
-            }
-        }
+        UpdaterContext.applicationHome.copyTo(currentUpdaterLocation, overwrite = true)
 
         ProcessUtils.run(currentUpdaterLocation)
         LOGGER.info("Moved updater to correct location, relaunching now.")
@@ -100,7 +96,7 @@ object SelfUpdateService {
 
         if (UpdaterContext.ifeoHome.exists()) {
 
-            val isNewUpdaterIfeoVersionAvailable = runBlocking(Dispatchers.IO) {
+            val isNewUpdaterIfeoVersionAvailable = runBlocking {
                 val latestUpdaterIfeoChecksum: String = runCatching {
                     HashingService.calculateSha3Checksum(URI.create(PatchConstants.UPDATER_IFEO_URL).toURL().openStream())
                 }.getOrNull() ?: return@runBlocking false

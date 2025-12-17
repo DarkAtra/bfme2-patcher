@@ -11,7 +11,6 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.URI
-import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -36,7 +35,7 @@ object PatchService {
 
         ensureActive()
 
-        val requirements = DownloadService.getContent(URI.create(PatchConstants.REQUIREMENTS_URL).toURL(), Requirements::class)
+        val requirements = DownloadService.getContent<Requirements>(URI.create(PatchConstants.REQUIREMENTS_URL).toURL())
         if (!meetsAllRequirements(requirements.minUpdaterVersion, updaterVersion)) {
             progressListener?.onRequirementsNotMet()
             return@withContext
@@ -44,7 +43,7 @@ object PatchService {
 
         ensureActive()
 
-        val patch = DownloadService.getContent(URI.create(PatchConstants.PATCH_LIST_URL).toURL(), Patch::class)
+        val patch = DownloadService.getContent<Patch>(URI.create(PatchConstants.PATCH_LIST_URL).toURL())
         patch.applyContext(UpdaterContext.context)
 
         ensureActive()
@@ -93,7 +92,7 @@ object PatchService {
             backupExistingFileIfRequired(packet)
 
             val dest = Path.of(packet.dest)
-            DownloadService.download(URL(packet.src), dest, packet.compression) { downloadProgress ->
+            DownloadService.download(URI.create(packet.src).toURL(), dest, packet.compression) { downloadProgress ->
 
                 currentNetwork += downloadProgress.countNetwork
                 currentDisk += downloadProgress.countDisk

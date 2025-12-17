@@ -7,7 +7,7 @@ import kotlin.io.path.exists
 class Context : HashMap<String, String>() {
 
     companion object {
-        const val PREFIX = "\${"
+        const val PREFIX = $$"${"
         const val SUFFIX = "}"
 
         const val SERVER_URL_IDENTIFIER = "serverUrl"

@@ -1,11 +1,14 @@
 import edu.sc.seis.launch4j.tasks.DefaultLaunch4jTask
 import org.gradle.jvm.tasks.Jar
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.launch4j)
+    alias(libs.plugins.kapt)
+    alias(libs.plugins.graalvm.native)
 }
 
 dependencies {
@@ -16,10 +19,13 @@ dependencies {
     implementation(libs.jackson.kotlin.module)
     implementation(libs.jackson.datatype.jsr310)
     implementation(libs.bouncycastle)
-    implementation(libs.commons.io)
     implementation(libs.jna.platform)
     implementation(libs.mslinks)
     implementation(libs.kotlin.dll.injector)
+
+    kapt(libs.graalvm.hint.processor)
+    compileOnly(libs.graalvm.hint.annotations)
+    compileOnly(libs.graalvm.library.support)
 
     testImplementation(kotlin("test"))
     testImplementation(libs.assertj)
@@ -29,13 +35,46 @@ dependencies {
 
 kotlin {
 
-    jvmToolchain(17)
+    jvmToolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+        vendor = JvmVendorSpec.ADOPTIUM
+    }
+
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
+        java {
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
+        }
+    }
 
     sourceSets {
         all {
             languageSettings.apply {
                 progressiveMode = true
             }
+        }
+    }
+}
+
+graalvmNative {
+    binaries {
+        all {
+            useFatJar = true
+            javaLauncher = javaToolchains.launcherFor {
+                languageVersion = JavaLanguageVersion.of(21)
+                vendor = JvmVendorSpec.GRAAL_VM
+            }
+        }
+
+        named("main") {
+            imageName.set("updater")
+            mainClass.set("de.darkatra.bfme2.MainKt")
+
+            buildArgs.add("--no-fallback")
+            buildArgs.add("-O3")
+            buildArgs.add("-H:+AddAllCharsets")
+            buildArgs.add("-Djava.awt.headless=false")
         }
     }
 }
@@ -63,15 +102,6 @@ compose.desktop {
             packageVersion = "${project.version}"
         }
     }
-}
-
-compose.resources {
-    customDirectory(
-        sourceSetName = "main",
-        directoryProvider = provider {
-            layout.projectDirectory.dir("src/main/resources")
-        }
-    )
 }
 
 afterEvaluate {

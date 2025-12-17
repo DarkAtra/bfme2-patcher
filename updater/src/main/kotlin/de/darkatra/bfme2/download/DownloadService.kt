@@ -1,14 +1,14 @@
 package de.darkatra.bfme2.download
 
+import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonMapperBuilder
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import de.darkatra.bfme2.patch.Compression
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
-import org.apache.commons.io.input.CountingInputStream
-import java.net.URI
 import java.net.URL
 import java.nio.file.Path
 import java.util.function.Consumer
@@ -17,22 +17,24 @@ import kotlin.io.path.exists
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.outputStream
 import kotlin.io.path.pathString
-import kotlin.reflect.KClass
 
 object DownloadService {
 
-    private val objectMapper: ObjectMapper = jacksonMapperBuilder().addModule(JavaTimeModule()).build()
+    private val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
 
-    fun <T : Any> getContent(url: URL, clazz: KClass<T>): T {
+    inline fun <reified T : Any> getContent(url: URL): T {
+
+        return getContent(url, jacksonTypeRef<T>())
+    }
+
+    fun <T : Any> getContent(url: URL, typeOfT: TypeReference<T>): T {
 
         val content = url.openStream().bufferedReader().use { it.readText() }
 
-        return objectMapper.readValue(content, clazz.java)
+        return objectMapper.readValue(content, typeOfT)
     }
 
     suspend fun download(src: URL, dest: Path, compression: Compression, progressListener: Consumer<DownloadProgress>? = null) = withContext(Dispatchers.IO) {
-
-        val uri = URI(src.protocol, src.userInfo, src.host, src.port, src.path, src.query, src.ref)
 
         ensureParentFolderExists(dest)
 
@@ -42,7 +44,7 @@ object DownloadService {
 
         ensureActive()
 
-        val (diskInputStream, networkInputStream) = getDownloadStream(uri.toURL(), compression)
+        val (diskInputStream, networkInputStream) = getDownloadStream(src, compression)
         diskInputStream.use { downloadStream ->
             dest.outputStream().use { fileOutputStream ->
 
@@ -57,13 +59,13 @@ object DownloadService {
 
                     progressListener?.accept(
                         DownloadProgress(
-                            countDisk = diskInputStream.byteCount,
-                            countNetwork = networkInputStream.byteCount
+                            countDisk = diskInputStream.count,
+                            countNetwork = networkInputStream.count
                         )
                     )
 
-                    diskInputStream.resetByteCount()
-                    networkInputStream.resetByteCount()
+                    diskInputStream.resetCount()
+                    networkInputStream.resetCount()
                 }
             }
         }

@@ -1,5 +1,6 @@
 package de.darkatra.bfme2.download
 
+import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo
@@ -24,8 +25,28 @@ internal class DownloadServiceTest {
 
         val port = wireMockRuntimeInfo.httpPort
 
-        @Suppress("UNCHECKED_CAST")
-        val content: Map<String, String> = downloadService.getContent(URI.create("http://localhost:$port/test.json").toURL(), Map::class) as Map<String, String>
+        val content: Map<String, String> = downloadService.getContent(
+            url = URI.create("http://localhost:$port/test.json").toURL(),
+            typeOfT = jacksonTypeRef<Map<String, String>>()
+        )
+
+        assertThat(content).containsEntry("name", "Testi")
+    }
+
+    @Test
+    fun `should download content from uri with reified type parameter`(wireMockRuntimeInfo: WireMockRuntimeInfo) {
+
+        wireMockRuntimeInfo.wireMock.register(
+            get("/test.json").willReturn(
+                ok().withBody("{\"name\": \"Testi\"}")
+            )
+        )
+
+        val port = wireMockRuntimeInfo.httpPort
+
+        val content: Map<String, String> = downloadService.getContent<Map<String, String>>(
+            url = URI.create("http://localhost:$port/test.json").toURL()
+        )
 
         assertThat(content).containsEntry("name", "Testi")
     }

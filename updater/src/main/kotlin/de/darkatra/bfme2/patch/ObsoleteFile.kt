@@ -16,7 +16,7 @@ data class ObsoleteFile(
 
         val origDest: String = dest
 
-        context.forEach { key, value ->
+        context.forEach { (key, value) ->
             dest = Path.of(dest.replace("${Context.PREFIX}$key${Context.SUFFIX}", value)).normalize().toString()
         }
 

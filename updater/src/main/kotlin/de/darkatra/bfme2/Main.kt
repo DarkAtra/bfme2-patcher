@@ -19,6 +19,7 @@ import de.darkatra.bfme2.ui.UpdaterModel
 import de.darkatra.bfme2.ui.UpdaterView
 import de.darkatra.bfme2.updater.generated.resources.Res
 import de.darkatra.bfme2.updater.generated.resources.icon
+import de.darkatra.bfme2.util.NativeImageUtils
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.skiko.setSystemLookAndFeel
 import java.awt.Color.WHITE
@@ -56,6 +57,8 @@ fun main(args: Array<String>) {
         |------------------------------
         """.trimMargin()
     )
+
+    NativeImageUtils.setupNativeImageEnvironmentIfNecessary()
 
     setSystemLookAndFeel()
     UIManager.put("MenuBar.border", LineBorder(WHITE, 0))

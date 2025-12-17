@@ -2,6 +2,7 @@ package de.darkatra.bfme2.persistence
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import de.darkatra.bfme2.UpdaterContext
 import java.io.IOException
 import java.util.logging.Logger
@@ -17,9 +18,8 @@ object PersistenceService {
 
     fun loadPersistentState(): PersistentState {
         return try {
-            objectMapper.readValue(
-                patcherUserDir.resolve(PATCHER_STATE_FILE_NAME).normalize().toFile(),
-                PersistentState::class.java
+            objectMapper.readValue<PersistentState>(
+                patcherUserDir.resolve(PATCHER_STATE_FILE_NAME).normalize().toFile()
             )
         } catch (e: IOException) {
             logger.info("Could not parse patcher state. Message: ${e.message}")

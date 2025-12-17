@@ -30,7 +30,7 @@ data class Packet(
         val origSrc: String = src
         val origDest: String = dest
 
-        context.forEach { key, value ->
+        context.forEach { (key, value) ->
             src = src.replace("${Context.PREFIX}$key${Context.SUFFIX}", value)
             dest = Path.of(dest.replace("${Context.PREFIX}$key${Context.SUFFIX}", value)).normalize().toString()
         }

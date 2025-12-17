@@ -1,0 +1,80 @@
+{
+    "resources": {
+        "includes": [
+            {
+                "pattern": "\\QMETA-INF/services/java.awt.im.spi.InputMethodDescriptor\\E"
+            },
+            {
+                "pattern": "\\QMETA-INF/services/java.lang.System$LoggerFinder\\E"
+            },
+            {
+                "pattern": "\\QMETA-INF/services/java.time.zone.ZoneRulesProvider\\E"
+            },
+            {
+                "pattern": "\\QMETA-INF/services/kotlin.reflect.jvm.internal.impl.resolve.ExternalOverridabilityCondition\\E"
+            },
+            {
+                "pattern": "\\QMETA-INF/services/kotlin.reflect.jvm.internal.impl.util.ModuleVisibilityHelper\\E"
+            },
+            {
+                "pattern": "\\QMETA-INF/services/kotlinx.coroutines.internal.MainDispatcherFactory\\E"
+            },
+            {
+                "pattern": "\\Qcom/sun/jna/win32-x86-64/jnidispatch.dll\\E"
+            },
+            {
+                "pattern": "\\QcomposeResources/de.darkatra.bfme2.updater.generated.resources/drawable/check.svg\\E"
+            },
+            {
+                "pattern": "\\QcomposeResources/de.darkatra.bfme2.updater.generated.resources/drawable/icon.png\\E"
+            },
+            {
+                "pattern": "\\QcomposeResources/de.darkatra.bfme2.updater.generated.resources/drawable/splash14_1920x1080.jpg\\E"
+            },
+            {
+                "pattern": "\\QcomposeResources/de.darkatra.bfme2.updater.generated.resources/drawable/splash15_1920x1080.jpg\\E"
+            },
+            {
+                "pattern": "\\QcomposeResources/de.darkatra.bfme2.updater.generated.resources/drawable/splash19_1500x1200.jpg\\E"
+            },
+            {
+                "pattern": "\\QcomposeResources/de.darkatra.bfme2.updater.generated.resources/drawable/splash20_1262x633.jpg\\E"
+            },
+            {
+                "pattern": "\\QcomposeResources/de.darkatra.bfme2.updater.generated.resources/drawable/splash22_2069x1260.png\\E"
+            },
+            {
+                "pattern": "\\QcomposeResources/de.darkatra.bfme2.updater.generated.resources/drawable/splash8_2560x1600.jpg\\E"
+            },
+            {
+                "pattern": "\\Qkotlin/kotlin.kotlin_builtins\\E"
+            },
+            {
+                "pattern": "\\Qskiko-windows-x64.dll.sha256\\E"
+            }
+        ]
+    },
+    "bundles": [
+        {
+            "name": "com.sun.java.swing.plaf.windows.resources.windows",
+            "classNames": [
+                "com.sun.java.swing.plaf.windows.resources.windows",
+                "com.sun.java.swing.plaf.windows.resources.windows_de"
+            ]
+        },
+        {
+            "name": "com.sun.swing.internal.plaf.basic.resources.basic",
+            "classNames": [
+                "com.sun.swing.internal.plaf.basic.resources.basic",
+                "com.sun.swing.internal.plaf.basic.resources.basic_de"
+            ]
+        },
+        {
+            "name": "sun.awt.resources.awt",
+            "classNames": [
+                "sun.awt.resources.awt",
+                "sun.awt.resources.awt_de"
+            ]
+        }
+    ]
+}

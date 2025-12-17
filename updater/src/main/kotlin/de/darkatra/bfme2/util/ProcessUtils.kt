@@ -62,9 +62,7 @@ object ProcessUtils {
     }
 
     fun runElevated(executable: Path, args: Array<String> = emptyArray()): Process {
-        return Runtime.getRuntime().exec(
-            "cmd /c \"${executable.absolutePathString()}\" ${args.joinToString(" ")}"
-        )
+        return Runtime.getRuntime().exec(arrayOf("cmd", "/c", executable.absolutePathString(), *args))
     }
 
     fun runJar(jar: Path, args: Array<String> = emptyArray()): Process {

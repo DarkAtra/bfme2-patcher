@@ -1,9 +1,23 @@
 package de.darkatra.bfme2.registry
 
+import com.sun.jna.platform.win32.Advapi32
 import com.sun.jna.platform.win32.Advapi32Util
+import com.sun.jna.platform.win32.WinReg.HKEY
+import com.sun.jna.platform.win32.WinReg.HKEYByReference
 import com.sun.jna.platform.win32.WinReg.HKEY_LOCAL_MACHINE
+import com.sun.jna.ptr.IntByReference
+import io.goodforgod.graalvm.hint.annotation.DynamicProxyHint
+import io.goodforgod.graalvm.hint.annotation.ReflectionHint
 import java.nio.file.Path
 
+@ReflectionHint(types = [
+    HKEY::class,
+    HKEYByReference::class,
+    IntByReference::class,
+])
+@DynamicProxyHint(
+    DynamicProxyHint.Configuration(interfaces = [Advapi32::class])
+)
 object RegistryService {
 
     private const val BASE_GAME_REGISTRY_KEY = "SOFTWARE\\Wow6432Node\\Electronic Arts\\Electronic Arts\\The Battle for Middle-earth II"
