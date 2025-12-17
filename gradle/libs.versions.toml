@@ -11,7 +11,6 @@ kotlin-dll-injector = "1.0.24"
 assertj = "3.27.6"
 wiremock = "3.13.2"
 launch4j = "4.0.0"
-graalvm-library = "25.0.1"
 graalvm-hint = "1.2.0"
 
 [libraries]
@@ -26,7 +25,6 @@ bouncycastle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "boun
 mslinks = { module = "com.github.vatbub:mslinks", version.ref = "mslinks" }
 kotlin-dll-injector = { module = "de.darkatra.injector:kotlin-dll-injector-common", version.ref = "kotlin-dll-injector" }
 
-graalvm-library-support = { module = "org.graalvm.nativeimage:library-support", version.ref = "graalvm-library" }
 graalvm-hint-processor = { module = "io.goodforgod:graalvm-hint-processor", version.ref = "graalvm-hint" }
 graalvm-hint-annotations = { module = "io.goodforgod:graalvm-hint-annotations", version.ref = "graalvm-hint" }
 

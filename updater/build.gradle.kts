@@ -25,7 +25,6 @@ dependencies {
 
     kapt(libs.graalvm.hint.processor)
     compileOnly(libs.graalvm.hint.annotations)
-    compileOnly(libs.graalvm.library.support)
 
     testImplementation(kotlin("test"))
     testImplementation(libs.assertj)

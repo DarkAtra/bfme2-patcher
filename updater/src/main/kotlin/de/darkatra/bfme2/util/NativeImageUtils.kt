@@ -31,10 +31,10 @@ object NativeImageUtils {
      */
     fun setupNativeImageEnvironmentIfNecessary() {
 
-        val javaHome = System.getProperty("java.home")
-        val isNativeImage = org.graalvm.nativeimage.ImageInfo.inImageCode()
+        val javaHome: String? = System.getProperty("java.home")
+        val nativeImageCode: String? = System.getProperty("org.graalvm.nativeimage.imagecode")
 
-        if (isNativeImage && (javaHome == null || javaHome.isEmpty())) {
+        if ((nativeImageCode == "buildtime" || nativeImageCode == "runtime") && javaHome.isNullOrEmpty()) {
 
             val currentDir = Path.of(System.getProperty("user.dir"))
             val binDir = currentDir.resolve("bin")
