@@ -32,6 +32,11 @@ dependencies {
     testImplementation(libs.wiremock)
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
 kotlin {
 
     jvmToolchain {
@@ -41,10 +46,6 @@ kotlin {
 
     compilerOptions {
         jvmTarget = JvmTarget.JVM_17
-        java {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
-        }
         freeCompilerArgs.add("-Xcontext-parameters")
     }
 
