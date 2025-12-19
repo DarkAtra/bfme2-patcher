@@ -143,7 +143,7 @@ object UpdateBuilderNoUI {
         val feature = featureFiles.find { featureFile -> featureFile.dest == dest }?.feature
         packets.add(
             Packet(
-                src = Path.of("\${serverUrl}/bfmemod2/").resolve(base64EncodedFilePath).normalize().toString().replace("\\", "/"),
+                src = Path.of($$"${serverUrl}/bfmemod2/").resolve(base64EncodedFilePath).normalize().toString().replace("\\", "/"),
                 dest = dest,
                 packetSize = filePath.toFile().length(),
                 compressedSize = output.fileSize(),

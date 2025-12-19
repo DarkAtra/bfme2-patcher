@@ -70,7 +70,7 @@ object ModBuilderApplication {
         // copy mod.big
         val modFinalLocation = rotwkHomeDir.resolve("!mod.big")
         Path.of(OUTPUT_FILE_NAME).copyTo(modFinalLocation, true)
-        println("* Moved asset.dat to ${modFinalLocation.pathString}")
+        println("* Moved !mod.big to ${modFinalLocation.pathString}")
 
         // copy englishstringsmod.big
         val enStringsLocation = rotwkHomeDir.resolve("lang/englishstringsmod.big")

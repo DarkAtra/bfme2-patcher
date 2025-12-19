@@ -6,6 +6,7 @@ import de.darkatra.bfme2.checksum.HashingService
 import de.darkatra.bfme2.download.DownloadService
 import de.darkatra.bfme2.registry.RegistryService
 import de.darkatra.bfme2.util.ProcessUtils
+import de.darkatra.bfme2.util.forEachParallel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
@@ -142,7 +143,7 @@ object PatchService {
 
         val packets = mutableSetOf<Packet>()
 
-        patch.packets.forEach { packet ->
+        patch.packets.forEachParallel { packet ->
 
             val destPath = Path.of(packet.dest)
 
