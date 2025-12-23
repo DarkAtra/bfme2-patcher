@@ -33,10 +33,9 @@ import de.darkatra.bfme2.updater.generated.resources.check
 import de.darkatra.bfme2.updater.generated.resources.splash14_1920x1080
 import de.darkatra.bfme2.updater.generated.resources.splash15_1920x1080
 import de.darkatra.bfme2.updater.generated.resources.splash19_1500x1200
-import de.darkatra.bfme2.updater.generated.resources.splash20_1262x633
-import de.darkatra.bfme2.updater.generated.resources.splash21_1920x1080
-import de.darkatra.bfme2.updater.generated.resources.splash22_2069x1260
-import de.darkatra.bfme2.updater.generated.resources.splash23_1192x670
+import de.darkatra.bfme2.updater.generated.resources.splash24_1536x1024
+import de.darkatra.bfme2.updater.generated.resources.splash25_1536x1024
+import de.darkatra.bfme2.updater.generated.resources.splash27_1536x1024
 import de.darkatra.bfme2.updater.generated.resources.splash2_1920x1080
 import de.darkatra.bfme2.updater.generated.resources.splash8_2560x1600
 import de.darkatra.bfme2.util.JavaLogger
@@ -54,15 +53,14 @@ import java.util.logging.Level
 import kotlin.io.path.absolutePathString
 
 private val imagePaths = arrayOf(
+    Res.drawable.splash24_1536x1024,
     Res.drawable.splash2_1920x1080,
-    Res.drawable.splash23_1192x670,
+    Res.drawable.splash27_1536x1024,
     Res.drawable.splash8_2560x1600,
-    Res.drawable.splash20_1262x633,
     Res.drawable.splash14_1920x1080,
-    Res.drawable.splash22_2069x1260,
     Res.drawable.splash15_1920x1080,
     Res.drawable.splash19_1500x1200,
-    Res.drawable.splash21_1920x1080
+    Res.drawable.splash25_1536x1024,
 )
 
 @Composable
