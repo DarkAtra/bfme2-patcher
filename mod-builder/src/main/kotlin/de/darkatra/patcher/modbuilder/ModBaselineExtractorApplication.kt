@@ -5,6 +5,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.name
 import kotlin.io.path.outputStream
 import kotlin.io.path.pathString
 
@@ -28,8 +29,8 @@ object ModBaselineExtractorApplication {
         println("Extracting files to: ${outputDir.absolutePathString()}")
 
         inputDir.listDirectoryEntries()
-            .reversed()
             .filter { path: Path -> Files.isRegularFile(path) }
+            .sortedByDescending { it.name.lowercase() }
             .filter { file -> file.pathString.endsWith(".big") }
             .forEach { file ->
 
