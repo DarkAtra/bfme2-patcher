@@ -23,13 +23,18 @@ object ProcessUtils {
         val startupInfo = WinBase.STARTUPINFO()
         val processInformation = WinBase.PROCESS_INFORMATION.ByReference()
 
+        val applicationName = executable.absolutePathString()
+        val commandLine = when (args.isNotEmpty()) {
+            true -> args.joinToString(" ")
+            false -> null
+        }
+
+        LOGGER.fine("Run '$applicationName' with args '$commandLine'")
+
         // create the process with debug flag to bypass IFEO
         val successful = Kernel32.INSTANCE.CreateProcess(
-            executable.absolutePathString(),
-            when (args.isNotEmpty()) {
-                true -> " ${args.joinToString(" ")}" // note: the leading space is important
-                false -> null
-            },
+            null,
+            "$applicationName $commandLine",
             null,
             null,
             false,
