@@ -23,6 +23,7 @@ import de.darkatra.bfme2.util.NativeImageUtils
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.skiko.setSystemLookAndFeel
 import java.awt.Color.WHITE
+import java.util.Locale
 import java.util.logging.FileHandler
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -35,6 +36,8 @@ import kotlin.io.path.absolutePathString
 val LOGGER: Logger = Logger.getLogger("updater")
 
 fun main(args: Array<String>) {
+
+    Locale.setDefault(Locale.ENGLISH)
 
     if ("--filelog" in args || SelfUpdateService.isInCorrectLocation()) {
         LOGGER.addHandler(
