@@ -20,6 +20,7 @@ import kotlin.io.path.exists
 class UpdaterModel : PatchProgressListener {
 
     private val _state = PersistenceService.loadPersistentState().let {
+        configureLogLevel(it.debugModeEnabled)
         MutableStateFlow(
             State(
                 hdEditionEnabled = it.hdEditionEnabled,
@@ -143,12 +144,16 @@ class UpdaterModel : PatchProgressListener {
     }
 
     fun setDebugModeEnabled(debugModeEnabled: Boolean) {
+        configureLogLevel(debugModeEnabled)
+        _state.update { it.copy(debugModeEnabled = debugModeEnabled) }
+        updatePersistentState()
+    }
+
+    private fun configureLogLevel(debugModeEnabled: Boolean) {
         LOGGER.level = when {
             debugModeEnabled -> Level.FINE
             else -> Level.INFO
         }
-        _state.update { it.copy(debugModeEnabled = debugModeEnabled) }
-        updatePersistentState()
     }
 
     private fun updatePersistentState() {
