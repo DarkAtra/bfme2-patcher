@@ -22,6 +22,7 @@ object UpdaterContext {
     }
 
     fun isRunningAsJar(): Boolean {
+        // return !NativeImageUtils.isInNativeImage() && applicationHome.isRegularFile()
         return applicationHome.isRegularFile()
     }
 

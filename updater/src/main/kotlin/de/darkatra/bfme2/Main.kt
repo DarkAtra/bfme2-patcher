@@ -3,6 +3,7 @@ package de.darkatra.bfme2
 import de.darkatra.bfme2.selfupdate.SelfUpdateService
 import de.darkatra.bfme2.util.NativeImageUtils
 import org.jetbrains.skiko.setSystemLookAndFeel
+import java.nio.file.Path
 import java.util.Locale
 import java.util.logging.FileHandler
 import java.util.logging.Level
@@ -35,9 +36,21 @@ fun main(args: Array<String>) {
         |Starting Updater with:
         |  applicationVersion: ${UpdaterContext.applicationVersion}
         |  applicationHome: ${UpdaterContext.applicationHome.absolutePathString()}
+        |  workingDirectory: ${Path.of(".").normalize().absolutePathString()}
+        |  args: [${args.joinToString(", ")}]
+        |  isNative: ${NativeImageUtils.isInNativeImage()}
         |------------------------------
         """.trimMargin()
     )
+
+    try {
+        appMain(args)
+    } catch (e: Exception) {
+        LOGGER.log(Level.SEVERE, "Unexpected error invoking appMain", e)
+    }
+}
+
+private fun appMain(args: Array<String>) {
 
     NativeImageUtils.setupNativeImageEnvironmentIfNecessary()
 
