@@ -76,6 +76,7 @@ graalvmNative {
             buildArgs.add("-O3")
             buildArgs.add("-H:+AddAllCharsets")
             buildArgs.add("-Djava.awt.headless=false")
+            buildArgs.add("--enable-https")
         }
     }
 }

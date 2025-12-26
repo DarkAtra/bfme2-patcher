@@ -1,7 +1,9 @@
 package de.darkatra.bfme2.patch
 
+import io.goodforgod.graalvm.hint.annotation.ReflectionHint
 import java.nio.file.Path
 
+@ReflectionHint(ReflectionHint.AccessType.ALL_DECLARED_CONSTRUCTORS)
 data class ObsoleteFile(
     var dest: String
 ) : ContextAware {
