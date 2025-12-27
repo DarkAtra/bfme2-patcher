@@ -104,21 +104,15 @@ object SelfUpdateService {
     fun applyUpdate() {
         if (updaterTempLocation.exists()) {
             ProcessUtils.run(updaterTempLocation, arrayOf(UNINSTALL_CURRENT_PARAMETER))
-        } else {
-            ProcessUtils.runJar(fallbackUpdaterTempLocation, arrayOf(UNINSTALL_CURRENT_PARAMETER))
         }
     }
 
     fun uninstallPreviousVersion() = runBlocking(Dispatchers.IO) {
         if (currentUpdaterLocation.exists()) {
             attemptRename(currentUpdaterLocation, oldUpdaterLocation, true)
-        } else {
-            attemptRename(fallbackCurrentUpdaterLocation, fallbackOldUpdaterLocation, true)
         }
         if (oldUpdaterLocation.exists()) {
             ProcessUtils.run(oldUpdaterLocation, arrayOf(INSTALL_PARAMETER))
-        } else {
-            ProcessUtils.runJar(fallbackOldUpdaterLocation, arrayOf(INSTALL_PARAMETER))
         }
     }
 
@@ -126,8 +120,6 @@ object SelfUpdateService {
         if (updaterTempLocation.exists()) {
             attemptRename(updaterTempLocation, currentUpdaterLocation, true)
             ProcessUtils.run(currentUpdaterLocation)
-        } else {
-            ProcessUtils.runJar(fallbackCurrentUpdaterLocation)
         }
     }
 

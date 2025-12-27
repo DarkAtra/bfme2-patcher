@@ -5,7 +5,6 @@ import com.sun.jna.platform.win32.WinDef
 import de.darkatra.bfme2.LOGGER
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
-import kotlin.io.path.name
 
 object ProcessUtils {
 
@@ -46,7 +45,9 @@ object ProcessUtils {
         )
 
         if (!successful) {
-            throw RuntimeException("Could not run '${executable.absolutePathString()}', error code: ${Kernel32.INSTANCE.GetLastError()}")
+            // TODO: find a way to catch all errors using jb-compose error handler
+            LOGGER.severe("Could not run '${executable.absolutePathString()}', error code: ${Kernel32.INSTANCE.GetLastError()}")
+            throw IllegalStateException("Could not run '${executable.absolutePathString()}', error code: ${Kernel32.INSTANCE.GetLastError()}")
         }
 
         // stop debugging the new process (it will be suspended otherwise)
@@ -62,13 +63,6 @@ object ProcessUtils {
         return run(
             listOf(executable.absolutePathString(), *args),
             executable.parent
-        )
-    }
-
-    fun runJar(jar: Path, args: Array<String> = emptyArray()): Process {
-        return run(
-            listOf("java", "-jar", jar.name, *args),
-            jar.parent
         )
     }
 
