@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import java.util.logging.Level
-import kotlin.io.path.exists
 
 class UpdaterModel : PatchProgressListener {
 
@@ -30,7 +29,6 @@ class UpdaterModel : PatchProgressListener {
                 modEnabled = it.modEnabled,
                 trayIconEnabled = it.trayIconEnabled,
                 hookEnabled = UpdaterContext.hasExpansionDebugger,
-                hookingSupported = UpdaterContext.ifeoHome.exists(),
                 debugModeEnabled = it.debugModeEnabled,
             )
         )
@@ -193,7 +191,6 @@ class UpdaterModel : PatchProgressListener {
 
         val trayIconEnabled: Boolean = false,
         val hookEnabled: Boolean = false,
-        val hookingSupported: Boolean = false,
         val debugModeEnabled: Boolean = false,
     ) {
 

@@ -5,7 +5,6 @@ import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.checksum.HashingService
 import de.darkatra.bfme2.download.DownloadService
 import de.darkatra.bfme2.registry.RegistryService
-import de.darkatra.bfme2.util.ProcessUtils
 import de.darkatra.bfme2.util.forEachParallel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
@@ -15,7 +14,6 @@ import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
-import java.util.Base64
 import kotlin.io.path.deleteExisting
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
@@ -33,6 +31,7 @@ object PatchService {
         progressListener?.onPatchStarted()
 
         updateRegistryVersionIfNecessary()
+        configureCompatModeIfNecessary()
 
         ensureActive()
 
@@ -181,7 +180,6 @@ object PatchService {
     /**
      * This is required so that the game doesn't ask you to install the latest official patch in order to play online.
      * The patcher already takes care of installing it, and now it also updates the appropriate registry key.
-     * Writing to the registry requires elevated permissions so we delegate to `updater-ifeo.exe`.
      */
     private fun updateRegistryVersionIfNecessary() {
 
@@ -191,19 +189,26 @@ object PatchService {
             return
         }
 
-        LOGGER.info("Setting registry version to latest official patch version: $latestOfficialPatchVersion")
-        val exitCode = ProcessUtils.runElevated(
-            UpdaterContext.ifeoHome,
-            arrayOf(
-                "filelog",
-                "setVersion",
-                Base64.getEncoder().encodeToString(latestOfficialPatchVersion.toString().toByteArray())
-            )
-        ).waitFor()
+        LOGGER.info("Setting registry version to latest official patch version '$latestOfficialPatchVersion'.")
+        RegistryService.updateExpansionVersion(latestOfficialPatchVersion)
 
-        when (exitCode) {
-            0 -> LOGGER.info("Successfully updated registry version for the expansion. New value: $latestOfficialPatchVersion")
-            else -> error("Could not update registry version for the expansion. Exit code: $exitCode")
+        LOGGER.info("Successfully updated registry version for the expansion. New value: $latestOfficialPatchVersion")
+    }
+
+    /**
+     * This is required so that the game launches with Windows 11 24H2.
+     */
+    private fun configureCompatModeIfNecessary() {
+
+        val expansionCompatMode = "~ WINXPSP3"
+        if (RegistryService.getExpansionCompatMode() == expansionCompatMode) {
+            LOGGER.info("Registry compat mode is already configured. No changes required.")
+            return
         }
+
+        LOGGER.info("Setting registry compat mode to '$expansionCompatMode'.")
+        RegistryService.updateExpansionCompatMode(expansionCompatMode)
+
+        LOGGER.info("Successfully updated registry compat mode for the expansion. New value: $expansionCompatMode")
     }
 }

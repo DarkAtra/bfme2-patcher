@@ -13,6 +13,7 @@ import kotlin.io.path.toPath
 object UpdaterContext {
 
     const val APPLICATION_NAME: String = "BfME Mod Launcher"
+    const val ROTWK_EXE_NAME: String = "lotrbfme2ep1.exe"
     val applicationVersion: String = UpdaterContext::class.java.getPackage().implementationVersion ?: "dev"
     val applicationHome: Path = javaClass.protectionDomain.codeSource.location.toURI().toPath()
     val ifeoHome: Path = when (isRunningAsJar()) {

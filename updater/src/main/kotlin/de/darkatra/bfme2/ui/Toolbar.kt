@@ -7,14 +7,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.MenuBar
-import de.darkatra.bfme2.LOGGER
 import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.game.Game
 import de.darkatra.bfme2.game.OptionFileService
-import de.darkatra.bfme2.ui.UpdaterModel.State.ErrorDetails
-import de.darkatra.bfme2.util.ProcessUtils
-import java.util.Base64
-import kotlin.io.path.absolutePathString
+import de.darkatra.bfme2.registry.RegistryService
 import kotlin.io.path.exists
 import kotlin.io.path.notExists
 
@@ -122,40 +118,18 @@ fun Toolbar(
                         updaterModel.setTrayIconEnabled(trayIconEnabled)
                     }
                 )
-                if (state.hookingSupported) {
-                    CheckboxItem(
-                        text = "Hook Game",
-                        enabled = state.errorDetails == null,
-                        checked = state.hookEnabled,
-                        onCheckedChange = { hookEnabled ->
-
-                            val exitCode = ProcessUtils.runElevated(
-                                UpdaterContext.ifeoHome,
-                                when (hookEnabled) {
-                                    true -> arrayOf(
-                                        "filelog",
-                                        "set",
-                                        Base64.getEncoder().encodeToString(UpdaterContext.applicationHome.absolutePathString().toByteArray())
-                                    )
-
-                                    false -> arrayOf("filelog", "reset")
-                                }
-                            ).waitFor()
-
-                            if (exitCode == 0) {
-                                LOGGER.info("Successfully ${if (hookEnabled) "hooked" else "unhooked"}")
-                                updaterModel.setHookEnabled(hookEnabled)
-                            } else {
-                                LOGGER.severe("Could not run updater-ifeo.exe. Exit code: $exitCode")
-                                updaterModel.setErrorDetails(
-                                    ErrorDetails(
-                                        message = "Could not run updater-ifeo.exe. Exit code: $exitCode",
-                                    )
-                                )
-                            }
+                CheckboxItem(
+                    text = "Hook Game",
+                    enabled = state.errorDetails == null,
+                    checked = state.hookEnabled,
+                    onCheckedChange = { hookEnabled ->
+                        when {
+                            hookEnabled -> RegistryService.setExpansionDebugger(UpdaterContext.applicationHome)
+                            else -> RegistryService.resetExpansionDebugger()
                         }
-                    )
-                }
+                        updaterModel.setHookEnabled(hookEnabled)
+                    }
+                )
                 CheckboxItem(
                     text = "Debug Mode",
                     enabled = state.errorDetails == null,

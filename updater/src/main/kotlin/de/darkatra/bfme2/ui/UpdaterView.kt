@@ -200,7 +200,7 @@ fun UpdaterView(
                         updaterModel.setGameRunning(true)
                         patchScope.launch {
                             runCatching {
-                                when (state.hookingSupported && state.hookEnabled) {
+                                when (state.hookEnabled) {
                                     true -> launchGameBypassingDebugger(rotwkHomeDir, patcherUserDir, state.hdEditionEnabled)
                                     false -> launchGame(rotwkHomeDir, patcherUserDir, state.hdEditionEnabled)
                                 }
@@ -277,7 +277,7 @@ private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, patcherUserD
     LOGGER.info("Launching game with game-patcher...")
 
     val successful = ProcessUtils.runBypassingDebugger(
-        rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize(),
+        rotwkHomeDir.resolve(UpdaterContext.ROTWK_EXE_NAME).normalize(),
         when (hdEditionEnabled) {
             true -> arrayOf(
                 "-mod",
@@ -293,7 +293,7 @@ private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, patcherUserD
 
         val gameProcess = withTimeoutOrNull(Duration.ofSeconds(5)) {
             var gameProcess: ProcessHandle?
-            while (ProcessUtils.findProcess("lotrbfme2ep1.exe").also { gameProcess = it } == null) {
+            while (ProcessUtils.findProcess(UpdaterContext.ROTWK_EXE_NAME).also { gameProcess = it } == null) {
                 delay(500)
             }
             return@withTimeoutOrNull gameProcess
@@ -311,7 +311,7 @@ private suspend fun launchGame(rotwkHomeDir: Path, patcherUserDir: Path, hdEditi
     LOGGER.info("Launching game without game-patcher...")
 
     val gameProcess = ProcessUtils.run(
-        rotwkHomeDir.resolve("lotrbfme2ep1.exe").normalize(),
+        rotwkHomeDir.resolve(UpdaterContext.ROTWK_EXE_NAME).normalize(),
         when (hdEditionEnabled) {
             true -> arrayOf(
                 "-mod",

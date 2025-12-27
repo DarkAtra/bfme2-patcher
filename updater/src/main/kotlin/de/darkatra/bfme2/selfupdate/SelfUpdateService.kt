@@ -16,6 +16,7 @@ import java.net.URI
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.copyTo
+import kotlin.io.path.deleteExisting
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
@@ -88,35 +89,16 @@ object SelfUpdateService {
         }
     }
 
-    fun downloadUpdaterIfeoIfNecessary() {
+    fun cleanupUpdaterIfeoIfNecessary() {
 
         if (!UpdaterContext.isRunningAsJar()) {
             return
         }
 
         if (UpdaterContext.ifeoHome.exists()) {
-
-            val isNewUpdaterIfeoVersionAvailable = runBlocking {
-                val latestUpdaterIfeoChecksum: String = runCatching {
-                    HashingService.calculateSha3Checksum(URI.create(PatchConstants.UPDATER_IFEO_URL).toURL().openStream())
-                }.getOrNull() ?: return@runBlocking false
-                val currentUpdaterIfeoChecksum: String = HashingService.calculateSha3Checksum(UpdaterContext.ifeoHome.inputStream())
-                return@runBlocking currentUpdaterIfeoChecksum != latestUpdaterIfeoChecksum
-            }
-
-            if (!isNewUpdaterIfeoVersionAvailable) {
-                return
-            }
+            LOGGER.info("Deleting obsolete updater-ifeo.exe.")
+            UpdaterContext.ifeoHome.deleteExisting()
         }
-
-        runBlocking {
-            DownloadService.download(
-                URI.create(PatchConstants.UPDATER_IFEO_URL).toURL(),
-                UpdaterContext.ifeoHome,
-                Compression.NONE
-            )
-        }
-        LOGGER.info("Downloaded updater-ifeo.exe.")
     }
 
     fun applyUpdate() {

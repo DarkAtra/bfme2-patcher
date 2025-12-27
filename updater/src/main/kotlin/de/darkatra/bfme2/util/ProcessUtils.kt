@@ -46,8 +46,7 @@ object ProcessUtils {
         )
 
         if (!successful) {
-            LOGGER.severe("Could not run '${executable.absolutePathString()}', error code: ${Kernel32.INSTANCE.GetLastError()}")
-            return false
+            throw RuntimeException("Could not run '${executable.absolutePathString()}', error code: ${Kernel32.INSTANCE.GetLastError()}")
         }
 
         // stop debugging the new process (it will be suspended otherwise)
@@ -64,10 +63,6 @@ object ProcessUtils {
             listOf(executable.absolutePathString(), *args),
             executable.parent
         )
-    }
-
-    fun runElevated(executable: Path, args: Array<String> = emptyArray()): Process {
-        return Runtime.getRuntime().exec(arrayOf("cmd", "/c", executable.absolutePathString(), *args))
     }
 
     fun runJar(jar: Path, args: Array<String> = emptyArray()): Process {

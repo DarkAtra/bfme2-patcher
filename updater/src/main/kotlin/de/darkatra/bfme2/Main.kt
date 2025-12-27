@@ -114,7 +114,7 @@ fun main(args: Array<String>) {
     }
 
     SelfUpdateService.updateLinkLocationIfNecessary()
-    SelfUpdateService.downloadUpdaterIfeoIfNecessary()
+    SelfUpdateService.cleanupUpdaterIfeoIfNecessary()
     SelfUpdateService.performCleanup()
 
     setSystemLookAndFeel()

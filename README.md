@@ -19,8 +19,6 @@ The `bfme2-patcher` consists of the following applications:
   The `updater` keeps all files for a program and itself up to date. It calculates the differences between the current version of the program and the latest
   version from the server. For this purpose a SHA-3 hash is created for each file and compared with the server's hash. Afterwards all outdated or damaged files
   are downloaded from the server and obsolete files are deleted.
-- **updater-ifeo**:
-  The `updater-ifeo` is a tiny utility that is used to set the `Debugger` registry key for the games. This allows the updater to launch instead of the game.
 
 ## Build
 
