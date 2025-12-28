@@ -12,7 +12,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
-import java.util.stream.Collectors
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.fileSize
@@ -21,9 +20,9 @@ import kotlin.io.path.inputStream
 import kotlin.io.path.name
 import kotlin.io.path.pathString
 
-const val ORIGINAL_MAPS_DIR = "original-maps"
-const val EDITED_MAPS_DIR = "edited-maps"
-const val OUTPUT_FILE_NAME = "!maps.big"
+private const val ORIGINAL_MAPS_DIR = "original-maps"
+private const val EDITED_MAPS_DIR = "edited-maps"
+private const val OUTPUT_FILE_NAME = "!maps.big"
 
 fun main(args: Array<String>) {
     MapBuilderApplication.build("skipEditingMaps" in args)
@@ -47,7 +46,7 @@ object MapBuilderApplication {
 
         println("* Editing Maps (skip=${skipEditingMaps})")
         if (!skipEditingMaps) {
-            readFilesInDirectory(originalMapsDir)
+            originalMapsDir.readFilesInDirectory()
                 .filter { file -> file.name.endsWith(".map") }
                 .forEach { file ->
                     println("** Editing map: ${originalMapsDir.relativize(file).pathString}")
@@ -83,7 +82,7 @@ object MapBuilderApplication {
 
         println("* Map archive: ${outFile.pathString}")
         val bigArchive = BigArchive(BigArchiveVersion.BIG_F, outFile)
-        readFilesInDirectory(editedMapsDir)
+        editedMapsDir.readFilesInDirectory()
             .filter { file -> !file.name.endsWith(".map.uncompressed") }
             .forEach { file ->
                 println("** Adding file to archive: ${editedMapsDir.relativize(file).pathString}")
@@ -135,15 +134,6 @@ object MapBuilderApplication {
         println("** Completed Map archive!")
 
         println("Success! Output: ${outFile.pathString}")
-    }
-
-    // max file depth is 2
-    private fun readFilesInDirectory(directory: Path): Set<Path> {
-        return Files.walk(directory, 2).use { stream ->
-            stream
-                .filter { path: Path -> Files.isRegularFile(path) }
-                .collect(Collectors.toSet())
-        }
     }
 
     // implementation based on https://github.com/electronicarts/CnC_Generals_Zero_Hour/blob/0a05454d8574207440a5fb15241b98ad0b435590/Generals/Code/GameEngine/Source/Common/crc.cpp#L55
