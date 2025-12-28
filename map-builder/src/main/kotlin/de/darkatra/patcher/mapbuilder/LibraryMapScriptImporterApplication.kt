@@ -46,11 +46,20 @@ object LibraryMapScriptImporterApplication {
 
                 println("** Importing 'lib_gollumspawn' scripts for map: ${originalMapsDir.relativize(file).pathString}")
 
+                val indexOfCreepPlayer = map.sides.players
+                    .map { player -> player.properties.find { property -> property.key.name == "playerName" } }
+                    .indexOfFirst { property -> property?.value == "PlyrCreeps" }
+
+                if (indexOfCreepPlayer < 0) {
+                    println("** Map does not have a Player named 'PlyrCreeps'. Skipping: ${originalMapsDir.relativize(file).pathString}")
+                    return@forEach
+                }
+
                 val editedMap = map.copy(
                     // import the 'lib_gollumspawn' scripts
                     libraryMapsList = LibraryMapsList(
                         map.libraryMapsList.libraryMaps.toMutableList().apply {
-                            add(2, LibraryMaps(names = listOf("Libraries\\lib_gollumspawn\\lib_gollumspawn.map")))
+                            add(indexOfCreepPlayer, LibraryMaps(names = listOf("Libraries\\lib_gollumspawn\\lib_gollumspawn.map")))
                         }
                     )
                 )
