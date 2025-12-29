@@ -30,8 +30,8 @@ object ModBaselineExtractorApplication {
 
         inputDir.listDirectoryEntries()
             .filter { path: Path -> Files.isRegularFile(path) }
-            .sortedByDescending { it.name.lowercase() }
             .filter { file -> file.pathString.endsWith(".big") }
+            .sortedByDescending { it.name.lowercase() }
             .forEach { file ->
 
                 println("* Processing archive: ${file.pathString}")
