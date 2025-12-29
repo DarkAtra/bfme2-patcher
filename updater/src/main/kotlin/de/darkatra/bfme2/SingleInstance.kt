@@ -1,11 +1,10 @@
 package de.darkatra.bfme2
 
 import java.io.RandomAccessFile
+import java.nio.channels.FileLock
 import java.nio.file.Path
-import java.util.logging.Logger
+import java.util.logging.Level
 import kotlin.io.path.deleteIfExists
-
-private val logger = Logger.getLogger("updater-single-instance")
 
 object SingleInstance {
 
@@ -15,9 +14,9 @@ object SingleInstance {
 
     fun acquireLock(): Boolean {
 
-        runCatching {
+        try {
             val lockFile = RandomAccessFile(lockFilePath.toFile(), "rw")
-            val lock = lockFile.channel.tryLock()
+            val lock: FileLock? = lockFile.channel.tryLock()
             if (lock != null) {
                 Runtime.getRuntime().addShutdownHook(Thread {
                     lock.release()
@@ -26,8 +25,8 @@ object SingleInstance {
                 })
                 return true
             }
-        }.onFailure {
-            logger.info("Could not acquire lock. Another instance of the application is probably already running.")
+        } catch (e: Exception) {
+            LOGGER.log(Level.INFO, "Could not acquire lock. Another instance of the application is probably already running.", e)
         }
 
         return false

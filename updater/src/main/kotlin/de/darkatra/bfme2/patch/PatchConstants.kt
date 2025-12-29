@@ -10,9 +10,4 @@ object PatchConstants {
     const val UPDATER_NAME = "updater.exe"
     const val UPDATER_TEMP_NAME = "_updater.exe"
     const val UPDATER_OLD_NAME = "updater.old.exe"
-    const val UPDATER_IFEO_NAME = "updater-ifeo.exe"
-
-    const val FALLBACK_UPDATER_NAME = "updater.jar"
-    const val FALLBACK_UPDATER_TEMP_NAME = "_updater.jar"
-    const val FALLBACK_UPDATER_OLD_NAME = "updater.old.jar"
 }

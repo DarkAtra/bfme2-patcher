@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.FrameWindowScope
-import de.darkatra.bfme2.LOGGER
 import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.patch.Feature
 import de.darkatra.bfme2.patch.PatchService
@@ -38,19 +37,10 @@ import de.darkatra.bfme2.updater.generated.resources.splash25_1536x1024
 import de.darkatra.bfme2.updater.generated.resources.splash27_1536x1024
 import de.darkatra.bfme2.updater.generated.resources.splash2_1920x1080
 import de.darkatra.bfme2.updater.generated.resources.splash8_2560x1600
-import de.darkatra.bfme2.util.JavaLogger
-import de.darkatra.bfme2.util.ProcessUtils
-import de.darkatra.injector.Injector
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
+import de.darkatra.bfme2.util.GameUtils
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.time.withTimeoutOrNull
-import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.painterResource
-import java.nio.file.Path
 import java.time.Duration
-import java.util.logging.Level
-import kotlin.io.path.absolutePathString
 
 private val imagePaths = arrayOf(
     Res.drawable.splash24_1536x1024,
@@ -201,14 +191,13 @@ fun UpdaterView(
                         patchScope.launch {
                             runCatching {
                                 when (state.hookEnabled) {
-                                    true -> launchGameBypassingDebugger(rotwkHomeDir, patcherUserDir, state.hdEditionEnabled)
-                                    false -> launchGame(rotwkHomeDir, patcherUserDir, state.hdEditionEnabled)
+                                    true -> GameUtils.launchGameBypassingDebugger(rotwkHomeDir, patcherUserDir, state.hdEditionEnabled)
+                                    false -> GameUtils.launchGame(rotwkHomeDir, patcherUserDir, state.hdEditionEnabled)
                                 }
                             }.also {
                                 updaterModel.setGameRunning(false)
                                 updaterModel.setVisible(true)
                             }.onFailure { e ->
-                                LOGGER.log(Level.SEVERE, "An unexpected error occurred launching the game: ${e.message}", e)
                                 updaterModel.setErrorDetails(
                                     ErrorDetails(
                                         message = "An unexpected error occurred launching the game: ${e.message}",
@@ -270,57 +259,4 @@ fun UpdaterView(
             false -> updaterModel.setSelfUpdateState(SelfUpdateState.UP_TO_DATE)
         }
     }
-}
-
-private suspend fun launchGameBypassingDebugger(rotwkHomeDir: Path, patcherUserDir: Path, hdEditionEnabled: Boolean): Boolean = withContext(Dispatchers.IO) {
-
-    LOGGER.info("Launching game with game-patcher...")
-
-    val successful = ProcessUtils.runBypassingDebugger(
-        rotwkHomeDir.resolve(UpdaterContext.ROTWK_EXE_NAME).normalize(),
-        when (hdEditionEnabled) {
-            true -> arrayOf(
-                "-mod",
-                "\"${patcherUserDir.resolve("HDEdition.big").normalize().absolutePathString()}\""
-            )
-
-            false -> emptyArray()
-        }
-    )
-
-    if (successful) {
-        LOGGER.info("Injecting patches via game-patcher...")
-
-        val gameProcess = withTimeoutOrNull(Duration.ofSeconds(5)) {
-            var gameProcess: ProcessHandle?
-            while (ProcessUtils.findProcess(UpdaterContext.ROTWK_EXE_NAME).also { gameProcess = it } == null) {
-                delay(500)
-            }
-            return@withTimeoutOrNull gameProcess
-        } ?: return@withContext false
-
-        Injector.injectDll(gameProcess.pid(), rotwkHomeDir.resolve("game-patcher.dll").normalize(), JavaLogger)
-        gameProcess.onExit().get()
-    }
-
-    return@withContext true
-}
-
-private suspend fun launchGame(rotwkHomeDir: Path, patcherUserDir: Path, hdEditionEnabled: Boolean) = withContext(Dispatchers.IO) {
-
-    LOGGER.info("Launching game without game-patcher...")
-
-    val gameProcess = ProcessUtils.run(
-        rotwkHomeDir.resolve(UpdaterContext.ROTWK_EXE_NAME).normalize(),
-        when (hdEditionEnabled) {
-            true -> arrayOf(
-                "-mod",
-                "\"${patcherUserDir.resolve("HDEdition.big").normalize().absolutePathString()}\""
-            )
-
-            false -> emptyArray()
-        }
-    )
-
-    gameProcess.waitFor()
 }

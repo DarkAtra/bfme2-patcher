@@ -3,8 +3,6 @@ package de.darkatra.bfme2
 import de.darkatra.bfme2.patch.Context
 import de.darkatra.bfme2.patch.PatchConstants
 import de.darkatra.bfme2.registry.RegistryService
-import org.jetbrains.skiko.OS
-import org.jetbrains.skiko.hostOs
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.isRegularFile
@@ -14,21 +12,13 @@ object UpdaterContext {
 
     const val APPLICATION_NAME: String = "BfME Mod Launcher"
     const val ROTWK_EXE_NAME: String = "lotrbfme2ep1.exe"
+
     val applicationVersion: String = UpdaterContext::class.java.getPackage().implementationVersion ?: "dev"
     val applicationHome: Path = javaClass.protectionDomain.codeSource.location.toURI().toPath()
-    val ifeoHome: Path = when (isRunningAsJar()) {
-        true -> applicationHome.parent.resolve(PatchConstants.UPDATER_IFEO_NAME)
-        false -> Path.of(".").resolve(PatchConstants.UPDATER_IFEO_NAME).normalize()
-    }
-    val hasExpansionDebugger = hostOs == OS.Windows && RegistryService.hasExpansionDebugger()
 
-    val context: Context
-
-    init {
-        context = when (isRunningAsJar()) {
-            true -> getProductionContext()
-            false -> getTestContext()
-        }
+    val context: Context = when (isRunningAsJar()) {
+        true -> getProductionContext()
+        false -> getTestContext()
     }
 
     fun isRunningAsJar(): Boolean {

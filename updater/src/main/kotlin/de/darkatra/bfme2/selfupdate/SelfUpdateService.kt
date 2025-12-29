@@ -16,7 +16,6 @@ import java.net.URI
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.copyTo
-import kotlin.io.path.deleteExisting
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
@@ -30,11 +29,8 @@ object SelfUpdateService {
     private val linkLocation: Path = Path.of(System.getProperty("user.home"), "Desktop", "BfME Mod Launcher.lnk")
     private val patcherUserDir: Path = UpdaterContext.context.getPatcherUserDir()
     private val updaterTempLocation: Path = patcherUserDir.resolve(PatchConstants.UPDATER_TEMP_NAME)
-    private val fallbackUpdaterTempLocation: Path = patcherUserDir.resolve(PatchConstants.FALLBACK_UPDATER_TEMP_NAME)
     private val currentUpdaterLocation: Path = patcherUserDir.resolve(PatchConstants.UPDATER_NAME)
-    private val fallbackCurrentUpdaterLocation: Path = patcherUserDir.resolve(PatchConstants.FALLBACK_UPDATER_NAME)
     private val oldUpdaterLocation: Path = patcherUserDir.resolve(PatchConstants.UPDATER_OLD_NAME)
-    private val fallbackOldUpdaterLocation: Path = patcherUserDir.resolve(PatchConstants.FALLBACK_UPDATER_OLD_NAME)
     private val linkIconLocation: Path = patcherUserDir.resolve("icon.ico")
 
     fun isInCorrectLocation(): Boolean {
@@ -89,18 +85,6 @@ object SelfUpdateService {
         }
     }
 
-    fun cleanupUpdaterIfeoIfNecessary() {
-
-        if (!UpdaterContext.isRunningAsJar()) {
-            return
-        }
-
-        if (UpdaterContext.ifeoHome.exists()) {
-            LOGGER.info("Deleting obsolete updater-ifeo.exe.")
-            UpdaterContext.ifeoHome.deleteExisting()
-        }
-    }
-
     fun applyUpdate() {
         if (updaterTempLocation.exists()) {
             ProcessUtils.run(updaterTempLocation, arrayOf(UNINSTALL_CURRENT_PARAMETER))
@@ -125,8 +109,6 @@ object SelfUpdateService {
 
     fun performCleanup() = runCatching {
         oldUpdaterLocation.deleteIfExists()
-        fallbackOldUpdaterLocation.deleteIfExists()
-        fallbackUpdaterTempLocation.deleteIfExists()
     }
 
     suspend fun isNewVersionAvailable(): Boolean = withContext(Dispatchers.IO) {

@@ -6,19 +6,23 @@ import de.darkatra.bfme2.patch.PatchProgress
 import de.darkatra.bfme2.patch.PatchProgressListener
 import de.darkatra.bfme2.persistence.PersistenceService
 import de.darkatra.bfme2.persistence.PersistentState
+import de.darkatra.bfme2.registry.RegistryService
 import de.darkatra.bfme2.ui.UpdaterModel.State.ErrorDetails
 import de.darkatra.bfme2.ui.UpdaterModel.State.SelfUpdateState
 import de.darkatra.bfme2.util.StringUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import org.jetbrains.skiko.OS
+import org.jetbrains.skiko.hostOs
 import java.util.logging.Level
 
 class UpdaterModel : PatchProgressListener {
 
-    private val _state = PersistenceService.loadPersistentState().let {
+    private val _state: MutableStateFlow<State> = PersistenceService.loadPersistentState().let {
         configureLogLevel(it.debugModeEnabled)
         MutableStateFlow(
             State(
@@ -28,12 +32,12 @@ class UpdaterModel : PatchProgressListener {
                 newMusicEnabled = it.newMusicEnabled,
                 modEnabled = it.modEnabled,
                 trayIconEnabled = it.trayIconEnabled,
-                hookEnabled = UpdaterContext.hasExpansionDebugger,
+                hookEnabled = hostOs == OS.Windows && RegistryService.hasExpansionDebugger(),
                 debugModeEnabled = it.debugModeEnabled,
             )
         )
     }
-    val state = _state.asStateFlow()
+    val state: StateFlow<State> = _state.asStateFlow()
 
     override suspend fun onPatchStarted() = withContext(Dispatchers.Main.immediate) {
         setProgress(INDETERMINATE_PROGRESS, "Downloading patchlist...")
@@ -80,6 +84,9 @@ class UpdaterModel : PatchProgressListener {
     }
 
     fun setErrorDetails(errorDetails: ErrorDetails?) {
+        if (errorDetails != null) {
+            LOGGER.log(Level.SEVERE, errorDetails.message, errorDetails.cause)
+        }
         _state.update { it.copy(errorDetails = errorDetails) }
     }
 
