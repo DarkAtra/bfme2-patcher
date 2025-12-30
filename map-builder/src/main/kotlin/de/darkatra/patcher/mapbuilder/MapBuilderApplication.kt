@@ -53,13 +53,13 @@ object MapBuilderApplication {
 
                     val map = mapFileReader.read(file)
                     val editedMap = map.copy(
-                        // set the max camera height to 700
+                        // set the max camera height to 640
                         worldInfo = WorldInfo(
                             map.worldInfo.properties
                                 .filter { property -> property.key.name != "cameraMaxHeight" }
                                 .toMutableList()
                                 .apply {
-                                    add(map.worldInfo["cameraMaxHeight"]!!.copy(value = 700f))
+                                    add(map.worldInfo["cameraMaxHeight"]!!.copy(value = 640f))
                                 }
                         )
                     )
