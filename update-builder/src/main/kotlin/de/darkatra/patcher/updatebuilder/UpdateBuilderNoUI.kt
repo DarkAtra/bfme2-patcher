@@ -15,6 +15,8 @@ import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.io.path.copyTo
 import kotlin.io.path.createParentDirectories
+import kotlin.io.path.deleteExisting
+import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.fileSize
 import kotlin.io.path.inputStream
@@ -58,6 +60,8 @@ object UpdateBuilderNoUI {
 
         if (!skipBaselineBuild) {
             println("Building '__patch202.big' from: ${rotwk202SourcePath.toFile().path}")
+            rotwk202OutputPath.deleteIfExists()
+
             val bigArchive = BigArchive(BigArchiveVersion.BIG_F, rotwk202OutputPath)
             readFilesInDirectory(rotwk202SourcePath).forEach { file ->
                 println("** Adding file to archive: ${rotwk202SourcePath.relativize(file).pathString}")
@@ -65,6 +69,8 @@ object UpdateBuilderNoUI {
                     it.write(Files.readAllBytes(file))
                 }
             }
+
+            println("* Writing '__patch202.big' to: ${rotwk202OutputPath.toFile().path}")
             bigArchive.writeToDisk()
         } else {
             println("Skip building '__patch202.big' from: ${rotwk202SourcePath.toFile().path}")
