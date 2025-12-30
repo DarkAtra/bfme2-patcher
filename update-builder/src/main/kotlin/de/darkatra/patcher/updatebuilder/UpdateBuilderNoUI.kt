@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonMapperBuilder
 import de.darkatra.bfme2.big.BigArchive
 import de.darkatra.bfme2.big.BigArchiveVersion
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
@@ -15,7 +16,6 @@ import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.io.path.copyTo
 import kotlin.io.path.createParentDirectories
-import kotlin.io.path.deleteExisting
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.fileSize
@@ -64,6 +64,10 @@ object UpdateBuilderNoUI {
 
             val bigArchive = BigArchive(BigArchiveVersion.BIG_F, rotwk202OutputPath)
             readFilesInDirectory(rotwk202SourcePath).forEach { file ->
+                if (rotwk202SourcePath.relativize(file).pathString == "lang${File.separatorChar}data${File.separatorChar}lotr.str") {
+                    println("** Skipping file: ${rotwk202SourcePath.relativize(file).pathString}")
+                    return@forEach
+                }
                 println("** Adding file to archive: ${rotwk202SourcePath.relativize(file).pathString}")
                 bigArchive.createEntry(rotwk202SourcePath.relativize(file).toString()).outputStream().use {
                     it.write(Files.readAllBytes(file))
