@@ -3,6 +3,8 @@ package de.darkatra.patcher.updatebuilder
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonMapperBuilder
+import de.darkatra.bfme2.big.BigArchive
+import de.darkatra.bfme2.big.BigArchiveVersion
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
@@ -20,8 +22,8 @@ import kotlin.io.path.name
 import kotlin.io.path.outputStream
 import kotlin.io.path.pathString
 
-fun main() {
-    UpdateBuilderNoUI.build()
+fun main(args: Array<String>) {
+    UpdateBuilderNoUI.build("skipBaselineBuild" in args)
 }
 
 object UpdateBuilderNoUI {
@@ -31,9 +33,11 @@ object UpdateBuilderNoUI {
     private val featuresPath = Path.of("./features.json")
     private val requirementsPath = Path.of("./requirements.json")
     private val filesRequireBackup = setOf("asset.dat", "game.dat")
+    private val rotwk202SourcePath = Path.of("./rotwk-2.02-source/")
+    private val rotwk202OutputPath = Path.of(Directory.ROTWK_BASELINE_DIR_NAME.dirName).resolve("__patch202.big")
     private val hashingService = HashingService
 
-    fun build() {
+    fun build(skipBaselineBuild: Boolean) {
 
         val startTime = System.nanoTime()
 
@@ -51,6 +55,22 @@ object UpdateBuilderNoUI {
 
         println("Applying features from: ${featuresPath.toFile().path}")
         val featureFiles: Set<FeatureFile> = objectMapper.readValue(featuresPath.toFile(), Array<FeatureFile>::class.java).toSet()
+
+        if (!skipBaselineBuild) {
+            println("Building '__patch202.big' from: ${rotwk202SourcePath.toFile().path}")
+            val bigArchive = BigArchive(BigArchiveVersion.BIG_F, rotwk202OutputPath)
+            readFilesInDirectory(rotwk202SourcePath).forEach { file ->
+                println("** Adding file to archive: ${rotwk202SourcePath.relativize(file).pathString}")
+                bigArchive.createEntry(rotwk202SourcePath.relativize(file).toString()).outputStream().use {
+                    it.write(Files.readAllBytes(file))
+                }
+            }
+            bigArchive.writeToDisk()
+        } else {
+            println("Skip building '__patch202.big' from: ${rotwk202SourcePath.toFile().path}")
+        }
+
+        println("Building update...")
 
         var added = 0
         var archived = 0
