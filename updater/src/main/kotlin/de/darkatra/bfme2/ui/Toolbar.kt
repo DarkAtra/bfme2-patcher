@@ -100,6 +100,14 @@ fun Toolbar(
                     }
                 )
                 CheckboxItem(
+                    text = "Patch 2.02",
+                    enabled = !state.patchInProgress && state.errorDetails == null,
+                    checked = state.patch202Enabled,
+                    onCheckedChange = { patch202Enabled ->
+                        updaterModel.setPatch202Enabled(patch202Enabled)
+                    }
+                )
+                CheckboxItem(
                     text = "Mod",
                     enabled = !state.patchInProgress && state.errorDetails == null,
                     checked = state.modEnabled,

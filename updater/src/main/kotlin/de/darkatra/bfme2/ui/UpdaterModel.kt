@@ -134,6 +134,11 @@ class UpdaterModel : PatchProgressListener {
         updatePersistentState()
     }
 
+    fun setPatch202Enabled(patch202Enabled: Boolean) {
+        _state.update { it.copy(patch202Enabled = patch202Enabled, patchedOnce = false) }
+        updatePersistentState()
+    }
+
     fun setModEnabled(modEnabled: Boolean) {
         _state.update { it.copy(modEnabled = modEnabled, patchedOnce = false) }
         updatePersistentState()
@@ -190,10 +195,12 @@ class UpdaterModel : PatchProgressListener {
         val progress: Float = 0f,
         val progressText: String = "Waiting for user input.",
 
+        val improvedTexturesEnabled: Boolean = false,
         val hdEditionEnabled: Boolean = false,
         val timerEnabled: Boolean = false,
         val skipIntroEnabled: Boolean = false,
         val newMusicEnabled: Boolean = false,
+        val patch202Enabled: Boolean = true,
         val modEnabled: Boolean = true,
 
         val trayIconEnabled: Boolean = false,

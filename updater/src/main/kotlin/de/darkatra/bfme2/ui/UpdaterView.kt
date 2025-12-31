@@ -163,7 +163,11 @@ fun UpdaterView(
                                     if (state.skipIntroEnabled) {
                                         add(Feature.SKIP_INTRO)
                                     }
+                                    if (state.patch202Enabled) {
+                                        add(Feature.PATCH_202)
+                                    }
                                     if (state.modEnabled) {
+                                        add(Feature.PATCH_202)
                                         add(Feature.MOD)
                                     }
                                 })
