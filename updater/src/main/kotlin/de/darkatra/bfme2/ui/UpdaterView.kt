@@ -35,6 +35,7 @@ import de.darkatra.bfme2.updater.generated.resources.splash19_1500x1200
 import de.darkatra.bfme2.updater.generated.resources.splash24_1536x1024
 import de.darkatra.bfme2.updater.generated.resources.splash25_1536x1024
 import de.darkatra.bfme2.updater.generated.resources.splash27_1536x1024
+import de.darkatra.bfme2.updater.generated.resources.splash28_1536x1024
 import de.darkatra.bfme2.updater.generated.resources.splash2_1920x1080
 import de.darkatra.bfme2.updater.generated.resources.splash8_2560x1600
 import de.darkatra.bfme2.util.GameUtils
@@ -51,6 +52,7 @@ private val imagePaths = arrayOf(
     Res.drawable.splash15_1920x1080,
     Res.drawable.splash19_1500x1200,
     Res.drawable.splash25_1536x1024,
+    Res.drawable.splash28_1536x1024,
 )
 
 @Composable

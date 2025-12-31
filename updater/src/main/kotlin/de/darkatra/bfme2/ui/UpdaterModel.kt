@@ -30,6 +30,7 @@ class UpdaterModel : PatchProgressListener {
                 timerEnabled = it.timerEnabled,
                 skipIntroEnabled = it.skipIntroEnabled,
                 newMusicEnabled = it.newMusicEnabled,
+                patch202Enabled = it.patch202Enabled,
                 modEnabled = it.modEnabled,
                 trayIconEnabled = it.trayIconEnabled,
                 hookEnabled = hostOs == OS.Windows && RegistryService.hasExpansionDebugger(),
@@ -173,6 +174,7 @@ class UpdaterModel : PatchProgressListener {
                 timerEnabled = _state.value.timerEnabled,
                 skipIntroEnabled = _state.value.skipIntroEnabled,
                 newMusicEnabled = _state.value.newMusicEnabled,
+                patch202Enabled = _state.value.patch202Enabled,
                 modEnabled = _state.value.modEnabled,
                 trayIconEnabled = _state.value.trayIconEnabled,
                 debugModeEnabled = _state.value.debugModeEnabled
@@ -195,7 +197,6 @@ class UpdaterModel : PatchProgressListener {
         val progress: Float = 0f,
         val progressText: String = "Waiting for user input.",
 
-        val improvedTexturesEnabled: Boolean = false,
         val hdEditionEnabled: Boolean = false,
         val timerEnabled: Boolean = false,
         val skipIntroEnabled: Boolean = false,
