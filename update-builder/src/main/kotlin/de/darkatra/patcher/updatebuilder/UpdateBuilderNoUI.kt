@@ -14,9 +14,11 @@ import java.util.stream.Collectors
 import java.util.zip.GZIPOutputStream
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.copyTo
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.deleteIfExists
+import kotlin.io.path.deleteRecursively
 import kotlin.io.path.exists
 import kotlin.io.path.fileSize
 import kotlin.io.path.inputStream
@@ -39,6 +41,7 @@ object UpdateBuilderNoUI {
     private val rotwk202OutputPath = Path.of(Directory.ROTWK_BASELINE_DIR_NAME.dirName).resolve("__patch202.big")
     private val hashingService = HashingService
 
+    @OptIn(ExperimentalPathApi::class)
     fun build(skipBaselineBuild: Boolean) {
 
         val startTime = System.nanoTime()
@@ -79,6 +82,9 @@ object UpdateBuilderNoUI {
         } else {
             println("Skip building '__patch202.big' from: ${rotwk202SourcePath.toFile().path}")
         }
+
+        println("Clearing './output-diff/'...")
+        Path.of("./output-diff/").deleteRecursively()
 
         println("Building update...")
 
@@ -163,11 +169,14 @@ object UpdateBuilderNoUI {
 
         val base64EncodedFilePath = Base64.UrlSafe.encode(dest.toByteArray()) + ".gz"
         val output = Path.of("./output/", base64EncodedFilePath)
+        val outputDiff = Path.of("./output-diff/", base64EncodedFilePath)
         val outputExists: Boolean = output.exists()
         val archive: Boolean = fileChanged || !outputExists
         if (archive) {
             println("** Archiving file (changed: $fileChanged, exists: $outputExists): ${output.pathString}")
             createGzipArchive(filePath, output)
+            outputDiff.createParentDirectories()
+            output.copyTo(outputDiff, overwrite = true)
         }
 
         val feature = featureFiles.find { featureFile -> featureFile.dest == dest }?.feature
