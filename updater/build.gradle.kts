@@ -77,6 +77,10 @@ graalvmNative {
             buildArgs.add("-H:+AddAllCharsets")
             buildArgs.add("-Djava.awt.headless=false")
             buildArgs.add("--enable-https")
+
+            // hide the console window, see: https://github.com/oracle/graal/issues/2256
+            buildArgs.add("-H:NativeLinkerOption=/SUBSYSTEM:WINDOWS")
+            buildArgs.add("-H:NativeLinkerOption=/ENTRY:mainCRTStartup")
         }
     }
 }

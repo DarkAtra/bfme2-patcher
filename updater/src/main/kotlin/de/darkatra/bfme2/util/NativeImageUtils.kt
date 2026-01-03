@@ -10,9 +10,11 @@ import java.nio.file.DirectoryNotEmptyException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.logging.Level
+import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.copyTo
 import kotlin.io.path.createTempDirectory
+import kotlin.io.path.deleteRecursively
 import kotlin.io.path.exists
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
@@ -48,6 +50,7 @@ object NativeImageUtils {
     /**
      * Ensures that `java.home` and similar system properties are set so that AWT and Skiko initialize correctly.
      */
+    @OptIn(ExperimentalPathApi::class)
     fun setupNativeImageEnvironmentIfNecessary() {
 
         val javaHome: String? = System.getProperty("java.home")
@@ -70,6 +73,10 @@ object NativeImageUtils {
                 |------------------------------
                 """.trimMargin()
             )
+
+            if (binDir.exists()) {
+                binDir.deleteRecursively()
+            }
 
             if (!binDir.exists() && !binDir.toFile().mkdirs()) {
                 LOGGER.severe("Failed to create required bin directory '${binDir.absolutePathString()}'.")
