@@ -1,7 +1,9 @@
 package de.darkatra.bfme2.persistence
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import io.goodforgod.graalvm.hint.annotation.ReflectionHint
 
+@ReflectionHint(ReflectionHint.AccessType.ALL_DECLARED_CONSTRUCTORS)
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class PersistentState(
     val hdEditionEnabled: Boolean = false,

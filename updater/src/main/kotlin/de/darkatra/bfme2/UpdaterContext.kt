@@ -3,6 +3,7 @@ package de.darkatra.bfme2
 import de.darkatra.bfme2.patch.Context
 import de.darkatra.bfme2.patch.PatchConstants
 import de.darkatra.bfme2.registry.RegistryService
+import de.darkatra.bfme2.util.NativeImageUtils
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.isRegularFile
@@ -22,7 +23,9 @@ object UpdaterContext {
     }
 
     fun isRunningAsJar(): Boolean {
-        return applicationHome.isRegularFile()
+        // FIXME: revert this change when the native application works as expected
+        // return applicationHome.isRegularFile()
+        return !NativeImageUtils.isInNativeImage() && applicationHome.isRegularFile()
     }
 
     private fun getTestContext(): Context {
