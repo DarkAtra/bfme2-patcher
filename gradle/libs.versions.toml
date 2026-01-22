@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.3.0"
-compose = "1.10.0"
+compose = "1.9.3"
 kotlin-coroutine = "1.10.2"
 jackson = "2.21.0"
 bouncycastle = "1.83"
@@ -14,6 +14,7 @@ launch4j = "4.0.0"
 graalvm-hint = "1.2.0"
 
 [libraries]
+compose-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose" }
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlin-coroutine" }
 coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlin-coroutine" }
 bfme2-modding-utils-big = { module = "de.darkatra.bfme2:big", version.ref = "bfme2-modding-utils" }

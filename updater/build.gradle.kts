@@ -13,7 +13,7 @@ plugins {
 
 dependencies {
     implementation(compose.desktop.currentOs)
-    implementation(compose.components.resources)
+    implementation(libs.compose.resources)
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.swing)
     implementation(libs.jackson.kotlin.module)
@@ -108,7 +108,9 @@ compose.desktop {
 afterEvaluate {
     tasks {
         withType<DefaultLaunch4jTask> {
-            setJarTask(project.tasks.findByName("packageUberJarForCurrentOS"))
+            val packageUberJarForCurrentOS by getting
+            dependsOn(packageUberJarForCurrentOS)
+            setJarTask(packageUberJarForCurrentOS)
 
             outfile.value("${project.name}.exe")
             icon.value("$projectDir/icon.ico")
