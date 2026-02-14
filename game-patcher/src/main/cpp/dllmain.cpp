@@ -3,14 +3,13 @@
 
 using namespace std;
 
-__forceinline static BYTE* findPattern(BYTE* srcStart, BYTE* srcEnd, BYTE* patternStart, BYTE* patternEnd) {
+__forceinline static BYTE *findPattern(BYTE *srcStart, BYTE *srcEnd, const BYTE *patternStart, const BYTE *patternEnd) {
 
-    BYTE *pos, *end, *s1, *p1;
-    end = srcEnd - (patternEnd - patternStart);
+    const BYTE *end = srcEnd - (patternEnd - patternStart);
 
-    for (pos = srcStart; pos <= end; pos++) {
-        s1 = pos - 1;
-        p1 = patternStart - 1;
+    for (BYTE *pos = srcStart; pos <= end; pos++) {
+        const BYTE *s1 = pos - 1;
+        const BYTE *p1 = patternStart - 1;
 
         while (*++s1 == *++p1) {
             if (p1 == patternEnd) {
@@ -22,28 +21,38 @@ __forceinline static BYTE* findPattern(BYTE* srcStart, BYTE* srcEnd, BYTE* patte
     return srcEnd;
 }
 
-__forceinline static BYTE* findPatternInProcessMemory(BYTE* search, BYTE* search_end) {
+__forceinline static BYTE *findPatternInProcessMemory(const BYTE *search, const BYTE *search_end) {
 
     // start searching from the beginning of the process's memory
-    ULONG_PTR baseAddress = (ULONG_PTR) GetModuleHandleA(0);
+    ULONG_PTR baseAddress = reinterpret_cast<ULONG_PTR>(GetModuleHandleA(nullptr));
 
     MEMORY_BASIC_INFORMATION memoryInfo;
-    BYTE* res;
 
-    while (VirtualQuery((void*) baseAddress, &memoryInfo, sizeof(memoryInfo))) {
+    while (VirtualQuery(reinterpret_cast<void *>(baseAddress), &memoryInfo, sizeof(memoryInfo))) {
 
         // skip noncommitted and guard pages, nonreadable or nonexecutable pages
-        if ((memoryInfo.State & MEM_COMMIT) && (memoryInfo.Protect == ((memoryInfo.Protect & ~(PAGE_NOACCESS | PAGE_GUARD)) & (memoryInfo.Protect & (PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY))))) {
+        if (
+            memoryInfo.State & MEM_COMMIT &&
+            memoryInfo.Protect == (
+                (memoryInfo.Protect & ~(PAGE_NOACCESS | PAGE_GUARD)) &
+                (memoryInfo.Protect & (PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY))
+            )
+        ) {
 
-            res = findPattern((BYTE*) memoryInfo.BaseAddress, (BYTE*) memoryInfo.BaseAddress + memoryInfo.RegionSize, search, search_end);
-            if (res != (BYTE*) memoryInfo.BaseAddress + memoryInfo.RegionSize && res != search) {
+            BYTE *res = findPattern(
+                static_cast<BYTE *>(memoryInfo.BaseAddress),
+                static_cast<BYTE *>(memoryInfo.BaseAddress) + memoryInfo.RegionSize,
+                search,
+                search_end
+            );
+            if (res != static_cast<BYTE *>(memoryInfo.BaseAddress) + memoryInfo.RegionSize && res != search) {
                 // found
                 return res;
             }
         }
 
         // move to the next region
-        baseAddress = (ULONG_PTR) ((ULONG_PTR) memoryInfo.BaseAddress + (ULONG_PTR) memoryInfo.RegionSize);
+        baseAddress = reinterpret_cast<ULONG_PTR>(memoryInfo.BaseAddress) + memoryInfo.RegionSize;
     }
 
     // not found
@@ -107,43 +116,43 @@ hostent *WSAAPI Hooked_gethostbyname(const char *name) {
     return gethostbyname(name);
 }
 
-HOOK_TRACE_INFO hHook = { NULL }; // keep track of our hook
+HOOK_TRACE_INFO hHook = {nullptr}; // keep track of our hook
 
-BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+BOOL APIENTRY DllMain(HINSTANCE /*hinstDLL*/, const DWORD fdwReason, LPVOID /*lpvReserved*/) {
 
     if (fdwReason == DLL_PROCESS_ATTACH) {
 
-        NTSTATUS result = LhInstallHook(
+        const NTSTATUS result = LhInstallHook(
             GetProcAddress(GetModuleHandle(TEXT("ws2_32")), "gethostbyname"),
             Hooked_gethostbyname,
-            NULL,
+            nullptr,
             &hHook
         );
         if (FAILED(result)) {
             // Hook could not be installed, see RtlGetLastErrorString() for details
-            MessageBoxW(NULL, L"Failed to hook gethostbyname. Online gameplay might not be possible.", L"Error", MB_OK);
+            MessageBoxW(nullptr, L"Failed to hook gethostbyname. Online gameplay might not be possible.", L"Error", MB_OK);
             return true;
         }
 
-        ULONG ACLEntries[1] = { 0 };
+        ULONG ACLEntries[1] = {};
         LhSetExclusiveACL(ACLEntries, 1, &hHook);
 
-        HANDLE currentProcess = GetCurrentProcess();
+        const HANDLE currentProcess = GetCurrentProcess();
 
-        BYTE search[] = { 0x89, 0x55, 0x88, 0x83, 0x7D, 0x88, 0x08, 0x74, 0x08 };
-        BYTE patch[] = { 0xEB, 0x46, 0x90, 0x90 };
+        const BYTE search[] = {0x89, 0x55, 0x88, 0x83, 0x7D, 0x88, 0x08, 0x74, 0x08};
+        constexpr BYTE patch[] = {0xEB, 0x46, 0x90, 0x90};
 
-        BYTE* addressToModify = findPatternInProcessMemory(search, search + 8);
-        if(addressToModify) {
+        BYTE *addressToModify = findPatternInProcessMemory(search, search + 8);
+        if (addressToModify) {
 
             SIZE_T bytesWritten;
-            bool certPatchSuccessful = WriteProcessMemory(currentProcess, addressToModify + 3, patch, sizeof(patch), &bytesWritten);
-            if(certPatchSuccessful) {
+            const bool certPatchSuccessful = WriteProcessMemory(currentProcess, addressToModify + 3, patch, sizeof(patch), &bytesWritten);
+            if (certPatchSuccessful) {
                 return true;
             }
         }
 
-        MessageBoxW(NULL, L"Failed to patch certificate. Online gameplay might not be possible.", L"Error", MB_OK);
+        MessageBoxW(nullptr, L"Failed to patch certificate. Online gameplay might not be possible.", L"Error", MB_OK);
 
     } else if (fdwReason == DLL_PROCESS_DETACH) {
         LhUninstallHook(&hHook);
