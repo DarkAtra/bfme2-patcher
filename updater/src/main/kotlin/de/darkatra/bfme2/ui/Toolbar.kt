@@ -11,6 +11,7 @@ import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.game.Game
 import de.darkatra.bfme2.game.OptionFileService
 import de.darkatra.bfme2.registry.RegistryService
+import de.darkatra.bfme2.ui.UpdaterModel.State.ErrorDetails
 import kotlin.io.path.exists
 import kotlin.io.path.notExists
 
@@ -131,9 +132,18 @@ fun Toolbar(
                     enabled = state.errorDetails == null,
                     checked = state.hookEnabled,
                     onCheckedChange = { hookEnabled ->
-                        when {
-                            hookEnabled -> RegistryService.setExpansionDebugger(UpdaterContext.applicationHome)
-                            else -> RegistryService.resetExpansionDebugger()
+                        try {
+                            when {
+                                hookEnabled -> RegistryService.setExpansionDebugger(UpdaterContext.applicationHome)
+                                else -> RegistryService.resetExpansionDebugger()
+                            }
+                        } catch (e: Exception) {
+                            updaterModel.setErrorDetails(
+                                ErrorDetails(
+                                    message = "An unexpected error occurred enabling the hook: ${e.message}",
+                                    cause = e
+                                )
+                            )
                         }
                         updaterModel.setHookEnabled(hookEnabled)
                     }
