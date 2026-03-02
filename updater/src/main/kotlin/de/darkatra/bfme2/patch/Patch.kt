@@ -1,5 +1,8 @@
 package de.darkatra.bfme2.patch
 
+import io.goodforgod.graalvm.hint.annotation.ReflectionHint
+
+@ReflectionHint(ReflectionHint.AccessType.ALL_DECLARED_CONSTRUCTORS)
 data class Patch(
     val packets: Set<Packet>,
     val obsoleteFiles: Set<ObsoleteFile>
