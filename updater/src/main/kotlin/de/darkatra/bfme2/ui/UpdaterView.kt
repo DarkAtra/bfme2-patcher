@@ -151,7 +151,7 @@ fun UpdaterView(
                     onClick = {
                         updaterModel.setPatchInProgress(true)
                         patchScope.launch {
-                            runCatching {
+                            try {
                                 PatchService.patch(updaterModel, UpdaterContext.applicationVersion, buildSet {
                                     if (state.hdEditionEnabled) {
                                         add(Feature.HD_EDITION)
@@ -173,7 +173,7 @@ fun UpdaterView(
                                         add(Feature.MOD)
                                     }
                                 })
-                            }.onFailure { e ->
+                            } catch (e: Exception) {
                                 updaterModel.setPatchInProgress(false)
                                 updaterModel.setErrorDetails(
                                     ErrorDetails(

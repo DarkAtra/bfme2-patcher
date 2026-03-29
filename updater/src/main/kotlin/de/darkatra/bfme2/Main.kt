@@ -35,9 +35,19 @@ fun main(args: Array<String>) {
         |Starting Updater with:
         |  applicationVersion: ${UpdaterContext.applicationVersion}
         |  applicationHome: ${UpdaterContext.applicationHome.absolutePathString()}
+        |  args: [${args.joinToString(", ")}]
         |------------------------------
         """.trimMargin()
     )
+
+    try {
+        appMain(args)
+    } catch (e: Exception) {
+        LOGGER.log(Level.SEVERE, "Unexpected error invoking appMain", e)
+    }
+}
+
+private fun appMain(args: Array<String>) {
 
     NativeImageUtils.setupNativeImageEnvironmentIfNecessary()
 
