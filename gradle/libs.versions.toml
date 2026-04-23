@@ -39,4 +39,4 @@ kapt = { id = "org.jetbrains.kotlin.kapt" }
 compose = { id = "org.jetbrains.compose", version.ref = "compose" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 launch4j = { id = "edu.sc.seis.launch4j", version.ref = "launch4j" }
-graalvm-native = { id = "org.graalvm.buildtools.native", version = "0.11.5" }
+graalvm-native = { id = "org.graalvm.buildtools.native", version = "1.1.0" }
