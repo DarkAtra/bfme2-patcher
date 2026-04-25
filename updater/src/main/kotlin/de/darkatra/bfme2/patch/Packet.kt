@@ -2,9 +2,11 @@ package de.darkatra.bfme2.patch
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import io.goodforgod.graalvm.hint.annotation.ReflectionHint
 import java.nio.file.Path
 import java.time.Instant
 
+@ReflectionHint(ReflectionHint.AccessType.ALL_DECLARED_CONSTRUCTORS)
 data class Packet(
     var src: String,
     var dest: String,
