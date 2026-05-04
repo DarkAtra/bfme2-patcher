@@ -2,7 +2,7 @@
 kotlin = "2.3.21"
 compose = "1.10.3"
 kotlin-coroutine = "1.10.2"
-jackson = "2.21.2"
+jackson = "2.21.3"
 bouncycastle = "1.84"
 jna = "5.18.1"
 mslinks = "1.0.6.2"
