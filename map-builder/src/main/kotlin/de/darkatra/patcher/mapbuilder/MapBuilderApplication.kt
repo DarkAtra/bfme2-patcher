@@ -8,10 +8,9 @@ import de.darkatra.bfme2.map.MapFileCompression
 import de.darkatra.bfme2.map.serialization.MapFileReader
 import de.darkatra.bfme2.map.serialization.MapFileWriter
 import de.darkatra.bfme2.map.worldinfo.WorldInfo
+import de.darkatra.bfme2.toWindowsFileTimestamp
 import java.nio.file.Files
 import java.nio.file.Path
-import java.time.Duration
-import java.time.Instant
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.fileSize
@@ -30,7 +29,6 @@ fun main(args: Array<String>) {
 
 object MapBuilderApplication {
 
-    private val ZERO = Instant.parse("1601-01-01T00:00:00Z")
     private val mapFileReader = MapFileReader()
     private val mapFieWriter = MapFileWriter()
 
@@ -93,13 +91,14 @@ object MapBuilderApplication {
                 if (file.name.endsWith(".map")) {
                     println("** Adding map cache entry for: ${editedMapsDir.relativize(file).pathString}")
                     val map = mapFileReader.read(file)
+                    val windowsFileTime = file.getLastModifiedTime().toInstant().toWindowsFileTimestamp()
                     mapCache.add(
                         MapCacheEntry(
                             mapPath = Path.of("maps").resolve(editedMapsDir.relativize(file)).toString(),
                             fileSize = file.fileSize(),
                             fileCRC = calculateCRC(file),
-                            timestampLo = winFileTimeFromInstant(file.getLastModifiedTime().toInstant()).toInt(),
-                            timestampHi = (winFileTimeFromInstant(file.getLastModifiedTime().toInstant()) shr 32).toInt(),
+                            timestampLo = windowsFileTime.lowDateTime,
+                            timestampHi = windowsFileTime.highDateTime,
                             isOfficial = true,
                             isScenarioMP = map.worldInfo["isScenarioMultiplayer"]?.value as Boolean? ?: false,
                             extentMin = Vector3(0f, 0f, 0f),
@@ -158,10 +157,5 @@ object MapBuilderApplication {
         return map.objects.objects.filter { it.typeName == "*Waypoints/Waypoint" }
             .find { it.properties.find { prop -> prop.key.name == "waypointName" }?.value == "Player_${player}_Start" }
             ?.position
-    }
-
-    private fun winFileTimeFromInstant(instant: Instant): Long {
-        val duration: Duration = Duration.between(ZERO, instant)
-        return duration.seconds * 10000000 + duration.nano / 100
     }
 }
