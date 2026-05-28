@@ -6,7 +6,7 @@ jackson = "2.21.3"
 bouncycastle = "1.84"
 jna = "5.18.1"
 mslinks = "1.0.6.2"
-bfme2-modding-utils = "1.6.0"
+bfme2-modding-utils = "1.7.0"
 kotlin-dll-injector = "1.0.27"
 assertj = "3.27.7"
 wiremock = "3.13.2"
@@ -17,6 +17,7 @@ graalvm-hint = "1.2.0"
 compose-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose" }
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlin-coroutine" }
 coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlin-coroutine" }
+bfme2-modding-utils-assetdat = { module = "de.darkatra.bfme2:assetdat", version.ref = "bfme2-modding-utils" }
 bfme2-modding-utils-big = { module = "de.darkatra.bfme2:big", version.ref = "bfme2-modding-utils" }
 bfme2-modding-utils-map = { module = "de.darkatra.bfme2:map", version.ref = "bfme2-modding-utils" }
 jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }

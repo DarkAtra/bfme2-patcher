@@ -8,6 +8,7 @@ pluginManagement {
 }
 
 rootProject.name = "bfme2-patcher"
+include("asset-builder")
 include("game-patcher")
 include("map-builder")
 include("mod-builder")
