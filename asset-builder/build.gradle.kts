@@ -10,9 +10,17 @@ kotlin {
 
 dependencies {
     implementation(libs.bfme2.modding.utils.assetdat)
+    implementation(libs.bfme2.modding.utils.w3d)
+
+    testImplementation(kotlin("test"))
+    testImplementation(libs.assertj)
 }
 
 tasks {
+
+    withType<Test> {
+        useJUnitPlatform()
+    }
 
     withType<Jar> {
         manifest {
