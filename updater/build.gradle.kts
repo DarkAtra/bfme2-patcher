@@ -46,7 +46,6 @@ kotlin {
 
     compilerOptions {
         jvmTarget = JvmTarget.JVM_17
-        freeCompilerArgs.add("-Xcontext-parameters")
     }
 
     sourceSets {

@@ -150,7 +150,7 @@ object PatchService {
                 packets.add(packet)
             }
 
-            ensureActive()
+            this@withContext.ensureActive()
         }
 
         return@withContext Patch(
