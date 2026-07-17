@@ -19,7 +19,7 @@ private const val ASSET_BUILDER_NAME = "bfme2-ep1-mod-assets/asset-builder.bat"
 private const val ASSET_FILE_NAME = "update-builder/bfme2/asset.dat"
 
 fun main(args: Array<String>) {
-    ModBuilderApplication.build("debug" in args)
+    ModBuilderApplication.build("debug" in args, "withAssets" in args)
 }
 
 object ModBuilderApplication {
@@ -27,7 +27,7 @@ object ModBuilderApplication {
     private val bfmeLocationService = BfmeLocationService
     private val excludedDirs = listOf(".git", ".gitignore", ".idea", ENGLISH_TRANSLATION_FILE, GERMAN_TRANSLATION_FILE)
 
-    fun build(debug: Boolean) {
+    fun build(debug: Boolean, withAssets: Boolean) {
 
         println("Building mod archives...")
 
@@ -59,30 +59,35 @@ object ModBuilderApplication {
 
         println("Success! Output: ${outFile.pathString}")
 
-        println("Building asset.dat...")
-
         val assetBuilder = Path.of(ASSET_BUILDER_NAME)
         val assetBuilderWorkingDirectory = assetBuilder.parent
-        val assetBuilderProcess = ProcessUtils.runBatchFile(assetBuilder, assetBuilderWorkingDirectory, debug)
-        println("* AssetBuilderProcess started: ${assetBuilderProcess.pid()}")
-        val assetBuilderExitCode = assetBuilderProcess.waitFor()
-        if (assetBuilderExitCode != 0) {
-            throw IllegalStateException("Could not build asset.dat. asset-builder returned with exit code: $assetBuilderExitCode")
-        }
 
-        println("Successfully built asset.dat.")
+        if (withAssets) {
+            println("Building asset.dat...")
+
+            val assetBuilderProcess = ProcessUtils.runBatchFile(assetBuilder, assetBuilderWorkingDirectory, debug)
+            println("* AssetBuilderProcess started: ${assetBuilderProcess.pid()}")
+            val assetBuilderExitCode = assetBuilderProcess.waitFor()
+            if (assetBuilderExitCode != 0) {
+                throw IllegalStateException("Could not build asset.dat. asset-builder returned with exit code: $assetBuilderExitCode")
+            }
+
+            println("Successfully built asset.dat.")
+        }
 
         println("Installing mod...")
         val bfme2HomeDir = bfmeLocationService.findBfME2HomeDirectory().orElseThrow()
         val rotwkHomeDir = bfmeLocationService.findBfME2RotWKHomeDirectory().orElseThrow()
 
-        // copy asset.dat from asset-builder to update-builder and local game directory
-        val assetBuilderOutput = assetBuilderWorkingDirectory.resolve("asset.dat")
-        val assetOutputLocation = Path.of(ASSET_FILE_NAME)
-        assetBuilderOutput.copyTo(assetOutputLocation, true)
-        val assetLocalLocation = bfme2HomeDir.resolve("asset.dat")
-        assetBuilderOutput.copyTo(assetLocalLocation, true)
-        println("* Moved asset.dat to ${assetOutputLocation.pathString} and ${assetLocalLocation.pathString}")
+        if (withAssets) {
+            // copy asset.dat from asset-builder to update-builder and local game directory
+            val assetBuilderOutput = assetBuilderWorkingDirectory.resolve("asset.dat")
+            val assetOutputLocation = Path.of(ASSET_FILE_NAME)
+            assetBuilderOutput.copyTo(assetOutputLocation, true)
+            val assetLocalLocation = bfme2HomeDir.resolve("asset.dat")
+            assetBuilderOutput.copyTo(assetLocalLocation, true)
+            println("* Moved asset.dat to ${assetOutputLocation.pathString} and ${assetLocalLocation.pathString}")
+        }
 
         // copy mod.big
         val modFinalLocation = rotwkHomeDir.resolve("!mod.big")
