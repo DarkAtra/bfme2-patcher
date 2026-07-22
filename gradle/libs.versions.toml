@@ -6,7 +6,7 @@ jackson = "2.22.1"
 bouncycastle = "1.85"
 jna = "5.19.1"
 mslinks = "1.0.6.2"
-bfme2-modding-utils = "1.8.6"
+bfme2-modding-utils = "1.8.7"
 kotlin-dll-injector = "1.0.29"
 assertj = "3.27.7"
 wiremock = "3.13.2"
@@ -41,4 +41,4 @@ kapt = { id = "org.jetbrains.kotlin.kapt" }
 compose = { id = "org.jetbrains.compose", version.ref = "compose" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 launch4j = { id = "edu.sc.seis.launch4j", version.ref = "launch4j" }
-graalvm-native = { id = "org.graalvm.buildtools.native", version = "1.1.4" }
+graalvm-native = { id = "org.graalvm.buildtools.native", version = "1.1.5" }
