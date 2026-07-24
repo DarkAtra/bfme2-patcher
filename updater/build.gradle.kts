@@ -18,7 +18,6 @@ dependencies {
     implementation(libs.coroutines.swing)
     implementation(libs.jackson.kotlin.module)
     implementation(libs.jackson.datatype.jsr310)
-    implementation(libs.bouncycastle)
     implementation(libs.jna.platform)
     implementation(libs.mslinks)
     implementation(libs.kotlin.dll.injector)
@@ -107,7 +106,7 @@ compose.desktop {
 afterEvaluate {
     tasks {
         withType<DefaultLaunch4jTask> {
-            val packageUberJarForCurrentOS by getting
+            val packageUberJarForCurrentOS = getByName("packageUberJarForCurrentOS")
             dependsOn(packageUberJarForCurrentOS)
             setJarTask(packageUberJarForCurrentOS)
 

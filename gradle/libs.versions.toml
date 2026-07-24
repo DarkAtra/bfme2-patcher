@@ -3,7 +3,6 @@ kotlin = "2.4.10"
 compose = "1.11.1"
 kotlin-coroutine = "1.11.0"
 jackson = "2.22.1"
-bouncycastle = "1.85"
 jna = "5.19.1"
 mslinks = "1.0.6.2"
 bfme2-modding-utils = "1.8.7"
@@ -24,7 +23,6 @@ bfme2-modding-utils-w3d = { module = "de.darkatra.bfme2:w3d", version.ref = "bfm
 jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 jackson-kotlin-module = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
-bouncycastle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 mslinks = { module = "com.github.vatbub:mslinks", version.ref = "mslinks" }
 kotlin-dll-injector = { module = "de.darkatra.injector:kotlin-dll-injector-common", version.ref = "kotlin-dll-injector" }
 

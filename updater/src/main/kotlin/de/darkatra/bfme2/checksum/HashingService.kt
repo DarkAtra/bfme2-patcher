@@ -3,15 +3,15 @@ package de.darkatra.bfme2.checksum
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
-import org.bouncycastle.jcajce.provider.digest.SHA3
 import java.io.InputStream
+import java.security.MessageDigest
 import java.util.Base64
 
 object HashingService {
 
     suspend fun calculateSha3Checksum(inputStream: InputStream): String = withContext(Dispatchers.IO) {
 
-        val sha3Digest: SHA3.Digest256 = SHA3.Digest256()
+        val sha3Digest = MessageDigest.getInstance("SHA3-256")
 
         inputStream.buffered().use { bufferedInputStream ->
 

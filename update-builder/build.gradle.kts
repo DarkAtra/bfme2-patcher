@@ -12,7 +12,6 @@ dependencies {
     implementation(libs.bfme2.modding.utils.big)
     implementation(libs.jackson.kotlin.module)
     implementation(libs.jackson.datatype.jsr310)
-    implementation(libs.bouncycastle)
 }
 
 tasks {

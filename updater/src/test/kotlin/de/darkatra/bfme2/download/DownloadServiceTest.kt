@@ -6,6 +6,8 @@ import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo
 import com.github.tomakehurst.wiremock.junit5.WireMockTest
 import de.darkatra.bfme2.patch.Compression
+import de.darkatra.bfme2.patch.Feature
+import de.darkatra.bfme2.patch.Packet
 import de.darkatra.bfme2.randomString
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
@@ -15,6 +17,7 @@ import java.io.ByteArrayOutputStream
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import java.time.Instant
 import java.util.zip.GZIPOutputStream
 import kotlin.io.path.readText
 
@@ -58,6 +61,52 @@ internal class DownloadServiceTest {
         )
 
         assertThat(content).containsEntry("name", "Testi")
+    }
+
+    @Test
+    fun `should download packet content from uri with java time and compression conversion`(wireMockRuntimeInfo: WireMockRuntimeInfo) {
+
+        wireMockRuntimeInfo.wireMock.register(
+            get("/packets.json").willReturn(
+                ok().withBody(
+                    $$"""
+                    [
+                      {
+                        "src": "${PATCHER_HOME}/asset.big",
+                        "dest": "${ROTWK_HOME}/asset.big",
+                        "packetSize": 1024,
+                        "compressedSize": 512,
+                        "dateTime": "2026-07-24T19:51:00Z",
+                        "checksum": "checksum",
+                        "backupExisting": true,
+                        "compression": "ZIP",
+                        "feature": "PATCH_202"
+                      }
+                    ]
+                    """.trimIndent()
+                )
+            )
+        )
+
+        val port = wireMockRuntimeInfo.httpPort
+
+        val content: List<Packet> = downloadService.getContent(
+            url = URI.create("http://localhost:$port/packets.json").toURL()
+        )
+
+        assertThat(content).containsExactly(
+            Packet(
+                src = $$"${PATCHER_HOME}/asset.big",
+                dest = $$"${ROTWK_HOME}/asset.big",
+                size = 1024,
+                compressedSize = 512,
+                dateTime = Instant.parse("2026-07-24T19:51:00Z"),
+                checksum = "checksum",
+                backupExisting = true,
+                compression = Compression.GZIP,
+                feature = Feature.PATCH_202
+            )
+        )
     }
 
     @Test

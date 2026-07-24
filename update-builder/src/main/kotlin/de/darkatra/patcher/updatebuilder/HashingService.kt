@@ -1,9 +1,9 @@
 package de.darkatra.patcher.updatebuilder
 
-import org.bouncycastle.jcajce.provider.digest.SHA3
 import java.io.File
 import java.io.FileInputStream
 import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.util.Base64
 import java.util.Optional
 
@@ -11,7 +11,7 @@ object HashingService {
 
     fun getSHA3Checksum(file: File): Optional<String> {
         if (file.isFile) {
-            val sha3Digest = SHA3.Digest256()
+            val sha3Digest = MessageDigest.getInstance("SHA3-256")
             FileInputStream(file).use { fileInputStream ->
                 val buffer = ByteArray(DEFAULT_BUFFER_SIZE) // 50 MB
                 var currentChar: Int
