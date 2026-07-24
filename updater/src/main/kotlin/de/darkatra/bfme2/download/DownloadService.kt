@@ -1,14 +1,10 @@
 package de.darkatra.bfme2.download
 
-import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import de.darkatra.bfme2.patch.Compression
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import java.net.URL
 import java.nio.file.Path
 import java.util.function.Consumer
@@ -20,18 +16,16 @@ import kotlin.io.path.pathString
 
 object DownloadService {
 
-    private val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
+    @PublishedApi
+    internal val json = Json {
+        ignoreUnknownKeys = true
+    }
 
     inline fun <reified T : Any> getContent(url: URL): T {
 
-        return getContent(url, jacksonTypeRef<T>())
-    }
-
-    fun <T : Any> getContent(url: URL, typeOfT: TypeReference<T>): T {
-
         val content = url.openStream().bufferedReader().use { it.readText() }
 
-        return objectMapper.readValue(content, typeOfT)
+        return json.decodeFromString<T>(content)
     }
 
     suspend fun download(src: URL, dest: Path, compression: Compression, progressListener: Consumer<DownloadProgress>? = null) = withContext(Dispatchers.IO) {

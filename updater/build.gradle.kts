@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.launch4j)
@@ -16,8 +17,7 @@ dependencies {
     implementation(libs.compose.resources)
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.swing)
-    implementation(libs.jackson.kotlin.module)
-    implementation(libs.jackson.datatype.jsr310)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.jna.platform)
     implementation(libs.mslinks)
     implementation(libs.kotlin.dll.injector)

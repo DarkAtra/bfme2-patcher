@@ -1,16 +1,23 @@
 package de.darkatra.bfme2.patch
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+
+@Serializable
 data class Patch(
     val packets: Set<Packet>,
     val obsoleteFiles: Set<ObsoleteFile>
 ) : ContextAware {
 
+    @Transient
     val size: Long = packets.sumOf { packet -> packet.size }
+
+    @Transient
     val compressedSize: Long = packets.sumOf { packet -> packet.compressedSize }
 
     /**
      * Applies the given [Context] to the [Patch], replacing placeholders of both [Packets][Packet] and [ObsoleteFiles][ObsoleteFile] with their actual value.
-     * Ideally this operation should only be performed once per [Patch].
+     * Ideally, this operation should only be performed once per [Patch].
      *
      * @param context the [Context] containing values for placeholders
      */

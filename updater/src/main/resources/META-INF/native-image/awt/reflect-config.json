@@ -1,17 +1,5 @@
 [
     {
-        "name": "[Lcom.fasterxml.jackson.databind.deser.Deserializers;"
-    },
-    {
-        "name": "[Lcom.fasterxml.jackson.databind.deser.KeyDeserializers;"
-    },
-    {
-        "name": "[Lcom.fasterxml.jackson.databind.deser.ValueInstantiators;"
-    },
-    {
-        "name": "[Lcom.fasterxml.jackson.databind.ser.Serializers;"
-    },
-    {
         "name": "android.os.Build"
     },
     {
@@ -74,15 +62,6 @@
                     "java.awt.AWTEvent",
                     "java.awt.AWTEvent"
                 ]
-            }
-        ]
-    },
-    {
-        "name": "com.fasterxml.jackson.databind.ext.Java7SupportImpl",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": []
             }
         ]
     },

@@ -1,8 +1,8 @@
 package de.darkatra.bfme2.persistence
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import kotlinx.serialization.Serializable
 
-@JsonIgnoreProperties(ignoreUnknown = true)
+@Serializable
 data class PersistentState(
     val hdEditionEnabled: Boolean = false,
     val timerEnabled: Boolean = false,

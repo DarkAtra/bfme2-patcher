@@ -1,27 +1,28 @@
 package de.darkatra.bfme2.patch
 
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import java.nio.file.Path
 import java.time.Instant
 
+@Serializable
 data class Packet(
     var src: String,
     var dest: String,
-    @param:JsonProperty("packetSize")
+    @SerialName("packetSize")
     val size: Long,
     val compressedSize: Long,
+    @Serializable(with = InstantSerde::class)
     val dateTime: Instant,
     val checksum: String,
     val backupExisting: Boolean,
-    @param:JsonDeserialize(converter = CompressionDeserializer::class)
     val compression: Compression,
     val feature: Feature? = null
 ) : ContextAware {
 
     /**
      * Applies the given [Context] to the [Packet], replacing placeholders with their actual value.
-     * Ideally this operation should only be performed once per [Packet].
+     * Ideally, this operation should only be performed once per [Packet].
      *
      * @param context the [Context] containing values for placeholders
      */
