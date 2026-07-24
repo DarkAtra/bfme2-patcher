@@ -178,10 +178,15 @@ object PatchService {
     }
 
     /**
-     * This is required so that the game doesn't ask you to install the latest official patch in order to play online.
+     * This is required so that the game doesn't ask you to install the latest official patch to play online.
      * The patcher already takes care of installing it, and now it also updates the appropriate registry key.
      */
     private fun updateRegistryVersionIfNecessary() {
+
+        if (!UpdaterContext.isRunningAsJar()) {
+            LOGGER.fine("Not updating registry since the updater is running in dev mode.")
+            return
+        }
 
         val latestOfficialPatchVersion = 0x20001
         if (RegistryService.getExpansionVersion() == latestOfficialPatchVersion) {
@@ -199,6 +204,11 @@ object PatchService {
      * This is required so that the game launches with Windows 11 24H2.
      */
     private fun configureCompatModeIfNecessary() {
+
+        if (!UpdaterContext.isRunningAsJar()) {
+            LOGGER.fine("Not configuring compat mode since the updater is running in dev mode.")
+            return
+        }
 
         val expansionCompatMode = "~ WINXPSP3"
         if (RegistryService.getExpansionCompatMode() == expansionCompatMode) {
