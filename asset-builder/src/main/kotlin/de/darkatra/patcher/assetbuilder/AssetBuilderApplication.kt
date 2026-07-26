@@ -1,8 +1,5 @@
-@file:OptIn(ExperimentalApi::class)
-
 package de.darkatra.patcher.assetbuilder
 
-import de.darkatra.bfme2.ExperimentalApi
 import de.darkatra.bfme2.assetdat.AssetDatFileReader
 import de.darkatra.bfme2.assetdat.AssetDatFileWriter
 import de.darkatra.bfme2.assetdat.model.Asset
