@@ -10,7 +10,9 @@ import androidx.compose.ui.window.MenuBar
 import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.game.Game
 import de.darkatra.bfme2.game.OptionFileService
+import de.darkatra.bfme2.patch.PatchConstants
 import de.darkatra.bfme2.registry.RegistryService
+import java.awt.Desktop
 import kotlin.io.path.exists
 import kotlin.io.path.notExists
 
@@ -149,7 +151,14 @@ fun Toolbar(
             }
 
             Menu(text = "Version") {
-                Item(text = "Version ${UpdaterContext.applicationVersion}", onClick = {})
+                Item(text = "Version ${UpdaterContext.applicationVersion}", onClick = {
+                    if (Desktop.isDesktopSupported()) {
+                        val desktop = Desktop.getDesktop()
+                        if (desktop.isSupported(Desktop.Action.BROWSE)) {
+                            desktop.browse(PatchConstants.SOURCE_URL)
+                        }
+                    }
+                })
                 Item(
                     text = "Check Updates",
                     enabled = state.errorDetails == null,

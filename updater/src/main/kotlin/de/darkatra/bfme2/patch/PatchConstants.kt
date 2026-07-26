@@ -1,6 +1,10 @@
 package de.darkatra.bfme2.patch
 
+import java.net.URI
+
 object PatchConstants {
+    val SOURCE_URL: URI = URI.create("https://github.com/DarkAtra/bfme2-patcher/commits/main/")
+
     const val SERVER_URL = "https://darkatra.de"
     const val UPDATER_URL = "$SERVER_URL/bfmemod2/updater.exe"
     const val UPDATER_ICON_URL = "$SERVER_URL/bfmemod2/icon.ico"
