@@ -1,12 +1,11 @@
 allprojects {
     group = "de.darkatra.bfme2"
-    version = "0.33.0"
+    version = "0.34.0"
 
     repositories {
         mavenCentral()
         maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
         google()
-        mavenLocal()
     }
 }
 

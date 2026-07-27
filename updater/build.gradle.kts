@@ -1,3 +1,4 @@
+import de.darkatra.femtojar.ReencodeJarTask
 import edu.sc.seis.launch4j.tasks.DefaultLaunch4jTask
 import org.gradle.jvm.tasks.Jar
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -10,6 +11,7 @@ plugins {
     alias(libs.plugins.launch4j)
     alias(libs.plugins.kapt)
     alias(libs.plugins.graalvm.native)
+    alias(libs.plugins.femtojar)
 }
 
 dependencies {
@@ -105,16 +107,29 @@ compose.desktop {
 }
 
 afterEvaluate {
-    tasks {
-        withType<DefaultLaunch4jTask> {
-            val packageFatJarStep = getByName("packageUberJarForCurrentOS")
-            dependsOn(packageFatJarStep)
-            setJarTask(packageFatJarStep)
 
-            outfile.value("${project.name}.exe")
-            icon.value("$projectDir/icon.ico")
-            manifest.value("$projectDir/launch4j.manifest")
-            jreMinVersion.value("17")
-        }
+    val packageFatJarTask = tasks.getByName<Jar>("packageUberJarForCurrentOS")
+
+    val fatJarFile = packageFatJarTask.archiveFile.get().asFile
+    val compressedJarFile = fatJarFile.resolveSibling("${fatJarFile.nameWithoutExtension}-compressed.${fatJarFile.extension}")
+
+    femtojar {
+        `in` = fatJarFile.absolutePath
+        out = compressedJarFile.absolutePath
+    }
+
+    val reencodeJarTask = tasks.named<ReencodeJarTask>("reencodeJar") {
+        dependsOn(packageFatJarTask)
+    }
+
+    tasks.withType<DefaultLaunch4jTask> {
+        dependsOn(reencodeJarTask)
+        setJarFiles(files(reencodeJarTask.flatMap { it.outputFile }))
+        mainClassName.value(femtojar.mainClass.get())
+
+        outfile.value("${project.name}.exe")
+        icon.value("$projectDir/icon.ico")
+        manifest.value("$projectDir/launch4j.manifest")
+        jreMinVersion.value("17")
     }
 }
