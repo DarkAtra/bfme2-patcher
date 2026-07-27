@@ -96,6 +96,7 @@ tasks {
 compose.desktop {
     application {
         mainClass = "de.darkatra.bfme2.MainKt"
+
         nativeDistributions {
             packageName = "updater"
             packageVersion = "${project.version}"
@@ -106,9 +107,9 @@ compose.desktop {
 afterEvaluate {
     tasks {
         withType<DefaultLaunch4jTask> {
-            val packageUberJarForCurrentOS = getByName("packageUberJarForCurrentOS")
-            dependsOn(packageUberJarForCurrentOS)
-            setJarTask(packageUberJarForCurrentOS)
+            val packageFatJarStep = getByName("packageUberJarForCurrentOS")
+            dependsOn(packageFatJarStep)
+            setJarTask(packageFatJarStep)
 
             outfile.value("${project.name}.exe")
             icon.value("$projectDir/icon.ico")
