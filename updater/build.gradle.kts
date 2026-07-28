@@ -125,7 +125,7 @@ afterEvaluate {
     tasks.withType<DefaultLaunch4jTask> {
         dependsOn(reencodeJarTask)
         setJarFiles(files(reencodeJarTask.flatMap { it.outputFile }))
-        mainClassName.value(femtojar.mainClass.get())
+        mainClassName.assign(femtojar.mainClass)
 
         outfile.value("${project.name}.exe")
         icon.value("$projectDir/icon.ico")
