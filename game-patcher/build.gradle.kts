@@ -1,5 +1,5 @@
 plugins {
-    `cpp-library`
+    id("cpp-library")
 }
 
 library {
@@ -9,7 +9,15 @@ library {
 
     tasks {
         withType<LinkSharedLibrary> {
-            libs.from("${projectDir}/libs/EasyHook32.lib", "${projectDir}/libs/user32.lib", "${projectDir}/libs/WS2_32.Lib")
+            libs.from(
+                "${projectDir}/libs/EasyHook32.lib",
+                "${projectDir}/libs/user32.lib",
+                "${projectDir}/libs/WS2_32.Lib"
+            )
         }
     }
+}
+
+tasks.named("build") {
+    dependsOn("assembleRelease")
 }

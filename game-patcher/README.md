@@ -6,15 +6,14 @@
 gradlew clean build
 ```
 
-This will generate a `game-patcher.dll` file in `build/lib/main/debug`. The file needs to be injected into the game process.
+This will generate a `game-patcher.dll` file in `build/lib/main/release`. The file needs to be injected into the game process.
 
-The `EasyHook32.lib` comes from [here](https://easyhook.github.io/tutorials/nativemanuallyaddref.html), `user32.lib` and `WS2_32.Lib` come from the windows dev
-kit 10.0.22000.0 (`C:\Program Files (x86)\Windows Kits\10\Lib\10.0.22000.0\um\x86`).
+The `EasyHook32.lib` comes from [here](https://easyhook.github.io/tutorials/nativemanuallyaddref.html), `user32.lib` and `WS2_32.Lib` come from the Windows Dev
+Kit 10.0.22000.0 (`C:\Program Files (x86)\Windows Kits\10\Lib\10.0.22000.0\um\x86`).
 
 ## Patches
 
-Uses [EasyHook](https://easyhook.github.io/) to patch the `gethostbyname` function and modifies the result for the following GameSpy and EA
-addresses:
+Uses [EasyHook](https://easyhook.github.io/) to patch the `gethostbyname` function and modifies the result for the following GameSpy and EA addresses:
 
 - `gpcm.gamespy.com` -> `gpcm.server.cnc-online.net`
 - `peerchat.gamespy.com` -> `peerchat.server.cnc-online.net`
