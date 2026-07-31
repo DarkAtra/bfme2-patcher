@@ -63,7 +63,7 @@ graalvmNative {
         all {
             useFatJar = true
             javaLauncher = javaToolchains.launcherFor {
-                languageVersion = JavaLanguageVersion.of(21)
+                languageVersion = JavaLanguageVersion.of(25)
                 vendor = JvmVendorSpec.GRAAL_VM
             }
         }
