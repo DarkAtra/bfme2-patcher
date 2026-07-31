@@ -18,7 +18,6 @@ import kotlin.io.path.absolutePathString
 import kotlin.io.path.copyTo
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
-import kotlin.io.path.inputStream
 import kotlin.io.path.moveTo
 
 object SelfUpdateService {
@@ -117,10 +116,15 @@ object SelfUpdateService {
             return@withContext false
         }
 
-        val latestUpdaterChecksum: String = HashingService.calculateSha3Checksum(URI.create(PatchConstants.UPDATER_URL).toURL().openStream())
-        val currentUpdaterChecksum: String = HashingService.calculateSha3Checksum(UpdaterContext.applicationHome.inputStream())
+        val updaterUrl = URI.create(PatchConstants.UPDATER_URL).toURL()
 
-        return@withContext currentUpdaterChecksum != latestUpdaterChecksum
+        val latestEtag = DownloadService.getETag(updaterUrl)
+        val currentEtag = HashingService.calculateEtag(UpdaterContext.applicationHome)
+
+        val isOutdated = latestEtag.fileSize != currentEtag.fileSize || latestEtag.lastModified > currentEtag.lastModified
+        LOGGER.fine("Latest E-Tag: '$latestEtag', Current E-Tag: '$currentEtag', isOutdated: $isOutdated")
+
+        return@withContext isOutdated
     }
 
     suspend fun downloadLatestUpdaterVersion() = withContext(Dispatchers.IO) {

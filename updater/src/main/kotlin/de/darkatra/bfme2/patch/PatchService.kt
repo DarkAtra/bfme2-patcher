@@ -17,7 +17,6 @@ import java.time.Instant
 import kotlin.io.path.deleteExisting
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
-import kotlin.io.path.inputStream
 import kotlin.io.path.moveTo
 import kotlin.io.path.name
 import kotlin.io.path.pathString
@@ -111,7 +110,7 @@ object PatchService {
 
             ensureActive()
 
-            if (packet.checksum != HashingService.calculateSha3Checksum(dest.inputStream())) {
+            if (packet.checksum != HashingService.calculateSha3Checksum(dest)) {
                 error("The checksum of local file '${dest.pathString}' does not match the servers checksum.")
             }
 
@@ -146,7 +145,7 @@ object PatchService {
 
             val destPath = Path.of(packet.dest)
 
-            if (!destPath.exists() || HashingService.calculateSha3Checksum(destPath.inputStream()) != packet.checksum) {
+            if (!destPath.exists() || HashingService.calculateSha3Checksum(destPath) != packet.checksum) {
                 packets.add(packet)
             }
 

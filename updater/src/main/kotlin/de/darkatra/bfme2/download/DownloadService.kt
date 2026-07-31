@@ -1,12 +1,15 @@
 package de.darkatra.bfme2.download
 
 import de.darkatra.bfme2.patch.Compression
+import de.darkatra.bfme2.patch.ETag
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.file.Path
+import java.time.Instant
 import java.util.function.Consumer
 import java.util.zip.GZIPInputStream
 import kotlin.io.path.exists
@@ -62,6 +65,32 @@ object DownloadService {
                     networkInputStream.resetCount()
                 }
             }
+        }
+    }
+
+    suspend fun getETag(url: URL): ETag = withContext(Dispatchers.IO) {
+
+        val connection = url.openConnection()
+        if (connection !is HttpURLConnection) {
+            error("Could not get etag for '$url'.")
+        }
+
+        try {
+            connection.requestMethod = "HEAD"
+            connection.connect()
+
+            val size = connection.contentLengthLong
+            val modified = connection.lastModified
+
+            check(size >= 0) { "Missing Content-Length while getting E-Tag for '$url'" }
+            check(modified > 0) { "Missing Last-Modified while getting E-Tag for '$url'" }
+
+            return@withContext ETag(
+                fileSize = size,
+                lastModified = Instant.ofEpochMilli(modified)
+            )
+        } finally {
+            connection.disconnect()
         }
     }
 
