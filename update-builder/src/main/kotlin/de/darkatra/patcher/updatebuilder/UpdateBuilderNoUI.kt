@@ -13,7 +13,6 @@ import java.time.Instant
 import java.util.stream.Collectors
 import java.util.zip.GZIPOutputStream
 import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.copyTo
 import kotlin.io.path.createParentDirectories
@@ -39,6 +38,7 @@ object UpdateBuilderNoUI {
     private val filesRequireBackup = setOf("asset.dat", "game.dat")
     private val rotwk202SourcePath = Path.of("./rotwk-2.02-source/")
     private val rotwk202OutputPath = Path.of(Directory.ROTWK_BASELINE_DIR_NAME.dirName).resolve("__patch202.big")
+    private val rotwk202EnglishLangOutputPath = Path.of(Directory.ROTWK_BASELINE_DIR_NAME.dirName).resolve("lang/englishstrings202.big")
     private val hashingService = HashingService
 
     @OptIn(ExperimentalPathApi::class)
@@ -55,14 +55,14 @@ object UpdateBuilderNoUI {
             else -> null
         }
 
-        println("Applying obsolete files from: ${obsoleteFilesPath.toFile().path}")
+        println("Applying obsolete files from: ${obsoleteFilesPath.pathString}")
         val obsoleteFiles: Set<ObsoleteFile> = objectMapper.readValue(obsoleteFilesPath.toFile(), Array<ObsoleteFile>::class.java).toSet()
 
-        println("Applying features from: ${featuresPath.toFile().path}")
+        println("Applying features from: ${featuresPath.pathString}")
         val featureFiles: Set<FeatureFile> = objectMapper.readValue(featuresPath.toFile(), Array<FeatureFile>::class.java).toSet()
 
         if (!skipBaselineBuild) {
-            println("Building '__patch202.big' from: ${rotwk202SourcePath.toFile().path}")
+            println("Building '__patch202.big' from: ${rotwk202SourcePath.pathString}")
             rotwk202OutputPath.deleteIfExists()
 
             val bigArchive = BigArchive(BigArchiveVersion.BIG_F, rotwk202OutputPath)
@@ -77,10 +77,26 @@ object UpdateBuilderNoUI {
                 }
             }
 
-            println("* Writing '__patch202.big' to: ${rotwk202OutputPath.toFile().path}")
+            println("* Writing '__patch202.big' to: ${rotwk202OutputPath.pathString}")
             bigArchive.writeToDisk()
+
+            println("Building 'englishstrings202.big' from: ${rotwk202EnglishLangOutputPath.pathString}")
+            rotwk202EnglishLangOutputPath.deleteIfExists()
+
+            val englishLangFile = rotwk202SourcePath.resolve("lang/data/lotr.str")
+            if (englishLangFile.exists()) {
+                val englishLangBigArchive = BigArchive(BigArchiveVersion.BIG_F, rotwk202EnglishLangOutputPath)
+                englishLangBigArchive.createEntry("data/lotr.str").outputStream().use {
+                    it.write(Files.readAllBytes(englishLangFile))
+                }
+
+                println("* Writing 'englishstrings202.big' to: ${rotwk202OutputPath.resolve("lang").pathString}")
+                englishLangBigArchive.writeToDisk()
+            } else {
+                println("* No language file found. Skipping building 'englishstrings202.big'.")
+            }
         } else {
-            println("Skip building '__patch202.big' from: ${rotwk202SourcePath.toFile().path}")
+            println("Skip building '__patch202.big' and 'englishstrings202.big' from: ${rotwk202SourcePath.pathString}")
         }
 
         println("Clearing './output-diff/'...")
@@ -146,7 +162,6 @@ object UpdateBuilderNoUI {
         println("Success! Took: ${(endTime - startTime) / 1000000}ms")
     }
 
-    @OptIn(ExperimentalEncodingApi::class)
     private fun addFilesToPatch(packets: MutableSet<Packet>, lastPatch: Patch?, directory: Directory, filePath: Path, featureFiles: Set<FeatureFile>): Boolean {
 
         // creating the archive takes a lot of time, check if it's really necessary by comparing checksums
