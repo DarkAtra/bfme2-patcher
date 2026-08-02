@@ -70,14 +70,14 @@ fun Toolbar(
             }
 
             Menu(text = "Game Settings") {
-                CheckboxItem(
-                    text = "HD Edition",
-                    enabled = !state.patchInProgress && state.errorDetails == null,
-                    checked = state.hdEditionEnabled,
-                    onCheckedChange = { hdEditionEnabled ->
-                        updaterModel.setHdEditionEnabled(hdEditionEnabled)
-                    }
-                )
+                // CheckboxItem(
+                //     text = "HD Edition",
+                //     enabled = !state.patchInProgress && state.errorDetails == null,
+                //     checked = state.hdEditionEnabled,
+                //     onCheckedChange = { hdEditionEnabled ->
+                //         updaterModel.setHdEditionEnabled(hdEditionEnabled)
+                //     }
+                // )
                 CheckboxItem(
                     text = "Timer",
                     enabled = !state.patchInProgress && state.errorDetails == null,

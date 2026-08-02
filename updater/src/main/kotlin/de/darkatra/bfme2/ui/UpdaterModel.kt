@@ -26,7 +26,8 @@ class UpdaterModel : PatchProgressListener {
         configureLogLevel(it.debugModeEnabled)
         MutableStateFlow(
             State(
-                hdEditionEnabled = it.hdEditionEnabled,
+                // FIXME: enable when HDEdition is fixed
+                hdEditionEnabled = false,// it.hdEditionEnabled,
                 timerEnabled = it.timerEnabled,
                 skipIntroEnabled = it.skipIntroEnabled,
                 newMusicEnabled = it.newMusicEnabled,
