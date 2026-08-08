@@ -15,8 +15,8 @@ import androidx.compose.ui.layout.ContentScale
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
-import java.time.Duration
 import kotlin.random.Random
+import kotlin.time.Duration
 
 @Composable
 fun FadingBackground(
@@ -39,7 +39,9 @@ fun FadingBackground(
     Box(modifier = Modifier.fillMaxSize()) {
         Crossfade(
             targetState = images[currentImage],
-            animationSpec = tween(transitionDuration.toMillis().toInt())
+            animationSpec = tween(
+                durationMillis = transitionDuration.inWholeMilliseconds.toInt()
+            )
         ) { image ->
             Image(
                 painter = painterResource(image),
@@ -55,7 +57,7 @@ fun FadingBackground(
     }
 
     LaunchedEffect(currentImage) {
-        delay(transitionDelay.toMillis())
+        delay(transitionDelay)
         setCurrentImage((currentImage + 1) % images.size)
     }
 }

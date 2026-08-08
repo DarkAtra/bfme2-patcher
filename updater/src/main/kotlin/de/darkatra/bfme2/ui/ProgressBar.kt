@@ -48,9 +48,11 @@ fun ProgressBar(
             )
         }
 
-        Text(text = text,
+        Text(
+            text = text,
             fontSize = 15.sp,
             fontWeight = FontWeight.W400,
-            modifier = Modifier.fillMaxHeight().align(Alignment.Center).wrapContentHeight(Alignment.CenterVertically))
+            modifier = Modifier.fillMaxHeight().align(Alignment.Center).wrapContentHeight(Alignment.CenterVertically)
+        )
     }
 }

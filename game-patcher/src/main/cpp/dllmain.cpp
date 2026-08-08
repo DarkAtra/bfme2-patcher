@@ -63,8 +63,6 @@ __forceinline static BYTE *findPatternInProcessMemory(const BYTE *search, const 
 // hostent *WSAAPI gethostbyname(
 //   const char *name
 // );
-hostent *WSAAPI Hooked_gethostbyname(const char *name);
-
 hostent *WSAAPI Hooked_gethostbyname(const char *name) {
 
     if (strcmp("gpcm.gamespy.com", name) == 0) {

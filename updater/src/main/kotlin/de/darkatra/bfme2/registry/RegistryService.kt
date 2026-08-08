@@ -13,11 +13,13 @@ import io.goodforgod.graalvm.hint.annotation.ReflectionHint
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 
-@ReflectionHint(types = [
-    HKEY::class,
-    HKEYByReference::class,
-    IntByReference::class,
-])
+@ReflectionHint(
+    types = [
+        HKEY::class,
+        HKEYByReference::class,
+        IntByReference::class,
+    ]
+)
 @DynamicProxyHint(
     DynamicProxyHint.Configuration(interfaces = [Advapi32::class])
 )
@@ -65,10 +67,8 @@ object RegistryService {
     }
 
     fun hasExpansionDebugger(): Boolean {
-        if (!Advapi32Util.registryValueExists(HKEY_LOCAL_MACHINE, HOOK_REGISTRY_KEY, "Debugger")) {
-            return false
-        }
-        return Advapi32Util.registryGetStringValue(HKEY_LOCAL_MACHINE, HOOK_REGISTRY_KEY, "Debugger") != ""
+        return Advapi32Util.registryValueExists(HKEY_LOCAL_MACHINE, HOOK_REGISTRY_KEY, "Debugger")
+            && Advapi32Util.registryGetStringValue(HKEY_LOCAL_MACHINE, HOOK_REGISTRY_KEY, "Debugger") != ""
     }
 
     fun setExpansionDebugger(path: Path) {

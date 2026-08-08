@@ -40,7 +40,7 @@ import de.darkatra.bfme2.updater.generated.resources.splash8_2560x1600
 import de.darkatra.bfme2.util.GameUtils
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
-import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 private val imagePaths = arrayOf(
     Res.drawable.splash24_1536x1024,
@@ -94,8 +94,8 @@ fun UpdaterView(
 
     FadingBackground(
         images = imagePaths,
-        transitionDelay = Duration.ofSeconds(10),
-        transitionDuration = Duration.ofSeconds(2)
+        transitionDelay = 10.seconds,
+        transitionDuration = 2.seconds
     ) {
 
         UpdaterViewLayout(
