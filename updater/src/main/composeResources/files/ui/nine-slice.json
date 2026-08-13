@@ -1,0 +1,73 @@
+{
+    "pixelScale": 2,
+    "textures": [
+        {
+            "name": "buttonPrimary",
+            "resource": "drawable/button_primary_9slice.png",
+            "sizePx": {
+                "width": 212,
+                "height": 108
+            },
+            "capInsetsPx": {
+                "left": 48,
+                "top": 48,
+                "right": 48,
+                "bottom": 48
+            }
+        },
+        {
+            "name": "buttonSecondary",
+            "resource": "drawable/button_secondary_9slice.png",
+            "sizePx": {
+                "width": 212,
+                "height": 108
+            },
+            "capInsetsPx": {
+                "left": 48,
+                "top": 48,
+                "right": 48,
+                "bottom": 48
+            }
+        },
+        {
+            "name": "panelFrame",
+            "resource": "drawable/panel_frame_9slice.png",
+            "sizePx": {
+                "width": 184,
+                "height": 144
+            },
+            "capInsetsPx": {
+                "left": 48,
+                "top": 48,
+                "right": 48,
+                "bottom": 48
+            }
+        },
+        {
+            "name": "progressTrack",
+            "resource": "drawable/progress_track_9slice.png",
+            "sizePx": {
+                "width": 100,
+                "height": 58
+            },
+            "capInsetsPx": {
+                "left": 44,
+                "top": 25,
+                "right": 44,
+                "bottom": 25
+            }
+        },
+        {
+            "name": "progressFill",
+            "resource": "drawable/progress_fill_tile.png",
+            "sizePx": {
+                "width": 36,
+                "height": 48
+            },
+            "tileMode": {
+                "x": "repeat",
+                "y": "stretch"
+            }
+        }
+    ]
+}
