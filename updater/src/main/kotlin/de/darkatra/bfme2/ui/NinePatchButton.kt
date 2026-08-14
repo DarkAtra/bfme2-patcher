@@ -6,15 +6,27 @@ import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.material.LocalContentColor
+import androidx.compose.material.ProvideTextStyle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import de.darkatra.bfme2.updater.generated.resources.Res
-import de.darkatra.bfme2.updater.generated.resources.button_primary_9slice
-import de.darkatra.bfme2.updater.generated.resources.button_secondary_9slice
+import de.darkatra.bfme2.updater.generated.resources.RingbearerMedium
+import de.darkatra.bfme2.updater.generated.resources.button_9
+import de.darkatra.bfme2.updater.generated.resources.button_disabled_9
+import de.darkatra.bfme2.updater.generated.resources.button_hover_9
+import de.darkatra.bfme2.updater.generated.resources.button_pressed_9
+import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.imageResource
 
 @Composable
@@ -32,10 +44,16 @@ fun NinePatchButton(
     val hovered by interactionSource.collectIsHoveredAsState()
     val pressed by interactionSource.collectIsPressedAsState()
 
-    val defaultTexture = imageResource(Res.drawable.button_secondary_9slice)
-    val hoverTexture = imageResource(Res.drawable.button_primary_9slice)
-    val activeTexture = imageResource(Res.drawable.button_secondary_9slice)
-    val disabledTexture = imageResource(Res.drawable.button_secondary_9slice)
+    val defaultTexture = imageResource(Res.drawable.button_9)
+    val hoverTexture = imageResource(Res.drawable.button_hover_9)
+    val activeTexture = imageResource(Res.drawable.button_pressed_9)
+    val disabledTexture = imageResource(Res.drawable.button_disabled_9)
+
+    val fontFamily = FontFamily(Font(Res.font.RingbearerMedium))
+    val fontColor = when {
+        enabled -> Color(0xFFF1D58A)
+        else -> Color(0xFFAAA69A)
+    }
 
     val texture = when {
         !enabled -> disabledTexture
@@ -46,15 +64,16 @@ fun NinePatchButton(
 
     Box(
         modifier = modifier
-            .size(320.dp, 80.dp)
+            .height(48.dp)
             .ninePatch(
                 image = texture,
                 insets = NinePatchInsets(
-                    left = 48,
-                    top = 48,
-                    right = 48,
-                    bottom = 48,
+                    left = 80,
+                    top = 30,
+                    right = 80,
+                    bottom = 30,
                 ),
+                pixelScale = 2f,
             )
             .clickable(
                 enabled = enabled,
@@ -62,6 +81,19 @@ fun NinePatchButton(
                 indication = null,
                 onClick = onClick,
             ),
-        content = content,
-    )
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(modifier = Modifier.offset(y = 2.dp)) {
+            CompositionLocalProvider(LocalContentColor provides fontColor) {
+                ProvideTextStyle(
+                    value = TextStyle(
+                        color = fontColor,
+                        fontFamily = fontFamily,
+                    )
+                ) {
+                    content()
+                }
+            }
+        }
+    }
 }

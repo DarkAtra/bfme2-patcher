@@ -18,40 +18,37 @@ data class NinePatchInsets(
 fun Modifier.ninePatch(
     image: ImageBitmap,
     insets: NinePatchInsets,
+    pixelScale: Float = 1f,
     filterQuality: FilterQuality = FilterQuality.Low,
 ): Modifier = drawWithCache {
 
     val srcW = image.width
     val srcH = image.height
 
+    require(pixelScale.isFinite() && pixelScale > 0f)
     require(insets.left + insets.right <= srcW)
     require(insets.top + insets.bottom <= srcH)
 
     val dstW = size.width.roundToInt()
     val dstH = size.height.roundToInt()
 
-    val horizontalFixed = insets.left + insets.right
-    val verticalFixed = insets.top + insets.bottom
-
-    val horizontalScale = when {
-        horizontalFixed > dstW && horizontalFixed > 0 -> dstW.toFloat() / horizontalFixed
-        else -> 1f
-    }
-    val verticalScale = when {
-        verticalFixed > dstH && verticalFixed > 0 -> dstH.toFloat() / verticalFixed
-        else -> 1f
-    }
-
-    val dstLeft = (insets.left * horizontalScale).roundToInt()
-    val dstRight = (insets.right * horizontalScale).roundToInt()
-    val dstTop = (insets.top * verticalScale).roundToInt()
-    val dstBottom = (insets.bottom * verticalScale).roundToInt()
-
     val sx = intArrayOf(0, insets.left, srcW - insets.right, srcW)
     val sy = intArrayOf(0, insets.top, srcH - insets.bottom, srcH)
 
-    val dx = intArrayOf(0, dstLeft, dstW - dstRight, dstW)
-    val dy = intArrayOf(0, dstTop, dstH - dstBottom, dstH)
+    val dx = calculateNinePatchDestinationAxis(
+        destinationSize = dstW,
+        startInset = insets.left,
+        endInset = insets.right,
+        pixelScale = pixelScale,
+        density = density,
+    )
+    val dy = calculateNinePatchDestinationAxis(
+        destinationSize = dstH,
+        startInset = insets.top,
+        endInset = insets.bottom,
+        pixelScale = pixelScale,
+        density = density,
+    )
 
     onDrawBehind {
         for (y in 0 until 3) {
@@ -78,4 +75,23 @@ fun Modifier.ninePatch(
             }
         }
     }
+}
+
+internal fun calculateNinePatchDestinationAxis(
+    destinationSize: Int,
+    startInset: Int,
+    endInset: Int,
+    pixelScale: Float,
+    density: Float,
+): IntArray {
+    val destinationScale = density / pixelScale
+    val fixedSize = (startInset + endInset) * destinationScale
+    val fixedScale = when {
+        fixedSize > destinationSize && fixedSize > 0 -> destinationSize.toFloat() / fixedSize
+        else -> 1f
+    }
+    val destinationStart = (startInset * destinationScale * fixedScale).roundToInt()
+    val destinationEnd = (endInset * destinationScale * fixedScale).roundToInt()
+
+    return intArrayOf(0, destinationStart, destinationSize - destinationEnd, destinationSize)
 }

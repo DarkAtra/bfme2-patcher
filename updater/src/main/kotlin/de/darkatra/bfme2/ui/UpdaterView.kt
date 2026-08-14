@@ -143,7 +143,7 @@ fun UpdaterView(
                 )
             },
             leftButtonSlot = {
-                SmallButton(
+                NinePatchButton(
                     enabled = state.requirementsMet && !state.gameRunning && !state.selfUpdateInProgress && !state.patchInProgress,
                     modifier = Modifier.weight(1f),
                     onClick = {
@@ -187,7 +187,7 @@ fun UpdaterView(
                 }
             },
             rightButtonSlot = {
-                SmallButton(
+                NinePatchButton(
                     enabled = state.requirementsMet && !state.gameRunning && !state.selfUpdateInProgress && !state.patchInProgress && state.patchedOnce,
                     modifier = Modifier.weight(1f),
                     onClick = {
