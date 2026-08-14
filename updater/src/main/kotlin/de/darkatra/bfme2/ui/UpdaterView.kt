@@ -96,13 +96,14 @@ fun UpdaterView(
         images = imagePaths,
         transitionDelay = 10.seconds,
         transitionDuration = 2.seconds
-    ) { buttonTint ->
+    ) { tint ->
 
         UpdaterViewLayout(
             actionsSlot = {
                 when (state.selfUpdateState) {
-                    SelfUpdateState.OUTDATED -> SmallButton(
+                    SelfUpdateState.OUTDATED -> NinePatchButton(
                         enabled = !state.gameRunning && !state.selfUpdateInProgress && !state.patchInProgress,
+                        tint = tint,
                         onClick = {
                             performSelfUpdate()
                         }
@@ -110,7 +111,7 @@ fun UpdaterView(
                         Text(text = "Update available", fontSize = 15.sp, fontWeight = FontWeight.W400)
                     }
 
-                    SelfUpdateState.UP_TO_DATE -> SmallSurface {
+                    SelfUpdateState.UP_TO_DATE -> NinePatchButton(tint = tint) {
                         Icon(
                             painter = painterResource(Res.drawable.check),
                             contentDescription = null,
@@ -122,7 +123,7 @@ fun UpdaterView(
                         Text(text = "Up to Date", fontSize = 15.sp, fontWeight = FontWeight.W400)
                     }
 
-                    SelfUpdateState.UNKNOWN -> SmallSurface {
+                    SelfUpdateState.UNKNOWN -> NinePatchButton(tint = tint) {
                         CircularProgressIndicator(
                             modifier = Modifier.height(20.dp).width(20.dp),
                             strokeWidth = 3.dp,
@@ -140,13 +141,14 @@ fun UpdaterView(
                 ProgressBar(
                     progress = state.progress,
                     text = state.progressText,
+                    tint = tint,
                 )
             },
             leftButtonSlot = {
                 NinePatchButton(
                     enabled = state.requirementsMet && !state.gameRunning && !state.selfUpdateInProgress && !state.patchInProgress,
                     modifier = Modifier.weight(1f),
-                    tint = buttonTint,
+                    tint = tint,
                     onClick = {
                         updaterModel.setPatchInProgress(true)
                         patchScope.launch {
@@ -191,7 +193,7 @@ fun UpdaterView(
                 NinePatchButton(
                     enabled = state.requirementsMet && !state.gameRunning && !state.selfUpdateInProgress && !state.patchInProgress && state.patchedOnce,
                     modifier = Modifier.weight(1f),
-                    tint = buttonTint,
+                    tint = tint,
                     onClick = {
                         updaterModel.setGameRunning(true)
                         patchScope.launch {

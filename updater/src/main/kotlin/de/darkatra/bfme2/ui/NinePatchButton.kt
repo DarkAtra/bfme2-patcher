@@ -5,7 +5,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material.LocalContentColor
@@ -37,11 +38,11 @@ import org.jetbrains.compose.resources.imageResource
 
 @Composable
 fun NinePatchButton(
-    onClick: () -> Unit,
+    onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     tint: Color = Color.White,
-    content: @Composable (BoxScope.() -> Unit)
+    content: @Composable (RowScope.() -> Unit)
 ) {
 
     val interactionSource = remember {
@@ -81,12 +82,16 @@ fun NinePatchButton(
                 colorFilter = ColorFilter.tint(tint, BlendMode.Modulate),
             )
             .pointerHoverIcon(PointerIcon.Hand)
-            .clickable(
-                enabled = enabled,
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick,
-            ),
+            .apply {
+                if (onClick != null) {
+                    clickable(
+                        enabled = enabled,
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = onClick,
+                    )
+                }
+            },
         contentAlignment = Alignment.Center,
     ) {
         Box(modifier = Modifier.offset(y = 2.dp)) {
@@ -97,14 +102,16 @@ fun NinePatchButton(
                         fontFamily = fontFamily,
                     )
                 ) {
-                    content()
+                    Row(
+                        content = content
+                    )
                 }
             }
         }
     }
 }
 
-private fun buttonTextColor(tint: Color, enabled: Boolean): Color {
+internal fun buttonTextColor(tint: Color, enabled: Boolean): Color {
     val contrastingColor = when {
         tint.luminance() > 0.5f -> Color.Black
         else -> Color.White
