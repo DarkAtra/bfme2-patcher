@@ -2,6 +2,7 @@ package de.darkatra.bfme2.ui
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntOffset
@@ -20,6 +21,7 @@ fun Modifier.ninePatch(
     insets: NinePatchInsets,
     pixelScale: Float = 1f,
     filterQuality: FilterQuality = FilterQuality.Low,
+    colorFilter: ColorFilter? = null,
 ): Modifier = drawWithCache {
 
     val srcW = image.width
@@ -71,6 +73,7 @@ fun Modifier.ninePatch(
                     dstOffset = IntOffset(dx[x], dy[y]),
                     dstSize = IntSize(dstWidth, dstHeight),
                     filterQuality = filterQuality,
+                    colorFilter = colorFilter,
                 )
             }
         }

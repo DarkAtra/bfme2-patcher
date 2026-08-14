@@ -43,14 +43,14 @@ import org.jetbrains.compose.resources.painterResource
 import kotlin.time.Duration.Companion.seconds
 
 private val imagePaths = arrayOf(
-    Res.drawable.splash24_1536x1024,
-    Res.drawable.splash2_1920x1080,
-    Res.drawable.splash27_1536x1024,
-    Res.drawable.splash8_2560x1600,
-    Res.drawable.splash14_1920x1080,
-    Res.drawable.splash15_1920x1080,
-    Res.drawable.splash19_1500x1200,
-    Res.drawable.splash25_1536x1024,
+    BackgroundImage(Res.drawable.splash24_1536x1024, Color(0xFFB9AA60)),
+    BackgroundImage(Res.drawable.splash2_1920x1080, Color(0xFFD8A85F)),
+    BackgroundImage(Res.drawable.splash27_1536x1024, Color(0xFFCF806B)),
+    BackgroundImage(Res.drawable.splash8_2560x1600, Color(0xFF8295C8)),
+    BackgroundImage(Res.drawable.splash14_1920x1080, Color(0xFF8FA6A2)),
+    BackgroundImage(Res.drawable.splash15_1920x1080, Color(0xFFC79B89)),
+    BackgroundImage(Res.drawable.splash19_1500x1200, Color(0xFFAAB1BC)),
+    BackgroundImage(Res.drawable.splash25_1536x1024, Color(0xFF587FD0)),
 )
 
 @Composable
@@ -96,7 +96,7 @@ fun UpdaterView(
         images = imagePaths,
         transitionDelay = 10.seconds,
         transitionDuration = 2.seconds
-    ) {
+    ) { buttonTint ->
 
         UpdaterViewLayout(
             actionsSlot = {
@@ -146,6 +146,7 @@ fun UpdaterView(
                 NinePatchButton(
                     enabled = state.requirementsMet && !state.gameRunning && !state.selfUpdateInProgress && !state.patchInProgress,
                     modifier = Modifier.weight(1f),
+                    tint = buttonTint,
                     onClick = {
                         updaterModel.setPatchInProgress(true)
                         patchScope.launch {
@@ -183,13 +184,14 @@ fun UpdaterView(
                         }
                     }
                 ) {
-                    Text(text = "Check for Updates", fontSize = 15.sp, fontWeight = FontWeight.W400)
+                    Text(text = "Check for Updates", fontSize = 15.sp)
                 }
             },
             rightButtonSlot = {
                 NinePatchButton(
                     enabled = state.requirementsMet && !state.gameRunning && !state.selfUpdateInProgress && !state.patchInProgress && state.patchedOnce,
                     modifier = Modifier.weight(1f),
+                    tint = buttonTint,
                     onClick = {
                         updaterModel.setGameRunning(true)
                         patchScope.launch {
@@ -212,7 +214,7 @@ fun UpdaterView(
                         }
                     }
                 ) {
-                    Text(text = "Start Game", fontSize = 15.sp, fontWeight = FontWeight.W400)
+                    Text(text = "Start Game", fontSize = 15.sp)
                 }
             }
         )

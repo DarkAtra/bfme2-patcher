@@ -16,7 +16,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -34,6 +40,7 @@ fun NinePatchButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    tint: Color = Color.White,
     content: @Composable (BoxScope.() -> Unit)
 ) {
 
@@ -50,10 +57,7 @@ fun NinePatchButton(
     val disabledTexture = imageResource(Res.drawable.button_disabled_9)
 
     val fontFamily = FontFamily(Font(Res.font.RingbearerMedium))
-    val fontColor = when {
-        enabled -> Color(0xFFF1D58A)
-        else -> Color(0xFFAAA69A)
-    }
+    val fontColor = buttonTextColor(tint, enabled)
 
     val texture = when {
         !enabled -> disabledTexture
@@ -64,7 +68,7 @@ fun NinePatchButton(
 
     Box(
         modifier = modifier
-            .height(48.dp)
+            .height(50.dp)
             .ninePatch(
                 image = texture,
                 insets = NinePatchInsets(
@@ -74,7 +78,9 @@ fun NinePatchButton(
                     bottom = 30,
                 ),
                 pixelScale = 2f,
+                colorFilter = ColorFilter.tint(tint, BlendMode.Modulate),
             )
+            .pointerHoverIcon(PointerIcon.Hand)
             .clickable(
                 enabled = enabled,
                 interactionSource = interactionSource,
@@ -95,5 +101,17 @@ fun NinePatchButton(
                 }
             }
         }
+    }
+}
+
+private fun buttonTextColor(tint: Color, enabled: Boolean): Color {
+    val contrastingColor = when {
+        tint.luminance() > 0.5f -> Color.Black
+        else -> Color.White
+    }
+    val color = lerp(contrastingColor, tint.copy(alpha = 1f), 0.3f)
+    return when {
+        enabled -> color
+        else -> color.copy(alpha = 0.6f)
     }
 }

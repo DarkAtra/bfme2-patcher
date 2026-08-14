@@ -64,6 +64,24 @@ class NinePatchButtonAssetsTest {
         }
     }
 
+    @Test
+    fun `button textures are greyscale so they can be tinted`() {
+
+        buttonTextureNames.forEach { textureName ->
+            val image = ImageIO.read(drawableDirectory.resolve(textureName))
+
+            assertTrue(
+                image.rgbValues().all { color ->
+                    val red = color shr 16 and 0xff
+                    val green = color shr 8 and 0xff
+                    val blue = color and 0xff
+                    red == green && green == blue
+                },
+                textureName,
+            )
+        }
+    }
+
     private fun BufferedImage.alphaValues(): IntArray {
         return IntArray(width * height) { index ->
             getRGB(index % width, index / width).ushr(24)
