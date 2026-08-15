@@ -5,10 +5,12 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.LocalContentColor
 import androidx.compose.material.ProvideTextStyle
 import androidx.compose.runtime.Composable
@@ -35,6 +37,21 @@ import de.darkatra.bfme2.updater.generated.resources.button_hover_9
 import de.darkatra.bfme2.updater.generated.resources.button_pressed_9
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.imageResource
+
+private val ninePatchButtonInsets = NinePatchInsets(
+    left = 80,
+    top = 0,
+    right = 80,
+    bottom = 0,
+)
+private const val NINE_PATCH_BUTTON_PIXEL_SCALE = 2f
+
+private val ninePatchButtonContentPadding = PaddingValues(
+    start = (ninePatchButtonInsets.left / NINE_PATCH_BUTTON_PIXEL_SCALE).dp,
+    top = (ninePatchButtonInsets.top / NINE_PATCH_BUTTON_PIXEL_SCALE).dp,
+    end = (ninePatchButtonInsets.right / NINE_PATCH_BUTTON_PIXEL_SCALE).dp,
+    bottom = (ninePatchButtonInsets.bottom / NINE_PATCH_BUTTON_PIXEL_SCALE).dp,
+)
 
 @Composable
 fun NinePatchButton(
@@ -72,18 +89,13 @@ fun NinePatchButton(
             .height(50.dp)
             .ninePatch(
                 image = texture,
-                insets = NinePatchInsets(
-                    left = 80,
-                    top = 30,
-                    right = 80,
-                    bottom = 30,
-                ),
-                pixelScale = 2f,
+                insets = ninePatchButtonInsets,
+                pixelScale = NINE_PATCH_BUTTON_PIXEL_SCALE,
                 colorFilter = ColorFilter.tint(tint, BlendMode.Modulate),
             )
-            .pointerHoverIcon(PointerIcon.Hand)
             .apply {
                 if (onClick != null) {
+                    pointerHoverIcon(PointerIcon.Hand)
                     clickable(
                         enabled = enabled,
                         interactionSource = interactionSource,
@@ -103,6 +115,7 @@ fun NinePatchButton(
                     )
                 ) {
                     Row(
+                        modifier = Modifier.padding(ninePatchButtonContentPadding),
                         content = content
                     )
                 }

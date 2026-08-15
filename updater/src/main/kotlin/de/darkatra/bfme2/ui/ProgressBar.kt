@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.progressSemantics
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -52,7 +51,7 @@ private const val INDETERMINATE_INDICATOR_FRACTION = 0.35f
 fun ProgressBar(
     progress: Float,
     text: String,
-    tint: Color = MaterialTheme.colors.secondary,
+    tint: Color = Color.White,
 ) {
 
     val frameTexture = imageResource(Res.drawable.progress_bar_9)
