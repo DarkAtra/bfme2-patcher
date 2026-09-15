@@ -1,6 +1,6 @@
 [versions]
-kotlin = "2.4.10"
-compose = "1.11.1"
+kotlin = "2.4.20"
+compose = "1.12.0"
 kotlin-coroutine = "1.11.0"
 kotlinx-serialization = "1.11.0"
 jackson = "2.22.2"
@@ -42,5 +42,5 @@ kapt = { id = "org.jetbrains.kotlin.kapt" }
 compose = { id = "org.jetbrains.compose", version.ref = "compose" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 launch4j = { id = "edu.sc.seis.launch4j", version.ref = "launch4j" }
-graalvm-native = { id = "org.graalvm.buildtools.native", version = "1.1.10" }
+graalvm-native = { id = "org.graalvm.buildtools.native", version = "1.1.13" }
 femtojar = { id = "de.darkatra.femtojar", version = "1.0.1" }
