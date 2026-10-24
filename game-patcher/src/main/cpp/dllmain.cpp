@@ -1,6 +1,8 @@
 #include <winsock2.h>
 #include <easyhook.h>
 
+#include "render_rate.h"
+
 using namespace std;
 
 __forceinline static BYTE *findPattern(BYTE *srcStart, BYTE *srcEnd, const BYTE *patternStart, const BYTE *patternEnd) {
@@ -123,6 +125,10 @@ extern "C" __declspec(dllexport) void Noop() {}
 BOOL APIENTRY DllMain(HINSTANCE /*hinstDLL*/, const DWORD fdwReason, LPVOID /*lpvReserved*/) {
 
     if (fdwReason == DLL_PROCESS_ATTACH) {
+
+        if (!applyRenderRatePatch()) {
+            MessageBoxW(nullptr, L"Failed to apply the 60 fps patch. The game will run at 30 fps.", L"Error", MB_OK);
+        }
 
         const NTSTATUS result = LhInstallHook(
             GetProcAddress(GetModuleHandle(TEXT("ws2_32")), "gethostbyname"),
