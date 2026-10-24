@@ -2,6 +2,7 @@ package de.darkatra.bfme2.util
 
 import com.sun.jna.Native
 import com.sun.jna.platform.win32.WinDef.DWORD
+import com.sun.jna.platform.win32.WinNT.HANDLE
 import com.sun.jna.win32.W32APIOptions
 
 interface Kernel32 : com.sun.jna.platform.win32.Kernel32 {
@@ -17,6 +18,18 @@ interface Kernel32 : com.sun.jna.platform.win32.Kernel32 {
     fun DebugActiveProcessStop(
         dwProcessId: DWORD
     ): Boolean
+
+    /**
+     * See: https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-resumethread
+     *
+     * DWORD ResumeThread(
+     *   [in] HANDLE hThread
+     * );
+     */
+    @Suppress("FunctionName")
+    fun ResumeThread(
+        hThread: HANDLE
+    ): Int
 
     companion object {
         val INSTANCE: Kernel32 = Native.load("kernel32", Kernel32::class.java, W32APIOptions.DEFAULT_OPTIONS)

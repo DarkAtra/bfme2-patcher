@@ -8,17 +8,13 @@ import kotlin.io.path.absolutePathString
 
 object ProcessUtils {
 
-    fun findProcess(name: String, ignoreCase: Boolean = true): ProcessHandle? {
-        return ProcessHandle.allProcesses()
-            .filter { process -> process.info().command().isPresent }
-            .filter { process -> process.info().command().get().endsWith(name, ignoreCase = ignoreCase) }
-            .findFirst()
-            .orElse(null)
-    }
+    fun runSuspendedBypassingDebugger(
+        executable: Path,
+        args: Array<String> = emptyArray(),
+        beforeResume: (gameProcessId: Long) -> Unit
+    ): ProcessHandle {
 
-    fun runBypassingDebugger(executable: Path, args: Array<String> = emptyArray()): Boolean {
-
-        // we need to use jna here to set the DEBUG_ONLY_THIS_PROCESS flag when we create the process
+        // we need to use jna here to set the DEBUG_ONLY_THIS_PROCESS and CREATE_SUSPENDED flags when we create the process
         val startupInfo = WinBase.STARTUPINFO()
         val processInformation = WinBase.PROCESS_INFORMATION.ByReference()
 
@@ -37,7 +33,7 @@ object ProcessUtils {
             null,
             null,
             false,
-            WinDef.DWORD(WinBase.DEBUG_ONLY_THIS_PROCESS.toLong()),
+            WinDef.DWORD((WinBase.DEBUG_ONLY_THIS_PROCESS or WinBase.CREATE_SUSPENDED).toLong()),
             null,
             executable.parent.absolutePathString(),
             startupInfo,
@@ -50,13 +46,26 @@ object ProcessUtils {
             throw IllegalStateException("Could not run '${executable.absolutePathString()}', error code: ${Kernel32.INSTANCE.GetLastError()}")
         }
 
-        // stop debugging the new process (it will be suspended otherwise)
-        Kernel32.INSTANCE.DebugActiveProcessStop(processInformation.dwProcessId)
+        try {
+            Kernel32.INSTANCE.DebugActiveProcessStop(processInformation.dwProcessId)
 
-        Kernel32.INSTANCE.CloseHandle(processInformation.hThread)
-        Kernel32.INSTANCE.CloseHandle(processInformation.hProcess)
+            // resolve the process before resuming it, since it might exit right away
+            val processHandle = ProcessHandle.of(processInformation.dwProcessId.toLong()).orElseThrow()
 
-        return true
+            beforeResume(processHandle.pid())
+
+            if (Kernel32.INSTANCE.ResumeThread(processInformation.hThread) == -1) {
+                throw IllegalStateException("Could not resume '$applicationName', error code: ${Kernel32.INSTANCE.GetLastError()}")
+            }
+
+            return processHandle
+        } catch (e: Throwable) {
+            Kernel32.INSTANCE.TerminateProcess(processInformation.hProcess, 1)
+            throw IllegalStateException("Dll injection caused an unexpected error for '$applicationName'", e)
+        } finally {
+            Kernel32.INSTANCE.CloseHandle(processInformation.hThread)
+            Kernel32.INSTANCE.CloseHandle(processInformation.hProcess)
+        }
     }
 
     fun run(executable: Path, args: Array<String> = emptyArray()): Process {

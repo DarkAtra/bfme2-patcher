@@ -116,6 +116,10 @@ hostent *WSAAPI Hooked_gethostbyname(const char *name) {
 
 HOOK_TRACE_INFO hHook = {nullptr}; // keep track of our hook
 
+// this export is only required when the dll is loaded by manipulating the process's import table
+// however, it does not cause any harm even when the dll is still loaded via CreateRemoteThread and LoadLibraryA
+extern "C" __declspec(dllexport) void Noop() {}
+
 BOOL APIENTRY DllMain(HINSTANCE /*hinstDLL*/, const DWORD fdwReason, LPVOID /*lpvReserved*/) {
 
     if (fdwReason == DLL_PROCESS_ATTACH) {
@@ -133,7 +137,10 @@ BOOL APIENTRY DllMain(HINSTANCE /*hinstDLL*/, const DWORD fdwReason, LPVOID /*lp
         }
 
         ULONG ACLEntries[1] = {};
-        LhSetExclusiveACL(ACLEntries, 1, &hHook);
+        // the second parameter controls which threads are affected by the hook - use the following values depending on the way the dll is injected:
+        // 0 - if the dll is loaded via the main thread (i.e. by manipulating the import table of the process)
+        // 1 - if the dll is injected using a throwaway thread (i.e. via CreateRemoteThread and LoadLibraryA)
+        LhSetExclusiveACL(ACLEntries, 0, &hHook);
 
         const HANDLE currentProcess = GetCurrentProcess();
 
