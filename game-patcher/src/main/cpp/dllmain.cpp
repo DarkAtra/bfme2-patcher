@@ -1,7 +1,7 @@
 #include <winsock2.h>
 #include <easyhook.h>
 
-#include "render_rate.h"
+#include "patches.h"
 
 using namespace std;
 
@@ -126,8 +126,15 @@ BOOL APIENTRY DllMain(HINSTANCE /*hinstDLL*/, const DWORD fdwReason, LPVOID /*lp
 
     if (fdwReason == DLL_PROCESS_ATTACH) {
 
-        if (!applyRenderRatePatch()) {
-            MessageBoxW(nullptr, L"Failed to apply the 60 fps patch. The game will run at 30 fps.", L"Error", MB_OK);
+        const wchar_t *failedPatches[MAX_FAILED_PATCHES];
+        const size_t failedPatchCount = applyPatches(failedPatches);
+        if (failedPatchCount > 0) {
+            wchar_t message[512] = L"Failed to apply the following patches. The game will run without them:\n";
+            for (size_t i = 0; i < failedPatchCount; i++) {
+                lstrcatW(message, L"\n- ");
+                lstrcatW(message, failedPatches[i]);
+            }
+            MessageBoxW(nullptr, message, L"Error", MB_OK);
         }
 
         const NTSTATUS result = LhInstallHook(

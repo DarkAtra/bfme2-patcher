@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <cstring>
 
+#include "patch_set.h"
 #include "render_rate.h"
 
 // Lets the game draw at 60 frames per second without changing its pace. Derived from the render-rate patch of pySAGE
@@ -10,6 +11,8 @@
 //
 // Every site is verified before anything is written, and the patch is applied as a whole or not at all: a half moved
 // set of constants gives a game that runs at the wrong speed instead of one that crashes.
+
+using namespace patching;
 
 namespace {
 
@@ -35,129 +38,6 @@ namespace {
     // truncating conversion of the stock limiter cannot express that with a single integer period.
     constexpr BYTE FRAME_PERIOD_MS = 16;
 
-    constexpr size_t MAX_PATCH_LENGTH = 24;
-    constexpr size_t MAX_PATCHES = 48;
-    constexpr size_t CAVE_SIZE = 0x1000;
-
-    struct Patch {
-        uintptr_t address;
-        size_t length;
-        BYTE expected[MAX_PATCH_LENGTH];
-        BYTE replacement[MAX_PATCH_LENGTH];
-        bool write;
-    };
-
-    struct PatchSet {
-        Patch patches[MAX_PATCHES];
-        size_t count = 0;
-        bool overflow = false;
-
-        template<size_t N>
-        void expect(const uintptr_t address, const BYTE (&expected)[N]) {
-            static_assert(N <= MAX_PATCH_LENGTH);
-            Patch *patch = next();
-            if (patch == nullptr) {
-                return;
-            }
-            patch->address = address;
-            patch->length = N;
-            memcpy(patch->expected, expected, N);
-            patch->write = false;
-        }
-
-        template<size_t N>
-        void replace(const uintptr_t address, const BYTE (&expected)[N], const BYTE (&replacement)[N]) {
-            static_assert(N <= MAX_PATCH_LENGTH);
-            Patch *patch = next();
-            if (patch == nullptr) {
-                return;
-            }
-            patch->address = address;
-            patch->length = N;
-            memcpy(patch->expected, expected, N);
-            memcpy(patch->replacement, replacement, N);
-            patch->write = true;
-        }
-
-        template<size_t N>
-        void hook(const uintptr_t address, const BYTE (&expected)[N], const uintptr_t target) {
-            static_assert(N >= 5);
-            BYTE replacement[N];
-            memset(replacement, 0x90, N);
-            replacement[0] = 0xE9;
-            const auto displacement = static_cast<int32_t>(target - (address + 5));
-            memcpy(replacement + 1, &displacement, sizeof(displacement));
-            replace(address, expected, replacement);
-        }
-
-        void redirectCall(const uintptr_t address, const BYTE (&expected)[5], const uintptr_t target) {
-            BYTE replacement[5];
-            replacement[0] = 0xE8;
-            const auto displacement = static_cast<int32_t>(target - (address + 5));
-            memcpy(replacement + 1, &displacement, sizeof(displacement));
-            replace(address, expected, replacement);
-        }
-
-    private:
-        Patch *next() {
-            if (count == MAX_PATCHES) {
-                overflow = true;
-                return nullptr;
-            }
-            return &patches[count++];
-        }
-    };
-
-    struct Cave {
-        BYTE *base;
-        size_t size = 0;
-
-        explicit Cave(BYTE *base) : base(base) {}
-
-        uintptr_t here() const {
-            return reinterpret_cast<uintptr_t>(base) + size;
-        }
-
-        template<size_t N>
-        void emit(const BYTE (&bytes)[N]) {
-            memcpy(base + size, bytes, N);
-            size += N;
-        }
-
-        void emit32(const uint32_t value) {
-            memcpy(base + size, &value, sizeof(value));
-            size += sizeof(value);
-        }
-
-        void emit8(const BYTE value) {
-            base[size++] = value;
-        }
-
-        void jmp(const uintptr_t target) {
-            emit8(0xE9);
-            emitRelative(target);
-        }
-
-        void call(const uintptr_t target) {
-            emit8(0xE8);
-            emitRelative(target);
-        }
-
-        void jcc(const BYTE condition, const uintptr_t target) {
-            emit8(0x0F);
-            emit8(condition);
-            emitRelative(target);
-        }
-
-    private:
-        void emitRelative(const uintptr_t target) {
-            emit32(static_cast<uint32_t>(target - (here() + 4)));
-        }
-    };
-
-    constexpr BYTE JE = 0x84;
-    constexpr BYTE JB = 0x82;
-
     // Run time state of the caves, kept in front of their code.
     struct CaveData {
         uint32_t frameCounter;
@@ -166,16 +46,6 @@ namespace {
         float scrollScale;
         uint32_t savedScrollFactors[4];
     };
-
-    void putInt(BYTE *destination, const int value) {
-        memcpy(destination, &value, sizeof(value));
-    }
-
-    // The compiler folded these constants in double and narrowed them to float, which reproduces the shipped bytes.
-    void putFloat(BYTE *destination, const double value) {
-        const auto narrowed = static_cast<float>(value);
-        memcpy(destination, &narrowed, sizeof(narrowed));
-    }
 
     void addRate(PatchSet &set) {
         BYTE expected[4];
@@ -508,59 +378,6 @@ namespace {
         set.redirectCall(0x006484BD, viewCall, viewEntry);
     }
 
-    bool isReadable(const uintptr_t address, const size_t length) {
-        MEMORY_BASIC_INFORMATION memoryInfo;
-        if (!VirtualQuery(reinterpret_cast<const void *>(address), &memoryInfo, sizeof(memoryInfo))) {
-            return false;
-        }
-        const uintptr_t regionEnd = reinterpret_cast<uintptr_t>(memoryInfo.BaseAddress) + memoryInfo.RegionSize;
-        return memoryInfo.State == MEM_COMMIT
-            && (memoryInfo.Protect & (PAGE_NOACCESS | PAGE_GUARD)) == 0
-            && address + length <= regionEnd;
-    }
-
-    bool verify(const PatchSet &set) {
-        for (size_t i = 0; i < set.count; i++) {
-            const Patch &patch = set.patches[i];
-            if (!isReadable(patch.address, patch.length)) {
-                return false;
-            }
-            if (memcmp(reinterpret_cast<const void *>(patch.address), patch.expected, patch.length) != 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    bool writeBytes(const uintptr_t address, const BYTE *bytes, const size_t length) {
-        DWORD previousProtection;
-        if (!VirtualProtect(reinterpret_cast<void *>(address), length, PAGE_EXECUTE_READWRITE, &previousProtection)) {
-            return false;
-        }
-        memcpy(reinterpret_cast<void *>(address), bytes, length);
-        DWORD ignored;
-        VirtualProtect(reinterpret_cast<void *>(address), length, previousProtection, &ignored);
-        FlushInstructionCache(GetCurrentProcess(), reinterpret_cast<void *>(address), length);
-        return true;
-    }
-
-    bool write(const PatchSet &set) {
-        for (size_t i = 0; i < set.count; i++) {
-            const Patch &patch = set.patches[i];
-            if (!patch.write) {
-                continue;
-            }
-            if (!writeBytes(patch.address, patch.replacement, patch.length)) {
-                for (size_t j = 0; j < i; j++) {
-                    if (set.patches[j].write) {
-                        writeBytes(set.patches[j].address, set.patches[j].expected, set.patches[j].length);
-                    }
-                }
-                return false;
-            }
-        }
-        return true;
-    }
 }
 
 bool applyRenderRatePatch() {
@@ -570,7 +387,7 @@ bool applyRenderRatePatch() {
         return false;
     }
 
-    auto *caveMemory = static_cast<BYTE *>(VirtualAlloc(nullptr, CAVE_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+    BYTE *caveMemory = allocateCave();
     if (caveMemory == nullptr) {
         return false;
     }
@@ -584,8 +401,7 @@ bool applyRenderRatePatch() {
     cave.size = sizeof(CaveData);
 
     static PatchSet set;
-    set.count = 0;
-    set.overflow = false;
+    set.reset();
 
     addRate(set);
     addWrap(set);
@@ -595,7 +411,7 @@ bool applyRenderRatePatch() {
     addFrameLimiter(set, cave, data);
     addCameraScroll(set, cave, data);
 
-    if (set.overflow || cave.size > CAVE_SIZE || !verify(set) || !write(set)) {
+    if (!commit(set, cave)) {
         VirtualFree(caveMemory, 0, MEM_RELEASE);
         return false;
     }
