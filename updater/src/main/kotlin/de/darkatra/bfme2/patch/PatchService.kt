@@ -201,6 +201,8 @@ object PatchService {
 
     /**
      * This is required so that the game launches with Windows 11 24H2.
+     * Fullscreen optimizations are disabled because with them, Direct3D 9's Present periodically stalls for ~50 ms while
+     * other processes (e.g. RGB or hardware monitoring software) query the display.
      */
     private fun configureCompatModeIfNecessary() {
 
@@ -209,7 +211,7 @@ object PatchService {
             return
         }
 
-        val expansionCompatMode = "~ WINXPSP3"
+        val expansionCompatMode = "~ DISABLEDXMAXIMIZEDWINDOWEDMODE WINXPSP3"
         if (RegistryService.getExpansionCompatMode() == expansionCompatMode) {
             LOGGER.info("Registry compat mode is already configured. No changes required.")
             return
