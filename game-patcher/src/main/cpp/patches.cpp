@@ -3,6 +3,7 @@
 
 #include "broad_phase_table.h"
 #include "cell_center.h"
+#include "contact_scan.h"
 #include "crowd_cost_memo.h"
 #include "device_lock.h"
 #include "features.h"
@@ -40,6 +41,9 @@ size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
     }
     if (features::BROAD_PHASE_TABLE && !applyBroadPhaseTable()) {
         failed[count++] = L"broad phase pair table";
+    }
+    if (features::CONTACT_SCAN && !applyContactScan()) {
+        failed[count++] = L"contact handler";
     }
     if (features::QUAD_BATCH_CAP && !applyQuadBatchCap()) {
         failed[count++] = L"overlay batch cap";

@@ -40,6 +40,10 @@
 #define GAME_PATCHER_BROAD_PHASE_TABLE 1
 #endif
 
+#ifndef GAME_PATCHER_CONTACT_SCAN
+#define GAME_PATCHER_CONTACT_SCAN 1
+#endif
+
 #ifndef GAME_PATCHER_QUAD_BATCH_CAP
 #define GAME_PATCHER_QUAD_BATCH_CAP 1
 #endif
@@ -79,6 +83,10 @@ namespace features {
     // Gives the collision broad phase's first pair table 262139 buckets instead of 11131, so that the sweep's lookups no longer walk
     // chains of ten nodes or more when a big army is on the map (broad_phase_table.cpp). The game behaves exactly as before.
     constexpr bool BROAD_PHASE_TABLE = GAME_PATCHER_BROAD_PHASE_TABLE != 0;
+
+    // Skips the modules whose collide interface getter is the game's default (always null) in the broad phase's contact handler
+    // instead of calling it, 34 of about 37 per object (contact_scan.cpp). The game behaves exactly as before.
+    constexpr bool CONTACT_SCAN = GAME_PATCHER_CONTACT_SCAN != 0;
 
     // Stops the 2D overlay batch (health bars and the like) from taking more than the 65535 indices its 16 bit counters can hold:
     // beyond that the game writes past the end of its dynamic index buffer and crashes when a big army is on screen
