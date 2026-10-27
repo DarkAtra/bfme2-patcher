@@ -1,11 +1,8 @@
 #include <windows.h>
 #include <cstdint>
-#include <cstring>
 
-#include "features.h"
 #include "pace_sleep.h"
 #include "patch_set.h"
-#include "stats.h"
 
 // The frame limiter waits for the end of a frame by calling Sleep(0) in a loop, which returns at once and keeps the main
 // thread at 100% for most of every frame. This patch sleeps through the time that is left instead, and keeps spinning on
@@ -37,8 +34,6 @@ bool applyPaceSleep() {
     }
     Cave cave(caveMemory);
 
-    Stats *counters = features::STATS ? stats() : nullptr;
-
     const uintptr_t entry = cave.here();
 
     // eax = period - (now - frame start) - SPIN_MARGIN_MS, or 0 if that is not positive
@@ -57,16 +52,8 @@ bool applyPaceSleep() {
     };
     cave.emit(remaining);
     // sleep:
-    if (counters != nullptr) {
-        cave.increment(reinterpret_cast<uintptr_t>(&counters->paceLoopIterations));
-        cave.emit8(0x01); // add [paceSleepMs], eax
-        cave.emit8(0x05);
-        cave.emit32(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&counters->paceSleepMs)));
-    }
     cave.emit8(0x50); // push eax
-    cave.emit8(0xFF); // call [Sleep]
-    cave.emit8(0x15);
-    cave.emit32(SLEEP_IAT);
+    cave.callThrough(SLEEP_IAT);
     cave.jmp(LOOP_RESUME);
 
     static PatchSet set;

@@ -1,11 +1,8 @@
 #include <windows.h>
 #include <cstdint>
-#include <cstring>
 
-#include "features.h"
 #include "patch_set.h"
 #include "perf_scope_skip.h"
-#include "stats.h"
 
 // The render wraps thirty of its stages in a scope object (PerfScope, 0x00517690) that builds an event name for
 // D3DPERF_BeginEvent. For the two scopes that are opened per mesh that is two strncpy calls, one of which pads to 256
@@ -29,21 +26,6 @@ namespace {
 
 bool applyPerfScopeSkip() {
 
-    Stats *counters = features::STATS ? stats() : nullptr;
-
-    BYTE *caveMemory = counters != nullptr ? allocateCave() : nullptr;
-    if (counters != nullptr && caveMemory == nullptr) {
-        return false;
-    }
-    Cave cave(caveMemory);
-
-    uintptr_t target = SCOPE_EXIT;
-    if (counters != nullptr) {
-        target = cave.here();
-        cave.increment(reinterpret_cast<uintptr_t>(&counters->perfScopesSkipped));
-        cave.jmp(SCOPE_EXIT);
-    }
-
     static PatchSet set;
     set.reset();
 
@@ -53,18 +35,11 @@ bool applyPerfScopeSkip() {
 
     // je SCOPE_EXIT, which becomes a jmp to it
     const BYTE nullNameBranch[6] = {0x0F, 0x84, 0x92, 0x00, 0x00, 0x00};
-    set.hook(SCOPE_NULL_NAME_BRANCH, nullNameBranch, target);
+    set.hook(SCOPE_NULL_NAME_BRANCH, nullNameBranch, SCOPE_EXIT);
 
     // mov eax, esi / pop esi / ret 0xC
     const BYTE scopeExit[6] = {0x8B, 0xC6, 0x5E, 0xC2, 0x0C, 0x00};
     set.expect(SCOPE_EXIT, scopeExit);
 
-    if (!commit(set, cave)) {
-        if (caveMemory != nullptr) {
-            VirtualFree(caveMemory, 0, MEM_RELEASE);
-        }
-        return false;
-    }
-
-    return true;
+    return commit(set, Cave(nullptr));
 }

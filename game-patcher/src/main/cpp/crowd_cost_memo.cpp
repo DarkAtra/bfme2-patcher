@@ -1,5 +1,4 @@
 #include <windows.h>
-#include <intrin.h>
 #include <cstdint>
 #include <cstring>
 
@@ -7,7 +6,6 @@
 #include "crowd_cost_memo.h"
 #include "features.h"
 #include "patch_set.h"
-#include "stats.h"
 
 // The pathfinder prices every cell its A* search opens by the crowd cost (0x006ED21E): it walks a window of cells around
 // the cell and, for every unit standing in the window, asks three questions about that unit:
@@ -24,10 +22,6 @@
 // (0x006F5519), and a counter in front of it makes all earlier entries stale. Nothing is kept from one search to the
 // next, so a search that only one machine runs (the UI asks the pathfinder for the cursor feedback) cannot leave
 // anything behind that another search could read.
-//
-// With statistics on, every 16th hit also runs the original function and compares, and the result of the original wins
-// if they ever differ. The crowd cost is timed with the time stamp counter, and a control word lets a measuring tool turn
-// the memo off while the game runs.
 
 using namespace crowd_cost;
 using namespace patching;
@@ -54,9 +48,6 @@ namespace {
     constexpr uintptr_t CROWD_COST_CALL_IN_ESCAPE_SEARCH = 0x006FB0B0;
     constexpr uintptr_t CROWD_COST_CALL_IN_MELEE_SEARCH = 0x006F702A;
 
-    constexpr uintptr_t QUEUE_PROCESSING = 0x006F2364;
-    constexpr uintptr_t QUEUE_PROCESSING_CALL = 0x0062E69F;
-
     constexpr uintptr_t CLEANUP = 0x006F5519;
     constexpr uintptr_t CLEANUP_AFTER_CALL = 0x006F5522;
     constexpr uintptr_t CLEANUP_CALLEE = 0x006F4B1A;
@@ -82,14 +73,6 @@ namespace {
     Entry speeds[TABLE_SIZE];
     volatile uint32_t epoch = 1;
 
-    Stats *counters() {
-        return features::STATS ? stats() : nullptr;
-    }
-
-    bool memoizing(const Stats *statistics) {
-        return statistics == nullptr || statistics->control >= 2;
-    }
-
     Entry &slot(Entry *table, const uint32_t first, const uint32_t second) {
         uint32_t hash = first * 0x9E3779B1u;
         hash ^= second * 0x85EBCA6Bu;
@@ -97,32 +80,14 @@ namespace {
         return table[hash & (TABLE_SIZE - 1)];
     }
 
-    // Looks the question up and runs `compute` on a miss. With statistics on, every 16th hit is checked against a fresh
-    // answer, which wins on a difference.
+    // Looks the question up and runs `compute` on a miss.
     template<typename Compute>
     uint32_t remembered(Entry *table, const uint32_t first, const uint32_t second, Compute compute) {
 
-        Stats *statistics = counters();
-        if (!memoizing(statistics)) {
-            return compute();
-        }
-
         Entry &entry = slot(table, first, second);
         const uint32_t current = epoch;
-        if (statistics != nullptr) {
-            statistics->objectMemoLookups++;
-        }
         if (entry.epoch == current && entry.first == first && entry.second == second) {
-            uint32_t result = entry.result;
-            if (statistics != nullptr && (++statistics->crowdCostHits & 15) == 0) {
-                const uint32_t again = compute();
-                statistics->crowdCostChecks++;
-                if (again != result) {
-                    statistics->crowdCostMismatches++;
-                    result = again;
-                }
-            }
-            return result;
+            return entry.result;
         }
 
         const uint32_t result = compute();
@@ -158,31 +123,6 @@ namespace {
         float speed;
         memcpy(&speed, &bits, sizeof(speed));
         return speed;
-    }
-
-    // Times the queue processing and keeps the last calls in a ring for the measuring tool. Only installed with statistics.
-    void __fastcall queueProcessingTimed(int self) {
-        Stats *statistics = counters();
-        const volatile uint32_t *queues = reinterpret_cast<const volatile uint32_t *>(self);
-        QueueRecord record;
-        record.before[0] = queues[0x1D1E8 / 4];
-        record.before[1] = queues[0x1D1EC / 4];
-        record.before[2] = queues[0x1C9E0 / 4];
-        record.before[3] = queues[0x1C9E4 / 4];
-        const uint64_t start = __rdtsc();
-        reinterpret_cast<void (__fastcall *)(int)>(QUEUE_PROCESSING)(self);
-        record.cycles = static_cast<uint32_t>(__rdtsc() - start);
-        record.cells = queues[0x3C / 4];
-        record.after[0] = queues[0x1D1E8 / 4];
-        record.after[1] = queues[0x1D1EC / 4];
-        record.after[2] = queues[0x1C9E0 / 4];
-        record.after[3] = queues[0x1C9E4 / 4];
-        uint64_t cycles = (static_cast<uint64_t>(statistics->queueCyclesHigh) << 32) | statistics->queueCyclesLow;
-        cycles += record.cycles;
-        statistics->queueCyclesLow = static_cast<uint32_t>(cycles);
-        statistics->queueCyclesHigh = static_cast<uint32_t>(cycles >> 32);
-        statistics->queue[statistics->queueWrites % 64] = record;
-        statistics->queueWrites++;
     }
 
     // What a unit in a cell window adds to the crowd cost of a cell, as far as it does not depend on the cell: nothing, a
@@ -250,12 +190,12 @@ namespace {
         record.speed = reinterpret_cast<Speed>(SPEED)(otherLocomotor, other);
     }
 
-    const UnitRecord &recordOf(const int mover, const int other, const int flag) {
+    const UnitRecord &recordOf(const uint32_t mover, const uint32_t other, const uint32_t flag) {
 
-        UnitRecord &record = unitRecords[((static_cast<uint32_t>(mover) * 0x9E3779B1u) ^ (static_cast<uint32_t>(other) * 0x85EBCA6Bu) ^ (static_cast<uint32_t>(flag) * 0xC2B2AE35u)) >> 19 & (TABLE_SIZE - 1)];
+        const uint32_t hash = (mover * 0x9E3779B1u) ^ (other * 0x85EBCA6Bu) ^ (flag * 0xC2B2AE35u);
+        UnitRecord &record = unitRecords[(hash >> 19) & (TABLE_SIZE - 1)];
         const uint32_t current = epoch;
-        if (record.epoch == current && record.mover == static_cast<uint32_t>(mover) && record.other == static_cast<uint32_t>(other)
-            && record.flag == static_cast<uint32_t>(flag)) {
+        if (record.epoch == current && record.mover == mover && record.other == other && record.flag == flag) {
             return record;
         }
         classify(record, mover, other, flag);
@@ -294,8 +234,8 @@ namespace {
                 if (units == 0) {
                     continue;
                 }
-                for (int node_ = readInt(units + 0x14); node_ != 0; node_ = readInt(node_)) {
-                    const int other = readInt(node_ + 8);
+                for (int link = readInt(units + 0x14); link != 0; link = readInt(link)) {
+                    const int other = readInt(link + 8);
                     if (other == mover || readInt(other + 0x27C) == mover) {
                         continue;
                     }
@@ -349,48 +289,20 @@ namespace {
     }
 
     // Stands in for the four calls of the crowd cost. The game's function stays the reference: where this cannot reproduce
-    // it, it runs, and with statistics on every 32nd answer is compared with it.
+    // it, it runs.
     int __fastcall crowdCost(void *self, void *, int mover, int node, const int *cell, int radius, int extent, int flag) {
 
-        Stats *statistics = counters();
-        const uint64_t start = statistics != nullptr ? __rdtsc() : 0;
         const auto original = reinterpret_cast<CrowdCost>(CROWD_COST);
 
-        int result;
-        const bool rewriting = statistics == nullptr ? features::CROWD_COST_REWRITE : statistics->control >= 3;
-        const int mode = rewriting ? precision() : -1;
+        const int mode = precision();
         if (mode < 0) {
-            if (statistics != nullptr && rewriting) {
-                statistics->crowdRewriteFallbacks++;
-            }
-            result = original(self, mover, node, cell, radius, extent, flag);
-        } else {
-            bool ok = true;
-            result = mode == 0 ? crowdCostOf<false>(self, mover, node, cell, radius, extent, flag, ok)
-                               : crowdCostOf<true>(self, mover, node, cell, radius, extent, flag, ok);
-            if (!ok) {
-                if (statistics != nullptr) {
-                    statistics->crowdRewriteFallbacks++;
-                }
-                result = original(self, mover, node, cell, radius, extent, flag);
-            } else if (statistics != nullptr) {
-                if ((++statistics->crowdRewriteCalls & 31) == 0) {
-                    const int again = original(self, mover, node, cell, radius, extent, flag);
-                    statistics->crowdRewriteChecks++;
-                    if (again != result) {
-                        statistics->crowdRewriteMismatches++;
-                        result = again;
-                    }
-                }
-            }
+            return original(self, mover, node, cell, radius, extent, flag);
         }
-
-        if (statistics != nullptr) {
-            uint64_t cycles = (static_cast<uint64_t>(statistics->crowdCostCyclesHigh) << 32) | statistics->crowdCostCyclesLow;
-            cycles += __rdtsc() - start;
-            statistics->crowdCostCyclesLow = static_cast<uint32_t>(cycles);
-            statistics->crowdCostCyclesHigh = static_cast<uint32_t>(cycles >> 32);
-            statistics->crowdCostCalls++;
+        bool ok = true;
+        const int result = mode == 0 ? crowdCostOf<false>(self, mover, node, cell, radius, extent, flag, ok)
+                                     : crowdCostOf<true>(self, mover, node, cell, radius, extent, flag, ok);
+        if (!ok) {
+            return original(self, mover, node, cell, radius, extent, flag);
         }
         return result;
     }
@@ -435,11 +347,7 @@ bool applyCrowdCostMemo() {
     const BYTE speedCall[5] = {0xE8, 0x30, 0x6B, 0xEF, 0xFF};
     set.redirectCall(SPEED_CALL_OF_OTHER, speedCall, reinterpret_cast<uintptr_t>(&speedMemo));
 
-    if (features::STATS) {
-        const BYTE queueCall[5] = {0xE8, 0xC0, 0x3C, 0x0C, 0x00};
-        set.redirectCall(QUEUE_PROCESSING_CALL, queueCall, reinterpret_cast<uintptr_t>(&queueProcessingTimed));
-    }
-    if (features::STATS || features::CROWD_COST_REWRITE) {
+    if (features::CROWD_COST_REWRITE) {
         // the four calls of the crowd cost
         const BYTE expansionCall[5] = {0xE8, 0x9C, 0x33, 0xFF, 0xFF};
         set.redirectCall(CROWD_COST_CALL_IN_EXPANSION, expansionCall, reinterpret_cast<uintptr_t>(&crowdCost));

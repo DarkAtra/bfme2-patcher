@@ -125,6 +125,20 @@ namespace patching {
             emitRelative(target);
         }
 
+        // `call dword [address]`, through an import slot
+        void callThrough(const uintptr_t address) {
+            emit8(0xFF);
+            emit8(0x15);
+            emit32(static_cast<uint32_t>(address));
+        }
+
+        // `jmp dword [address]`
+        void jmpThrough(const uintptr_t address) {
+            emit8(0xFF);
+            emit8(0x25);
+            emit32(static_cast<uint32_t>(address));
+        }
+
         void jcc(const BYTE condition, const uintptr_t target) {
             emit8(0x0F);
             emit8(condition);
@@ -156,8 +170,12 @@ namespace patching {
         }
     };
 
-    constexpr BYTE JE = 0x84;
+    // the second opcode byte of the two byte `0F 8x` conditional jumps
+    constexpr BYTE JO = 0x80;
     constexpr BYTE JB = 0x82;
+    constexpr BYTE JAE = 0x83;
+    constexpr BYTE JE = 0x84;
+    constexpr BYTE JNE = 0x85;
 
     inline BYTE *allocateCave() {
         return static_cast<BYTE *>(VirtualAlloc(nullptr, CAVE_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));

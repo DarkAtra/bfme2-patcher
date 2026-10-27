@@ -1,11 +1,8 @@
 #include <windows.h>
 #include <cstdint>
-#include <cstring>
 
 #include "cell_center.h"
-#include "features.h"
 #include "patch_set.h"
-#include "stats.h"
 
 // The pathfinder prices a step into a cell by counting the units around it (crowd cost, 0x006ED21E). For every unit it
 // finds in the cell window it first asks 0x006ED049 for the world position of the cell's centre: the footprint radius of
@@ -18,9 +15,6 @@
 // nothing reads, becomes the "computed" flag. A hook ahead of the loops clears the flag, a hook at the call site skips
 // the call once the flag is set. The values are the ones the call would have produced: the function only reads the unit,
 // the terrain and the height map, none of which change while the crowd cost is being computed.
-//
-// With statistics on, every 16th reuse also runs the original call into a scratch buffer and compares the bits, so a
-// real game can show that the reuse never changes a value.
 
 using namespace patching;
 
@@ -32,13 +26,9 @@ namespace {
     constexpr uintptr_t CELL_CENTER_CALL = 0x006ED37A;
     constexpr uintptr_t CELL_CENTER_RESUME = 0x006ED389;
     constexpr uintptr_t CELL_CENTER = 0x006ED049;
-
-    constexpr BYTE JNE = 0x85;
 }
 
 bool applyCellCenter() {
-
-    Stats *counters = features::STATS ? stats() : nullptr;
 
     BYTE *caveMemory = allocateCave();
     if (caveMemory == nullptr) {
@@ -55,16 +45,6 @@ bool applyCellCenter() {
     cave.jmp(LOOP_SETUP_NEXT);
 
     const uintptr_t lookup = cave.here();
-    size_t controlJcc = 0;
-    if (counters != nullptr) {
-        // cmp dword [control], 1 / jb the game's own call
-        cave.emit8(0x83);
-        cave.emit8(0x3D);
-        cave.emit32(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&counters->control)));
-        cave.emit8(0x01);
-        controlJcc = cave.size;
-        cave.jcc(JB, 0);
-    }
     // cmp dword [ebp - 0x28], 0 / jne reuse
     const BYTE flagSet[4] = {0x83, 0x7D, 0xD8, 0x00};
     cave.emit(flagSet);
@@ -87,75 +67,13 @@ bool applyCellCenter() {
     // mov dword [ebp - 0x28], 1
     const BYTE setFlag[7] = {0xC7, 0x45, 0xD8, 0x01, 0x00, 0x00, 0x00};
     cave.emit(setFlag);
-    if (counters != nullptr) {
-        cave.increment(reinterpret_cast<uintptr_t>(&counters->cellCenterComputed));
-    }
     cave.jmp(CELL_CENTER_RESUME);
 
     cave.resolveJcc(reuseJcc, cave.here());
-    if (counters != nullptr) {
-        cave.increment(reinterpret_cast<uintptr_t>(&counters->cellCenterReused));
-
-        // Every 16th reuse: mov eax, [reused] / test al, 15 / jne skipCheck
-        cave.emit8(0xA1);
-        cave.emit32(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&counters->cellCenterReused)));
-        const BYTE every16th[2] = {0xA8, 0x0F};
-        cave.emit(every16th);
-        const size_t skipCheckJcc = cave.size;
-        cave.jcc(JNE, 0);
-
-        // sub esp, 0xC (scratch x, y, z) / mov eax, esp / the call again / add esp, 0x10
-        const BYTE reserveScratch[3] = {0x83, 0xEC, 0x0C};
-        cave.emit(reserveScratch);
-        const BYTE scratchAddress[2] = {0x8B, 0xC4};
-        cave.emit(scratchAddress);
-        cave.emit(push1);
-        cave.emit(pushCell);
-        cave.emit8(pushUnit);
-        cave.emit8(pushOutput);
-        cave.call(CELL_CENTER);
-        const BYTE dropArguments[3] = {0x83, 0xC4, 0x10};
-        cave.emit(dropArguments);
-
-        // mov eax, [esp] / cmp eax, [ebp - 0x30] / jne mismatch / mov eax, [esp + 4] / cmp eax, [ebp - 0x2C] / je match
-        const BYTE loadX[3] = {0x8B, 0x04, 0x24};
-        const BYTE compareX[3] = {0x3B, 0x45, 0xD0};
-        cave.emit(loadX);
-        cave.emit(compareX);
-        const size_t xMismatchJcc = cave.size;
-        cave.jcc(JNE, 0);
-        const BYTE loadY[4] = {0x8B, 0x44, 0x24, 0x04};
-        const BYTE compareY[3] = {0x3B, 0x45, 0xD4};
-        cave.emit(loadY);
-        cave.emit(compareY);
-        const size_t matchJcc = cave.size;
-        cave.jcc(JE, 0);
-        cave.resolveJcc(xMismatchJcc, cave.here());
-        cave.increment(reinterpret_cast<uintptr_t>(&counters->cellCenterMismatches));
-        cave.resolveJcc(matchJcc, cave.here());
-        cave.increment(reinterpret_cast<uintptr_t>(&counters->cellCenterChecks));
-
-        // add esp, 0xC
-        const BYTE dropScratch[3] = {0x83, 0xC4, 0x0C};
-        cave.emit(dropScratch);
-        cave.resolveJcc(skipCheckJcc, cave.here());
-    }
     // The resume point still removes four arguments, which are not on the stack on this path: sub esp, 0x10
     const BYTE reserveArguments[3] = {0x83, 0xEC, 0x10};
     cave.emit(reserveArguments);
     cave.jmp(CELL_CENTER_RESUME);
-
-    if (counters != nullptr) {
-        // The game's own call, for the comparison runs
-        cave.resolveJcc(controlJcc, cave.here());
-        cave.emit(push1);
-        cave.emit(pushCell);
-        cave.emit(leaPosition);
-        cave.emit8(pushUnit);
-        cave.emit8(pushOutput);
-        cave.call(CELL_CENTER);
-        cave.jmp(CELL_CENTER_RESUME);
-    }
 
     static PatchSet set;
     set.reset();

@@ -1,18 +1,14 @@
 #include <windows.h>
 #include <cstdint>
-#include <cstring>
 
-#include "features.h"
 #include "patch_set.h"
 #include "sse_rounding.h"
-#include "stats.h"
-
-// The game rounds and takes square roots through msvcr71's floor, ceil and sqrt: 415 and 144 call sites, most of them in the pathfinder, the terrain
+// The game rounds through msvcr71's floor and ceil (415 and 144 call sites), most of them in the pathfinder, the terrain
 // height lookup and the cell conversions. Both functions switch the x87 rounding mode with fldcw around frndint and
 // switch it back, and fldcw stalls the pipeline. In the slow frames of a profiled mid game that is a fifth of the samples
 // of the game thread.
 //
-// This replaces the two import slots of the exe with SSE2 versions that compute the same result without touching the x87
+// This replaces the import slots of the exe with SSE2 versions that compute the same result without touching the x87
 // control word: truncate to int32, step by one when the truncation went the wrong way, convert back. The result is the
 // exact integer the library returns, including the sign of a zero. Anything the int32 path cannot represent (NaN,
 // infinities, magnitudes of 2^31 and above) is handed to the original function, so those keep the library's behaviour.
@@ -21,6 +17,9 @@
 // not the 0x27F it wants, it loads 0x27F, takes the root with fsqrt and loads the old word back. A double precision fsqrt
 // is correctly rounded, which is what sqrtsd computes, so the roots are the same bits. Negative arguments and NaN keep
 // going through the library.
+//
+// fabs changes the control word too (about 100 ns a call). The replacement clears the sign bit, infinities and NaN keep going
+// through the library.
 
 using namespace patching;
 
@@ -29,13 +28,24 @@ namespace {
     constexpr uintptr_t FLOOR_IMPORT = 0x00BD0580;
     constexpr uintptr_t CEIL_IMPORT = 0x00BD0588;
     constexpr uintptr_t SQRT_IMPORT = 0x00BD06A0;
+    constexpr uintptr_t FABS_IMPORT = 0x00BD06A8;
 
-    constexpr BYTE JNE = 0x85;
-    constexpr BYTE JO = 0x80;
+    // cvtsi2sd xmm1, eax
+    void emitIntToDouble(Cave &cave) {
+        const BYTE convert[4] = {0xF2, 0x0F, 0x2A, 0xC8};
+        cave.emit(convert);
+    }
+
+    // sub esp, 8 / movsd [esp], xmm1 / fld qword [esp] / add esp, 8 / ret: the double in xmm1 is the result
+    void emitReturnInSt0(Cave &cave) {
+        const BYTE returnInSt0[14] = {0x83, 0xEC, 0x08, 0xF2, 0x0F, 0x11, 0x0C, 0x24, 0xDD, 0x04, 0x24, 0x83, 0xC4, 0x08};
+        cave.emit(returnInSt0);
+        cave.emit8(0xC3);
+    }
 
     // Everything after the int32 result is in eax and the argument is still in xmm0: the zero case, the conversion back
     // and the return in st(0).
-    void emitFinish(Cave &cave, const size_t fallbackJccOffsetCount, const size_t *fallbackJccOffsets, const uintptr_t fallbackSlot, const uintptr_t fallbackCounter) {
+    void emitFinish(Cave &cave, const size_t fallbackJccOffsetCount, const size_t *fallbackJccOffsets, const uintptr_t fallbackSlot) {
 
         // test eax, eax
         const BYTE testResult[2] = {0x85, 0xC0};
@@ -51,51 +61,15 @@ namespace {
         cave.jmp(0);
 
         cave.resolveJcc(nonZeroJcc, cave.here());
-        // cvtsi2sd xmm1, eax
-        const BYTE convert[4] = {0xF2, 0x0F, 0x2A, 0xC8};
-        cave.emit(convert);
+        emitIntToDouble(cave);
 
         cave.resolveJmp(skipConversion, cave.here());
-        // sub esp, 8 / movsd [esp], xmm1 / fld qword [esp] / add esp, 8 / ret
-        const BYTE returnInSt0[14] = {0x83, 0xEC, 0x08, 0xF2, 0x0F, 0x11, 0x0C, 0x24, 0xDD, 0x04, 0x24, 0x83, 0xC4, 0x08};
-        cave.emit(returnInSt0);
-        cave.emit8(0xC3);
+        emitReturnInSt0(cave);
 
         for (size_t i = 0; i < fallbackJccOffsetCount; i++) {
             cave.resolveJcc(fallbackJccOffsets[i], cave.here());
         }
-        if (fallbackCounter != 0) {
-            cave.increment(fallbackCounter);
-        }
-        // jmp [fallbackSlot]
-        cave.emit8(0xFF);
-        cave.emit8(0x25);
-        cave.emit32(static_cast<uint32_t>(fallbackSlot));
-    }
-
-    // cmp dword [control], 1 / jb original. Returns the offset of the jb, 0 without a control word.
-    size_t emitControlCheck(Cave &cave, const uintptr_t control) {
-        if (control == 0) {
-            return 0;
-        }
-        cave.emit8(0x83);
-        cave.emit8(0x3D);
-        cave.emit32(static_cast<uint32_t>(control));
-        cave.emit8(0x01);
-        const size_t offset = cave.size;
-        cave.jcc(JB, 0);
-        return offset;
-    }
-
-    // The target of the jb: jmp [fallbackSlot], without counting a fallback.
-    void emitControlTarget(Cave &cave, const uintptr_t control, const size_t controlJcc, const uintptr_t fallbackSlot) {
-        if (control == 0) {
-            return;
-        }
-        cave.resolveJcc(controlJcc, cave.here());
-        cave.emit8(0xFF);
-        cave.emit8(0x25);
-        cave.emit32(static_cast<uint32_t>(fallbackSlot));
+        cave.jmpThrough(fallbackSlot);
     }
 
     // movsd xmm0, [esp + 4] / cvttsd2si eax, xmm0 / cmp eax, 0x80000000 / je fallback / cvtsi2sd xmm1, eax
@@ -108,20 +82,15 @@ namespace {
         cave.emit(outOfRange);
         fallbackJcc = cave.size;
         cave.jcc(JE, 0);
-        const BYTE convert[4] = {0xF2, 0x0F, 0x2A, 0xC8};
-        cave.emit(convert);
+        emitIntToDouble(cave);
     }
 }
 
 namespace sse_rounding {
 
-    uintptr_t emitFloor(Cave &cave, const uintptr_t fallbackSlot, const uintptr_t counter, const uintptr_t fallbackCounter, const uintptr_t control) {
+    uintptr_t emitFloor(Cave &cave, const uintptr_t fallbackSlot) {
 
         const uintptr_t entry = cave.here();
-        if (counter != 0) {
-            cave.increment(counter);
-        }
-        const size_t controlJcc = emitControlCheck(cave, control);
         size_t fallbackJccs[1];
         emitTruncate(cave, fallbackJccs[0]);
 
@@ -132,18 +101,13 @@ namespace sse_rounding {
         const BYTE subtract[2] = {0x2B, 0xC1};
         cave.emit(subtract);
 
-        emitFinish(cave, 1, fallbackJccs, fallbackSlot, fallbackCounter);
-        emitControlTarget(cave, control, controlJcc, fallbackSlot);
+        emitFinish(cave, 1, fallbackJccs, fallbackSlot);
         return entry;
     }
 
-    uintptr_t emitCeil(Cave &cave, const uintptr_t fallbackSlot, const uintptr_t counter, const uintptr_t fallbackCounter, const uintptr_t control) {
+    uintptr_t emitCeil(Cave &cave, const uintptr_t fallbackSlot) {
 
         const uintptr_t entry = cave.here();
-        if (counter != 0) {
-            cave.increment(counter);
-        }
-        const size_t controlJcc = emitControlCheck(cave, control);
         size_t fallbackJccs[2];
         emitTruncate(cave, fallbackJccs[0]);
 
@@ -157,18 +121,39 @@ namespace sse_rounding {
         fallbackJccs[1] = cave.size;
         cave.jcc(JO, 0);
 
-        emitFinish(cave, 2, fallbackJccs, fallbackSlot, fallbackCounter);
-        emitControlTarget(cave, control, controlJcc, fallbackSlot);
+        emitFinish(cave, 2, fallbackJccs, fallbackSlot);
         return entry;
     }
 
-    uintptr_t emitSqrt(Cave &cave, const uintptr_t fallbackSlot, const uintptr_t counter, const uintptr_t fallbackCounter, const uintptr_t control) {
+    uintptr_t emitFabs(Cave &cave, const uintptr_t fallbackSlot) {
 
         const uintptr_t entry = cave.here();
-        if (counter != 0) {
-            cave.increment(counter);
-        }
-        const size_t controlJcc = emitControlCheck(cave, control);
+
+        // mov eax, [esp + 8] (the high word of the argument) / mov edx, eax / and edx, 0x7FF00000 / cmp edx, 0x7FF00000 /
+        // je fallback (an infinity or NaN)
+        const BYTE exponent[16] = {0x8B, 0x44, 0x24, 0x08, 0x8B, 0xD0, 0x81, 0xE2, 0x00, 0x00, 0xF0, 0x7F, 0x81, 0xFA, 0x00, 0x00};
+        cave.emit(exponent);
+        const BYTE exponentEnd[2] = {0xF0, 0x7F};
+        cave.emit(exponentEnd);
+        const size_t fallbackJcc = cave.size;
+        cave.jcc(JE, 0);
+
+        // and eax, 0x7FFFFFFF / mov ecx, [esp + 4] / push eax / push ecx / fld qword [esp] / add esp, 8 / ret
+        const BYTE clearSign[5] = {0x25, 0xFF, 0xFF, 0xFF, 0x7F};
+        cave.emit(clearSign);
+        const BYTE load[10] = {0x8B, 0x4C, 0x24, 0x04, 0x50, 0x51, 0xDD, 0x04, 0x24, 0x83};
+        cave.emit(load);
+        const BYTE loadEnd[3] = {0xC4, 0x08, 0xC3};
+        cave.emit(loadEnd);
+
+        cave.resolveJcc(fallbackJcc, cave.here());
+        cave.jmpThrough(fallbackSlot);
+        return entry;
+    }
+
+    uintptr_t emitSqrt(Cave &cave, const uintptr_t fallbackSlot) {
+
+        const uintptr_t entry = cave.here();
 
         // movsd xmm0, [esp + 4] / pxor xmm1, xmm1 / comisd xmm0, xmm1 / jb fallback (carry is set for a negative number and
         // for NaN, not for -0.0, whose root is -0.0 as well)
@@ -210,24 +195,13 @@ namespace sse_rounding {
         const BYTE rootSingle[8] = {0xF3, 0x0F, 0x51, 0xC9, 0xF3, 0x0F, 0x5A, 0xC9};
         cave.emit(rootSingle);
 
-        // sub esp, 8 / movsd [esp], xmm1 / fld qword [esp] / add esp, 8 / ret
         cave.resolveJmp(finishJmp, cave.here());
-        const BYTE returnInSt0[14] = {0x83, 0xEC, 0x08, 0xF2, 0x0F, 0x11, 0x0C, 0x24, 0xDD, 0x04, 0x24, 0x83, 0xC4, 0x08};
-        cave.emit(returnInSt0);
-        cave.emit8(0xC3);
+        emitReturnInSt0(cave);
 
         cave.resolveJcc(negativeJcc, cave.here());
         cave.resolveJcc(otherPrecisionJcc, cave.here());
         cave.resolveJcc(notAFloatJcc, cave.here());
-        if (fallbackCounter != 0) {
-            cave.increment(fallbackCounter);
-        }
-        // jmp [fallbackSlot]
-        cave.emit8(0xFF);
-        cave.emit8(0x25);
-        cave.emit32(static_cast<uint32_t>(fallbackSlot));
-
-        emitControlTarget(cave, control, controlJcc, fallbackSlot);
+        cave.jmpThrough(fallbackSlot);
         return entry;
     }
 }
@@ -238,14 +212,26 @@ bool applySseRounding() {
     if (runtime == nullptr) {
         return false;
     }
-    const auto library = [runtime](const char *name) {
-        return reinterpret_cast<uintptr_t>(GetProcAddress(runtime, name));
+
+    struct Replacement {
+        const char *name;
+        uintptr_t importSlot;
+        uintptr_t (*emit)(Cave &cave, uintptr_t fallbackSlot);
     };
-    const uintptr_t originalFloor = library("floor");
-    const uintptr_t originalCeil = library("ceil");
-    const uintptr_t originalSqrt = library("sqrt");
-    if (originalFloor == 0 || originalCeil == 0 || originalSqrt == 0) {
-        return false;
+    const Replacement replacements[] = {
+        {"floor", FLOOR_IMPORT, sse_rounding::emitFloor},
+        {"ceil", CEIL_IMPORT, sse_rounding::emitCeil},
+        {"sqrt", SQRT_IMPORT, sse_rounding::emitSqrt},
+        {"fabs", FABS_IMPORT, sse_rounding::emitFabs}
+    };
+    constexpr size_t COUNT = sizeof(replacements) / sizeof(replacements[0]);
+
+    uintptr_t originals[COUNT];
+    for (size_t i = 0; i < COUNT; i++) {
+        originals[i] = reinterpret_cast<uintptr_t>(GetProcAddress(runtime, replacements[i].name));
+        if (originals[i] == 0) {
+            return false;
+        }
     }
 
     BYTE *caveMemory = allocateCave();
@@ -254,47 +240,22 @@ bool applySseRounding() {
     }
     Cave cave(caveMemory);
 
-    // The originals the fallback paths jump to, one dword each.
-    const uintptr_t floorFallbackSlot = cave.here();
-    cave.emit32(static_cast<uint32_t>(originalFloor));
-    const uintptr_t ceilFallbackSlot = cave.here();
-    cave.emit32(static_cast<uint32_t>(originalCeil));
-    const uintptr_t sqrtFallbackSlot = cave.here();
-    cave.emit32(static_cast<uint32_t>(originalSqrt));
-
-    Stats *counters = features::STATS ? stats() : nullptr;
-    const uintptr_t sseFloor = sse_rounding::emitFloor(cave, floorFallbackSlot, counters != nullptr ? reinterpret_cast<uintptr_t>(&counters->floorCalls) : 0, counters != nullptr ? reinterpret_cast<uintptr_t>(&counters->roundingFallbacks) : 0, counters != nullptr ? reinterpret_cast<uintptr_t>(&counters->control) : 0);
-    const uintptr_t sseCeil = sse_rounding::emitCeil(cave, ceilFallbackSlot, counters != nullptr ? reinterpret_cast<uintptr_t>(&counters->ceilCalls) : 0, counters != nullptr ? reinterpret_cast<uintptr_t>(&counters->roundingFallbacks) : 0, counters != nullptr ? reinterpret_cast<uintptr_t>(&counters->control) : 0);
-    const uintptr_t sseSqrt = sse_rounding::emitSqrt(cave, sqrtFallbackSlot, counters != nullptr ? reinterpret_cast<uintptr_t>(&counters->sqrtCalls) : 0, counters != nullptr ? reinterpret_cast<uintptr_t>(&counters->sqrtFallbacks) : 0, counters != nullptr ? reinterpret_cast<uintptr_t>(&counters->control) : 0);
-
     static PatchSet set;
     set.reset();
 
-    // The slots must still hold the library functions, otherwise something else already took them over.
-    BYTE expectedFloor[4];
-    BYTE expectedCeil[4];
-    const auto originalFloorAddress = static_cast<uint32_t>(originalFloor);
-    const auto originalCeilAddress = static_cast<uint32_t>(originalCeil);
-    memcpy(expectedFloor, &originalFloorAddress, sizeof(expectedFloor));
-    memcpy(expectedCeil, &originalCeilAddress, sizeof(expectedCeil));
+    for (size_t i = 0; i < COUNT; i++) {
+        // the original the fallback path jumps to
+        const uintptr_t fallbackSlot = cave.here();
+        cave.emit32(static_cast<uint32_t>(originals[i]));
+        const uintptr_t replacement = replacements[i].emit(cave, fallbackSlot);
 
-    BYTE replacementFloor[4];
-    BYTE replacementCeil[4];
-    const auto sseFloorAddress = static_cast<uint32_t>(sseFloor);
-    const auto sseCeilAddress = static_cast<uint32_t>(sseCeil);
-    memcpy(replacementFloor, &sseFloorAddress, sizeof(replacementFloor));
-    memcpy(replacementCeil, &sseCeilAddress, sizeof(replacementCeil));
-
-    set.replace(FLOOR_IMPORT, expectedFloor, replacementFloor);
-    set.replace(CEIL_IMPORT, expectedCeil, replacementCeil);
-
-    BYTE expectedSqrt[4];
-    BYTE replacementSqrt[4];
-    const auto originalSqrtAddress = static_cast<uint32_t>(originalSqrt);
-    const auto sseSqrtAddress = static_cast<uint32_t>(sseSqrt);
-    memcpy(expectedSqrt, &originalSqrtAddress, sizeof(expectedSqrt));
-    memcpy(replacementSqrt, &sseSqrtAddress, sizeof(replacementSqrt));
-    set.replace(SQRT_IMPORT, expectedSqrt, replacementSqrt);
+        // the slot must still hold the library function, otherwise something else already took it over
+        BYTE expected[4];
+        BYTE replaced[4];
+        putInt(expected, static_cast<int>(originals[i]));
+        putInt(replaced, static_cast<int>(replacement));
+        set.replace(replacements[i].importSlot, expected, replaced);
+    }
 
     if (!commit(set, cave)) {
         VirtualFree(caveMemory, 0, MEM_RELEASE);

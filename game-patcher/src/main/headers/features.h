@@ -36,8 +36,16 @@
 #define GAME_PATCHER_CROWD_COST_REWRITE 1
 #endif
 
-#ifndef GAME_PATCHER_STATS
-#define GAME_PATCHER_STATS 0
+#ifndef GAME_PATCHER_BROAD_PHASE_TABLE
+#define GAME_PATCHER_BROAD_PHASE_TABLE 1
+#endif
+
+#ifndef GAME_PATCHER_QUAD_BATCH_CAP
+#define GAME_PATCHER_QUAD_BATCH_CAP 1
+#endif
+
+#ifndef GAME_PATCHER_QUAD_BATCH_FLUSH
+#define GAME_PATCHER_QUAD_BATCH_FLUSH 1
 #endif
 
 namespace features {
@@ -68,6 +76,16 @@ namespace features {
     // about every unit in every cell window (crowd_cost_memo.cpp).
     constexpr bool CROWD_COST_REWRITE = GAME_PATCHER_CROWD_COST_REWRITE != 0;
 
-    // Makes the patches count what they do in a shared memory block, for measuring. Leave off for release builds.
-    constexpr bool STATS = GAME_PATCHER_STATS != 0;
+    // Gives the collision broad phase's first pair table 262139 buckets instead of 11131, so that the sweep's lookups no longer walk
+    // chains of ten nodes or more when a big army is on the map (broad_phase_table.cpp). The game behaves exactly as before.
+    constexpr bool BROAD_PHASE_TABLE = GAME_PATCHER_BROAD_PHASE_TABLE != 0;
+
+    // Stops the 2D overlay batch (health bars and the like) from taking more than the 65535 indices its 16 bit counters can hold:
+    // beyond that the game writes past the end of its dynamic index buffer and crashes when a big army is on screen
+    // (quad_batch_cap.cpp). QUAD_BATCH_FLUSH decides what happens to the rectangles that no longer fit.
+    constexpr bool QUAD_BATCH_CAP = GAME_PATCHER_QUAD_BATCH_CAP != 0;
+
+    // With the cap: draws the batch collected so far and starts a new one instead of dropping the rectangles that no longer
+    // fit, so that every health bar stays visible (quad_batch_cap.cpp). Without it the excess rectangles are not drawn.
+    constexpr bool QUAD_BATCH_FLUSH = GAME_PATCHER_QUAD_BATCH_FLUSH != 0;
 }

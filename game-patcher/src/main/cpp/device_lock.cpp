@@ -4,9 +4,7 @@
 #include <cstring>
 
 #include "device_lock.h"
-#include "features.h"
 #include "patch_set.h"
-#include "stats.h"
 
 // Every call of the render's wrapper layer is bracketed by WW3D::Lock (0x0051EEC0) and WW3D::Unlock (0x005208D0), 123 and
 // 232 call sites. Each pair waits on and releases a kernel mutex (the handle at 0x00DD1FD8, created in 0x00524FD0), which
@@ -51,16 +49,11 @@ namespace {
     };
 
     // The mutex wait of WW3D::Lock: take the section and report WAIT_OBJECT_0.
-    uintptr_t emitLock(Cave &cave, const CaveData *data, Stats *counters) {
+    uintptr_t emitLock(Cave &cave, const CaveData *data) {
         const uintptr_t entry = cave.here();
-        if (counters != nullptr) {
-            cave.increment(reinterpret_cast<uintptr_t>(&counters->deviceLockAcquires));
-        }
         cave.emit8(0x68); // push section
         cave.emit32(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&data->section)));
-        const BYTE enter[2] = {0xFF, 0x15}; // call [EnterCriticalSection]
-        cave.emit(enter);
-        cave.emit32(ENTER_CRITICAL_SECTION_IAT);
+        cave.callThrough(ENTER_CRITICAL_SECTION_IAT);
         const BYTE waitObject0[2] = {0x33, 0xC0}; // xor eax, eax
         cave.emit(waitObject0);
         cave.jmp(LOCK_RESUME);
@@ -69,15 +62,12 @@ namespace {
 
     // The timed wait of the load screen's try lock. `timeout` is the argument of the function, which the cave is
     // entered at the start of. Reports WAIT_OBJECT_0 or WAIT_TIMEOUT to the code that checks it.
-    uintptr_t emitTryLock(Cave &cave, const CaveData *data, Stats *counters) {
+    uintptr_t emitTryLock(Cave &cave, const CaveData *data) {
         const uintptr_t section = reinterpret_cast<uintptr_t>(&data->section);
         const uintptr_t tryEnter = reinterpret_cast<uintptr_t>(&data->tryEnterCriticalSection);
         const uintptr_t getTickCount = reinterpret_cast<uintptr_t>(&data->getTickCount);
 
         const uintptr_t entry = cave.here();
-        if (counters != nullptr) {
-            cave.increment(reinterpret_cast<uintptr_t>(&counters->deviceLockTries));
-        }
 
         const BYTE prologue[6] = {
             0x53,                   // push ebx
@@ -90,54 +80,45 @@ namespace {
             cave.emit8(0x68);
             cave.emit32(static_cast<uint32_t>(section));
         };
-        const auto callThrough = [&](const uintptr_t pointer) {
-            const BYTE call[2] = {0xFF, 0x15};
-            cave.emit(call);
-            cave.emit32(static_cast<uint32_t>(pointer));
-        };
         const BYTE testResult[2] = {0x85, 0xC0}; // test eax, eax
 
         pushSection();
-        callThrough(tryEnter);
+        cave.callThrough(tryEnter);
         cave.emit(testResult);
         const size_t jumpToAcquired = cave.size;
-        cave.jcc(0x85, 0); // jnz acquired
+        cave.jcc(JNE, 0); // jnz acquired
 
-        callThrough(getTickCount);
+        cave.callThrough(getTickCount);
         const BYTE keepStart[2] = {0x8B, 0xD8}; // mov ebx, eax
         cave.emit(keepStart);
 
         const uintptr_t spin = cave.here();
-        callThrough(getTickCount);
+        cave.callThrough(getTickCount);
         const BYTE elapsed[4] = {
             0x2B, 0xC3, // sub eax, ebx
             0x3B, 0xC6  // cmp eax, esi
         };
         cave.emit(elapsed);
         const size_t jumpToTimeout = cave.size;
-        cave.jcc(0x83, 0); // jae timeout
+        cave.jcc(JAE, 0); // jae timeout
 
         const BYTE sleepOne[2] = {0x6A, 0x01}; // push 1
         cave.emit(sleepOne);
-        callThrough(SLEEP_IAT);
+        cave.callThrough(SLEEP_IAT);
         pushSection();
-        callThrough(tryEnter);
+        cave.callThrough(tryEnter);
         cave.emit(testResult);
-        cave.jcc(0x84, spin); // jz spin
+        cave.jcc(JE, spin); // jz spin
 
         const uintptr_t acquired = cave.here();
         cave.resolveJcc(jumpToAcquired, acquired);
         const BYTE waitObject0[2] = {0x33, 0xC0}; // xor eax, eax
         cave.emit(waitObject0);
         const size_t jumpToDone = cave.size;
-        cave.emit8(0xE9);
-        cave.emit32(0); // jmp done
+        cave.jmp(0); // jmp done
 
         const uintptr_t timedOut = cave.here();
         cave.resolveJcc(jumpToTimeout, timedOut);
-        if (counters != nullptr) {
-            cave.increment(reinterpret_cast<uintptr_t>(&counters->deviceLockTryTimeouts));
-        }
         cave.emit8(0xB8); // mov eax, WAIT_TIMEOUT
         cave.emit32(WAIT_TIMEOUT_RESULT);
 
@@ -150,14 +131,11 @@ namespace {
     }
 
     // ReleaseMutex: leave the section if this thread owns it.
-    uintptr_t emitRelease(Cave &cave, const CaveData *data, Stats *counters, const uintptr_t resume) {
+    uintptr_t emitRelease(Cave &cave, const CaveData *data, const uintptr_t resume) {
         const uintptr_t section = reinterpret_cast<uintptr_t>(&data->section);
         const uintptr_t owner = section + offsetof(CRITICAL_SECTION, OwningThread);
 
         const uintptr_t entry = cave.here();
-        if (counters != nullptr) {
-            cave.increment(reinterpret_cast<uintptr_t>(&counters->deviceLockReleases));
-        }
         const BYTE currentThread[6] = {0x64, 0xA1, 0x24, 0x00, 0x00, 0x00}; // mov eax, fs:[0x24]   the thread id
         cave.emit(currentThread);
         const BYTE compare[2] = {0x3B, 0x05}; // cmp eax, [owner]
@@ -167,9 +145,7 @@ namespace {
         cave.emit(skipLeave);
         cave.emit8(0x68); // push section
         cave.emit32(static_cast<uint32_t>(section));
-        const BYTE leave[2] = {0xFF, 0x15}; // call [LeaveCriticalSection]
-        cave.emit(leave);
-        cave.emit32(LEAVE_CRITICAL_SECTION_IAT);
+        cave.callThrough(LEAVE_CRITICAL_SECTION_IAT);
         cave.jmp(resume);
         return entry;
     }
@@ -177,7 +153,7 @@ namespace {
 
 bool applyDeviceLock() {
 
-    HMODULE kernel32 = GetModuleHandleA("kernel32");
+    const HMODULE kernel32 = GetModuleHandleA("kernel32");
     const auto tryEnterCriticalSection = reinterpret_cast<uintptr_t>(GetProcAddress(kernel32, "TryEnterCriticalSection"));
     const auto getTickCount = reinterpret_cast<uintptr_t>(GetProcAddress(kernel32, "GetTickCount"));
     if (tryEnterCriticalSection == 0 || getTickCount == 0) {
@@ -198,12 +174,10 @@ bool applyDeviceLock() {
     Cave cave(caveMemory);
     cave.size = sizeof(CaveData);
 
-    Stats *counters = features::STATS ? stats() : nullptr;
-
-    const uintptr_t lockEntry = emitLock(cave, data, counters);
-    const uintptr_t tryLockEntry = emitTryLock(cave, data, counters);
-    const uintptr_t unlockEntry = emitRelease(cave, data, counters, UNLOCK_RESUME);
-    const uintptr_t initEntry = emitRelease(cave, data, counters, INIT_RESUME);
+    const uintptr_t lockEntry = emitLock(cave, data);
+    const uintptr_t tryLockEntry = emitTryLock(cave, data);
+    const uintptr_t unlockEntry = emitRelease(cave, data, UNLOCK_RESUME);
+    const uintptr_t initEntry = emitRelease(cave, data, INIT_RESUME);
 
     static PatchSet set;
     set.reset();
