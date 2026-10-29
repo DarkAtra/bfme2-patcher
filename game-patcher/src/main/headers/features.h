@@ -52,6 +52,14 @@
 #define GAME_PATCHER_QUAD_BATCH_FLUSH 1
 #endif
 
+#ifndef GAME_PATCHER_AI_CONSTRUCTION_GATE
+#define GAME_PATCHER_AI_CONSTRUCTION_GATE 1
+#endif
+
+#ifndef GAME_PATCHER_AI_POWER_MODEL_CONDITION
+#define GAME_PATCHER_AI_POWER_MODEL_CONDITION 1
+#endif
+
 namespace features {
 
     // Draws at 60 frames per second without changing the game pace or the camera speed (render_rate.cpp).
@@ -96,4 +104,12 @@ namespace features {
     // With the cap: draws the batch collected so far and starts a new one instead of dropping the rectangles that no longer
     // fit, so that every health bar stays visible (quad_batch_cap.cpp). Without it the excess rectangles are not drawn.
     constexpr bool QUAD_BATCH_FLUSH = GAME_PATCHER_QUAD_BATCH_FLUSH != 0;
+
+    // Stops the skirmish AI from picking a building that is still under construction to produce a unit or revive a hero, which
+    // the player cannot do either (ai_construction_gate.cpp). The AI uses a finished building instead or waits.
+    constexpr bool AI_CONSTRUCTION_GATE = GAME_PATCHER_AI_CONSTRUCTION_GATE != 0;
+
+    // The AI no longer casts a power whose button the model conditions of its object disable, which the player cannot press
+    // either, e.g. a silenced hero's abilities (ai_power_model_condition.cpp).
+    constexpr bool AI_POWER_MODEL_CONDITION = GAME_PATCHER_AI_POWER_MODEL_CONDITION != 0;
 }

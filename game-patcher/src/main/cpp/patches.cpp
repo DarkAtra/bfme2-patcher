@@ -1,6 +1,8 @@
 #include <windows.h>
 #include <cstdint>
 
+#include "ai_construction_gate.h"
+#include "ai_power_model_condition.h"
 #include "broad_phase_table.h"
 #include "cell_center.h"
 #include "contact_scan.h"
@@ -47,6 +49,12 @@ size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
     }
     if (features::QUAD_BATCH_CAP && !applyQuadBatchCap()) {
         failed[count++] = L"overlay batch cap";
+    }
+    if (features::AI_CONSTRUCTION_GATE && !applyAiConstructionGate()) {
+        failed[count++] = L"AI construction gate";
+    }
+    if (features::AI_POWER_MODEL_CONDITION && !applyAiPowerModelCondition()) {
+        failed[count++] = L"AI power button conditions";
     }
 
     return count;

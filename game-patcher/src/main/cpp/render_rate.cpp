@@ -22,7 +22,6 @@ namespace {
     constexpr uintptr_t LATCH_DIVISOR_ADDRESS = 0x00ECA400;
     constexpr uintptr_t GAME_CLIENT_ADDRESS = 0x00DE4388;
     constexpr uintptr_t FTOL_ADDRESS = 0x00A3CFA4;
-    constexpr uintptr_t GLOBAL_DATA_ADDRESS = 0x00DE4364;
 
     constexpr int LOGIC_RATE = 5;
     constexpr int STOCK_CLIENT_RATE = 30;
@@ -44,7 +43,6 @@ namespace {
         uint32_t spellStoreTick;
         uint32_t getTickCount;
         float scrollScale;
-        uint32_t savedScrollFactors[4];
     };
 
     void addRate(PatchSet &set) {
@@ -291,91 +289,101 @@ namespace {
         set.expect(resume, landing);
     }
 
-    // Emits a stub that calls `target` with KeyboardScrollSpeedFactor and KeyboardCameraRotateSpeed scaled down for the
-    // duration of the call and restored afterwards. `ecx` (this) is left alone.
-    uintptr_t emitScaledCall(Cave &cave, const CaveData *data, const size_t slot, const uintptr_t target) {
-        constexpr uint32_t KEYBOARD_SCROLL_SPEED_FACTOR = 0xAF8;
-        constexpr uint32_t KEYBOARD_CAMERA_ROTATE_SPEED = 0xC2C;
+    // movss xmm0, [ebp + offset] / mulss xmm0, [scale] / movss [ebp + offset], xmm0
+    void emitScaleLocal(Cave &cave, const CaveData *data, const BYTE offset) {
+        const BYTE load[5] = {0xF3, 0x0F, 0x10, 0x45, offset};
+        cave.emit(load);
+        const BYTE multiply[4] = {0xF3, 0x0F, 0x59, 0x05};
+        cave.emit(multiply);
+        cave.emit32(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&data->scrollScale)));
+        const BYTE store[5] = {0xF3, 0x0F, 0x11, 0x45, offset};
+        cave.emit(store);
+    }
 
-        const uintptr_t savedScroll = reinterpret_cast<uintptr_t>(&data->savedScrollFactors[slot * 2]);
-        const uintptr_t savedRotate = savedScroll + sizeof(uint32_t);
-        const uintptr_t scale = reinterpret_cast<uintptr_t>(&data->scrollScale);
-
+    // Emits the cave of a hook that scales the given locals, runs the displaced instructions and jumps back behind them.
+    template<size_t N, size_t M>
+    uintptr_t emitScaledLocals(Cave &cave, const CaveData *data, const BYTE (&offsets)[M], const BYTE (&displaced)[N], const uintptr_t resume) {
         const uintptr_t entry = cave.here();
-        cave.emit8(0x53); // push ebx
-        const BYTE loadGlobalData[2] = {0x8B, 0x1D}; // mov ebx, [TheGlobalData]
-        cave.emit(loadGlobalData);
-        cave.emit32(GLOBAL_DATA_ADDRESS);
-        const BYTE testGlobalData[2] = {0x85, 0xDB}; // test ebx, ebx
-        cave.emit(testGlobalData);
-        const size_t jumpToUnscaled = cave.size;
-        cave.jcc(JE, 0); // patched below
-
-        const BYTE loadField[2] = {0x8B, 0x93}; // mov edx, [ebx + field]
-        const BYTE storeField[2] = {0x89, 0x93}; // mov [ebx + field], edx
-        const BYTE loadSaved[2] = {0x8B, 0x15}; // mov edx, [saved]
-        const BYTE storeSaved[2] = {0x89, 0x15}; // mov [saved], edx
-        const BYTE loadFloat[4] = {0xF3, 0x0F, 0x10, 0x83}; // movss xmm0, [ebx + field]
-        const BYTE storeFloat[4] = {0xF3, 0x0F, 0x11, 0x83}; // movss [ebx + field], xmm0
-        const BYTE multiply[4] = {0xF3, 0x0F, 0x59, 0x05}; // mulss xmm0, [scale]
-
-        cave.emit(loadField);
-        cave.emit32(KEYBOARD_SCROLL_SPEED_FACTOR);
-        cave.emit(storeSaved);
-        cave.emit32(savedScroll);
-        cave.emit(loadField);
-        cave.emit32(KEYBOARD_CAMERA_ROTATE_SPEED);
-        cave.emit(storeSaved);
-        cave.emit32(savedRotate);
-
-        cave.emit(loadFloat);
-        cave.emit32(KEYBOARD_SCROLL_SPEED_FACTOR);
-        cave.emit(multiply);
-        cave.emit32(scale);
-        cave.emit(storeFloat);
-        cave.emit32(KEYBOARD_SCROLL_SPEED_FACTOR);
-        cave.emit(loadFloat);
-        cave.emit32(KEYBOARD_CAMERA_ROTATE_SPEED);
-        cave.emit(multiply);
-        cave.emit32(scale);
-        cave.emit(storeFloat);
-        cave.emit32(KEYBOARD_CAMERA_ROTATE_SPEED);
-
-        cave.call(target);
-
-        cave.emit(loadSaved);
-        cave.emit32(savedScroll);
-        cave.emit(storeField);
-        cave.emit32(KEYBOARD_SCROLL_SPEED_FACTOR);
-        cave.emit(loadSaved);
-        cave.emit32(savedRotate);
-        cave.emit(storeField);
-        cave.emit32(KEYBOARD_CAMERA_ROTATE_SPEED);
-        cave.emit8(0x5B); // pop ebx
-        cave.emit8(0xC3); // ret
-
-        const uintptr_t unscaled = cave.here();
-        cave.call(target);
-        cave.emit8(0x5B); // pop ebx
-        cave.emit8(0xC3); // ret
-
-        const auto displacement = static_cast<uint32_t>(unscaled - (reinterpret_cast<uintptr_t>(cave.base) + jumpToUnscaled + 6));
-        memcpy(cave.base + jumpToUnscaled + 2, &displacement, sizeof(displacement));
+        for (const BYTE offset : offsets) {
+            emitScaleLocal(cave, data, offset);
+        }
+        cave.emit(displaced);
+        cave.jmp(resume);
         return entry;
     }
 
-    // The camera scroll and rotation steps are applied once per client frame without a time base: the two factors are
-    // the distance per call, so doubling the client rate doubles the scroll speed. Both subsystems are called once from
-    // GameClient::update. 0x006A1F4D reads the same fields but divides by the client rate itself, which is why the
-    // fields cannot simply be rescaled once.
-    void addCameraScroll(PatchSet &set, Cave &cave, const CaveData *data) {
-        const uintptr_t scrollEntry = emitScaledCall(cave, data, 0, 0x0083B471);
-        const uintptr_t viewEntry = emitScaledCall(cave, data, 1, 0x008392A7);
+    // Emits the cave that replaces `fsub/fadd dword [eax + KeyboardCameraRotateSpeed]` with the scaled step.
+    uintptr_t emitScaledRotation(Cave &cave, const CaveData *data, const BYTE popOperation, const uintptr_t resume) {
+        const uintptr_t entry = cave.here();
+        const BYTE loadStep[6] = {0xD9, 0x80, 0x2C, 0x0C, 0x00, 0x00}; // fld dword [eax + 0xC2C]
+        cave.emit(loadStep);
+        const BYTE multiply[2] = {0xD8, 0x0D}; // fmul dword [scale]
+        cave.emit(multiply);
+        cave.emit32(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&data->scrollScale)));
+        const BYTE apply[2] = {0xDE, popOperation}; // fsubp/faddp st(1), st(0)
+        cave.emit(apply);
+        cave.jmp(resume);
+        return entry;
+    }
 
-        const BYTE scrollCall[5] = {0xE8, 0xBA, 0x2F, 0x1F, 0x00};
-        set.redirectCall(0x006484B2, scrollCall, scrollEntry);
-        const BYTE viewCall[5] = {0xE8, 0xE5, 0x0D, 0x1F, 0x00};
-        set.redirectCall(0x006484BD, viewCall, viewEntry);
+    // The camera moves once per client frame by steps without a time base, so doubling the client rate doubles its speed.
+    // The steps are scaled where they are applied rather than at their inputs: the right mouse drag scroll is the cursor's
+    // distance from the drag start times Horizontal/VerticalScrollSpeedFactor plus a term with KeyboardScrollSpeedFactor
+    // squared, keyboard and screen edge scrolling use KeyboardScrollSpeedFactor once, so no input factor scales them all
+    // alike. The scroll amount the controller hands to the in-game UI (scroll cursor, ScrollAmountCutoff) stays per frame
+    // as in the stock game. 0x006A1F4D reads the same GlobalData fields but divides by the client rate itself.
+    void addCameraScroll(PatchSet &set, Cave &cave, const CaveData *data) {
+        // 0x0083B471, the tactical view's scroll controller: the scroll vector at [ebp - 0x10] goes to the view's scrollBy, or
+        // to the camera controller at 0x00DE4958 while that one is active
+        const BYTE scrollVector[2] = {0xF0, 0xF4};
+        const BYTE scrollBy[7] = {0x8D, 0x55, 0xF0, 0x52, 0xFF, 0x50, 0x5C}; // lea edx, [ebp - 0x10] / push edx / call [eax + 0x5C]
+        set.hook(0x0083B8A0, scrollBy, emitScaledLocals(cave, data, scrollVector, scrollBy, 0x0083B8A7));
+        const BYTE controllerMove[7] = {0x8D, 0x55, 0xF0, 0x52, 0xFF, 0x50, 0x2C}; // lea edx, [ebp - 0x10] / push edx / call [eax + 0x2C]
+        set.hook(0x0083B869, controllerMove, emitScaledLocals(cave, data, scrollVector, controllerMove, 0x0083B870));
+
+        // the rotate keys: the view angle -/+ KeyboardCameraRotateSpeed
+        const BYTE rotateLeft[6] = {0xD8, 0xA0, 0x2C, 0x0C, 0x00, 0x00}; // fsub dword [eax + 0xC2C]
+        set.hook(0x0083B984, rotateLeft, emitScaledRotation(cave, data, 0xE9, 0x0083B98A));
+        const BYTE rotateRight[6] = {0xD8, 0x80, 0x2C, 0x0C, 0x00, 0x00}; // fadd dword [eax + 0xC2C]
+        set.hook(0x0083B9B6, rotateRight, emitScaledRotation(cave, data, 0xC1, 0x0083B9BC));
+
+        // 0x008392A7, the camera controller's own input: every path to its move (scroll vector [ebp - 0xC], drag zoom
+        // [ebp - 4]) starts here, and its rotation step is in xmm0 at the second site
+        const BYTE moveLocals[3] = {0xF4, 0xF8, 0xFC};
+        const BYTE loadController[6] = {0x8B, 0x0D, 0x58, 0x49, 0xDE, 0x00}; // mov ecx, [0x00DE4958]
+        set.hook(0x008395EC, loadController, emitScaledLocals(cave, data, moveLocals, loadController, 0x008395F2));
+        const uintptr_t rotation = cave.here();
+        const BYTE scaleStep[4] = {0xF3, 0x0F, 0x59, 0x05}; // mulss xmm0, [scale]
+        cave.emit(scaleStep);
+        cave.emit32(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&data->scrollScale)));
+        cave.emit(loadController);
+        cave.jmp(0x00839657);
+        set.hook(0x00839651, loadController, rotation);
+
+        // lea edx, [ebp - 0xC] / fstp dword [esp] / push edx / call [eax + 0x2C]: the move the first site leads to
+        const BYTE controllerMoveCall[9] = {0x8D, 0x55, 0xF4, 0xD9, 0x1C, 0x24, 0x52, 0xFF, 0x50};
+        set.expect(0x008395F8, controllerMoveCall);
+        // movss [esp], xmm0 / push edx / call [eax + 0x2C]: the rotation the second site leads to
+        const BYTE controllerRotateCall[9] = {0xF3, 0x0F, 0x11, 0x04, 0x24, 0x52, 0xFF, 0x50, 0x2C};
+        set.expect(0x0083965D, controllerRotateCall);
+    }
+
+    // A middle mouse click resets the camera rotation if the button comes up within 5 client frames of going down (0x0083ADF4
+    // stores the frame, 0x0083AD70 compares), i.e. within about 150 ms in the stock game. At the doubled client rate the same
+    // window is about 75 ms, which many clicks exceed.
+    void addMiddleClick(PatchSet &set) {
+        constexpr BYTE STOCK_CLICK_FRAMES = 5;
+
+        // mov ecx, [TheGameClient] / mov eax, [ecx] / call [eax + 0x7C] / cmp byte [esi + 0x38], bl / mov [esi + 0x40], eax
+        const BYTE buttonDown[17] = {0x8B, 0x0D, 0x88, 0x43, 0xDE, 0x00, 0x8B, 0x01, 0xFF, 0x50, 0x7C, 0x38, 0x5E, 0x38, 0x89, 0x46, 0x40};
+        set.expect(0x0083ADE6, buttonDown);
+
+        // mov ecx, [TheGameClient] / mov eax, [ecx] / call [eax + 0x7C] / sub eax, [esi + 0x40]
+        const BYTE buttonUp[14] = {0x8B, 0x0D, 0x88, 0x43, 0xDE, 0x00, 0x8B, 0x01, 0xFF, 0x50, 0x7C, 0x2B, 0x46, 0x40};
+        set.expect(0x0083AD62, buttonUp);
+        const BYTE stock[3] = {0x83, 0xF8, STOCK_CLICK_FRAMES}; // cmp eax, 5
+        const BYTE patched[3] = {0x83, 0xF8, STOCK_CLICK_FRAMES * CLIENT_RATE / STOCK_CLIENT_RATE};
+        set.replace(0x0083AD70, stock, patched);
     }
 
 }
@@ -410,6 +418,7 @@ bool applyRenderRatePatch() {
     addSpellStore(set, cave, data);
     addFrameLimiter(set, cave, data);
     addCameraScroll(set, cave, data);
+    addMiddleClick(set);
 
     if (!commit(set, cave)) {
         VirtualFree(caveMemory, 0, MEM_RELEASE);
