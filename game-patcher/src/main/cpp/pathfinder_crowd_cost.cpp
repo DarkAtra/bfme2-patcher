@@ -3,10 +3,20 @@
 #include <cstring>
 
 #include "crowd_cost_math.h"
-#include "crowd_cost_memo.h"
+#include "pathfinder_crowd_cost.h"
 #include "features.h"
 #include "patch_set.h"
 
+// Pathfinder crowd cost
+//
+// Problem: for every cell its A* search opens, the pathfinder looks at all units around the cell and asks the same
+// expensive questions about the same units again and again; with a big army an order stalled the game for tens of
+// milliseconds.
+// Fix: remembers the answers for the duration of one search (PATHFINDER_CROWD_COST_MEMO) and, with
+// PATHFINDER_CROWD_COST_REWRITE, computes the crowd cost from one cached record per unit and search, falling back to the
+// game's function where it cannot reproduce it.
+// The results are the same, and nothing is kept from one search to the next.
+//
 // The pathfinder prices every cell its A* search opens by the crowd cost (0x006ED21E): it walks a window of cells around
 // the cell and, for every unit standing in the window, asks three questions about that unit:
 //   - how the mover relates to it (0x0068D7AB),
@@ -308,7 +318,7 @@ namespace {
     }
 }
 
-bool applyCrowdCostMemo() {
+bool applyPathfinderCrowdCost() {
 
     BYTE *caveMemory = allocateCave();
     if (caveMemory == nullptr) {
@@ -347,7 +357,7 @@ bool applyCrowdCostMemo() {
     const BYTE speedCall[5] = {0xE8, 0x30, 0x6B, 0xEF, 0xFF};
     set.redirectCall(SPEED_CALL_OF_OTHER, speedCall, reinterpret_cast<uintptr_t>(&speedMemo));
 
-    if (features::CROWD_COST_REWRITE) {
+    if (features::PATHFINDER_CROWD_COST_REWRITE) {
         // the four calls of the crowd cost
         const BYTE expansionCall[5] = {0xE8, 0x9C, 0x33, 0xFF, 0xFF};
         set.redirectCall(CROWD_COST_CALL_IN_EXPANSION, expansionCall, reinterpret_cast<uintptr_t>(&crowdCost));

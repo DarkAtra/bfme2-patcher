@@ -2,8 +2,14 @@
 #include <cstdint>
 
 #include "patch_set.h"
-#include "perf_scope_skip.h"
+#include "render_scope_names.h"
 
+// Render scope names
+//
+// Problem: the renderer builds a profiler event name for every render scope it opens, several hundred bytes of string
+// copying per mesh and frame, although nothing reads the names unless a profiler such as PIX is attached.
+// Fix: skips building the names. The only loss is that a PIX capture no longer shows the stage names.
+//
 // The render wraps thirty of its stages in a scope object (PerfScope, 0x00517690) that builds an event name for
 // D3DPERF_BeginEvent. For the two scopes that are opened per mesh that is two strncpy calls, one of which pads to 256
 // bytes, plus a strlen and a name widening, i.e. several hundred bytes of string work per mesh and frame. With no
@@ -24,7 +30,7 @@ namespace {
     constexpr uintptr_t SCOPE_EXIT = 0x00517731;
 }
 
-bool applyPerfScopeSkip() {
+bool applyRenderScopeNames() {
 
     static PatchSet set;
     set.reset();

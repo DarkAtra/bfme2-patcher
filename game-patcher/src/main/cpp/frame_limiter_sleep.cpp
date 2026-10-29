@@ -1,14 +1,18 @@
 #include <windows.h>
 #include <cstdint>
 
-#include "pace_sleep.h"
+#include "frame_limiter_sleep.h"
 #include "patch_set.h"
 
-// The frame limiter waits for the end of a frame by calling Sleep(0) in a loop, which returns at once and keeps the main
-// thread at 100% for most of every frame. This patch sleeps through the time that is left instead, and keeps spinning on
-// Sleep(0) only for the last SPIN_MARGIN_MS milliseconds so a late wake-up does not stretch the frame. The frame rate is
-// the same, the core is not pinned. The game raises the timer resolution to 1 ms at start (timeBeginPeriod in the
-// GameEngine constructor), so Sleep(n) returns after n to n + 1 ms.
+// Frame limiter sleep
+//
+// Problem: the frame limiter waits for the end of each frame by calling Sleep(0) in a loop, which returns at once and keeps
+// one CPU core at 100% the whole time.
+// Fix: sleeps through the time that is left and spins on Sleep(0) only for the last SPIN_MARGIN_MS milliseconds, so a late
+// wake-up does not stretch the frame. Same frame rate, no pinned core.
+//
+// The game raises the timer resolution to 1 ms at start (timeBeginPeriod in the GameEngine constructor), so Sleep(n)
+// returns after n to n + 1 ms.
 //
 // The limiter loop is at 0x0063A1DC. At that point esi is the period the frame has to take, edi the time of the last
 // timeGetTime call and [0x00DE4318] the time the frame started.
@@ -26,7 +30,7 @@ namespace {
     constexpr BYTE SPIN_MARGIN_MS = 2;
 }
 
-bool applyPaceSleep() {
+bool applyFrameLimiterSleep() {
 
     BYTE *caveMemory = allocateCave();
     if (caveMemory == nullptr) {

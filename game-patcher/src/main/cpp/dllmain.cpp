@@ -1,13 +1,16 @@
 #include <winsock2.h>
 #include <easyhook.h>
+#include <cstdio>
+#include <cwchar>
 
 #include "patches.h"
 
 using namespace std;
 
+// `patternEnd` points at the last byte of the pattern, not behind it.
 __forceinline static BYTE *findPattern(BYTE *srcStart, BYTE *srcEnd, const BYTE *patternStart, const BYTE *patternEnd) {
 
-    const BYTE *end = srcEnd - (patternEnd - patternStart);
+    const BYTE *end = srcEnd - (patternEnd - patternStart + 1);
 
     for (BYTE *pos = srcStart; pos <= end; pos++) {
         const BYTE *s1 = pos - 1;
@@ -118,6 +121,52 @@ hostent *WSAAPI Hooked_gethostbyname(const char *name) {
 
 HOOK_TRACE_INFO hHook = {nullptr}; // keep track of our hook
 
+// The log only uses kernel32 and the C runtime: DllMain runs under the loader lock, where user32 (a message box) is not safe.
+static HANDLE logFile = INVALID_HANDLE_VALUE;
+
+// <game folder>\.patcher\game-patcher-log.txt, next to the updater's logs, written anew at every start
+static void openLog() {
+
+    wchar_t path[MAX_PATH];
+    const DWORD length = GetModuleFileNameW(nullptr, path, MAX_PATH);
+    if (length == 0 || length >= MAX_PATH) {
+        return;
+    }
+    wchar_t *folderEnd = wcsrchr(path, L'\\');
+    if (folderEnd == nullptr) {
+        return;
+    }
+    folderEnd[1] = L'\0';
+    if (wcscat_s(path, L".patcher\\game-patcher-log.txt") != 0) {
+        return;
+    }
+    logFile = CreateFileW(path, GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+}
+
+static void writeLog(const char *level, const wchar_t *message) {
+
+    SYSTEMTIME now;
+    GetLocalTime(&now);
+    char line[512];
+    const int length = _snprintf_s(line, _TRUNCATE, "%04u-%02u-%02u %02u:%02u:%02u %s: %ls\r\n",
+        now.wYear, now.wMonth, now.wDay, now.wHour, now.wMinute, now.wSecond, level, message);
+    if (length <= 0) {
+        return;
+    }
+    OutputDebugStringA(line);
+    if (logFile != INVALID_HANDLE_VALUE) {
+        DWORD written;
+        WriteFile(logFile, line, static_cast<DWORD>(length), &written, nullptr);
+    }
+}
+
+static void closeLog() {
+    if (logFile != INVALID_HANDLE_VALUE) {
+        CloseHandle(logFile);
+        logFile = INVALID_HANDLE_VALUE;
+    }
+}
+
 // this export is only required when the dll is loaded by manipulating the process's import table
 // however, it does not cause any harm even when the dll is still loaded via CreateRemoteThread and LoadLibraryA
 extern "C" __declspec(dllexport) void Noop() {}
@@ -126,15 +175,18 @@ BOOL APIENTRY DllMain(HINSTANCE /*hinstDLL*/, const DWORD fdwReason, LPVOID /*lp
 
     if (fdwReason == DLL_PROCESS_ATTACH) {
 
+        openLog();
+        writeLog("INFO", L"Loaded game-patcher.");
+
         const wchar_t *failedPatches[MAX_FAILED_PATCHES];
         const size_t failedPatchCount = applyPatches(failedPatches);
-        if (failedPatchCount > 0) {
-            wchar_t message[512] = L"Failed to apply the following patches. The game will run without them:\n";
-            for (size_t i = 0; i < failedPatchCount; i++) {
-                lstrcatW(message, L"\n- ");
-                lstrcatW(message, failedPatches[i]);
-            }
-            MessageBoxW(nullptr, message, L"Error", MB_OK);
+        for (size_t i = 0; i < failedPatchCount; i++) {
+            wchar_t message[256];
+            swprintf_s(message, L"Failed to apply the patch \"%ls\", the game runs without it.", failedPatches[i]);
+            writeLog("WARNING", message);
+        }
+        if (failedPatchCount == 0) {
+            writeLog("INFO", L"Applied every enabled patch.");
         }
 
         const NTSTATUS result = LhInstallHook(
@@ -144,16 +196,17 @@ BOOL APIENTRY DllMain(HINSTANCE /*hinstDLL*/, const DWORD fdwReason, LPVOID /*lp
             &hHook
         );
         if (FAILED(result)) {
-            // Hook could not be installed, see RtlGetLastErrorString() for details
-            MessageBoxW(nullptr, L"Failed to hook gethostbyname. Online gameplay might not be possible.", L"Error", MB_OK);
-            return true;
+            wchar_t message[384];
+            swprintf_s(message, L"Failed to hook gethostbyname (0x%08lX: %ls). Online gameplay might not be possible.", result, RtlGetLastErrorString());
+            writeLog("SEVERE", message);
+        } else {
+            ULONG ACLEntries[1] = {};
+            // the second parameter controls which threads are affected by the hook - use the following values depending on the way the dll is injected:
+            // 0 - if the dll is loaded via the main thread (i.e. by manipulating the import table of the process)
+            // 1 - if the dll is injected using a throwaway thread (i.e. via CreateRemoteThread and LoadLibraryA)
+            LhSetExclusiveACL(ACLEntries, 0, &hHook);
+            writeLog("INFO", L"Hooked gethostbyname.");
         }
-
-        ULONG ACLEntries[1] = {};
-        // the second parameter controls which threads are affected by the hook - use the following values depending on the way the dll is injected:
-        // 0 - if the dll is loaded via the main thread (i.e. by manipulating the import table of the process)
-        // 1 - if the dll is injected using a throwaway thread (i.e. via CreateRemoteThread and LoadLibraryA)
-        LhSetExclusiveACL(ACLEntries, 0, &hHook);
 
         const HANDLE currentProcess = GetCurrentProcess();
 
@@ -161,16 +214,18 @@ BOOL APIENTRY DllMain(HINSTANCE /*hinstDLL*/, const DWORD fdwReason, LPVOID /*lp
         constexpr BYTE patch[] = {0xEB, 0x46, 0x90, 0x90};
 
         BYTE *addressToModify = findPatternInProcessMemory(search, search + 8);
-        if (addressToModify) {
-
+        if (addressToModify == nullptr) {
+            writeLog("SEVERE", L"Failed to patch the certificate check: its code was not found. Online gameplay might not be possible.");
+        } else {
             SIZE_T bytesWritten;
-            const bool certPatchSuccessful = WriteProcessMemory(currentProcess, addressToModify + 3, patch, sizeof(patch), &bytesWritten);
-            if (certPatchSuccessful) {
-                return true;
+            if (WriteProcessMemory(currentProcess, addressToModify + 3, patch, sizeof(patch), &bytesWritten)) {
+                writeLog("INFO", L"Patched the certificate check.");
+            } else {
+                writeLog("SEVERE", L"Failed to patch the certificate check: the write failed. Online gameplay might not be possible.");
             }
         }
 
-        MessageBoxW(nullptr, L"Failed to patch certificate. Online gameplay might not be possible.", L"Error", MB_OK);
+        closeLog();
 
     } else if (fdwReason == DLL_PROCESS_DETACH) {
         LhUninstallHook(&hHook);

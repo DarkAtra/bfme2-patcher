@@ -4,9 +4,9 @@
 
 #include "patch_set.h"
 
-bool applySseRounding();
+bool applySseMath();
 
-namespace sse_rounding {
+namespace sse_math {
 
     // Emit a cdecl double(double) function into the cave and return its address. Values the SSE code does not handle are
     // passed on to the function stored in the dword at `fallbackSlot`.

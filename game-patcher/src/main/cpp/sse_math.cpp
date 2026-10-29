@@ -2,7 +2,15 @@
 #include <cstdint>
 
 #include "patch_set.h"
-#include "sse_rounding.h"
+#include "sse_math.h"
+
+// SSE math functions
+//
+// Problem: the game's floor, ceil, sqrt and fabs come from msvcr71, which switches the x87 control word around each call.
+// The switches stall the CPU, and the pathfinder and the terrain lookups call these functions all the time.
+// Fix: points the four imports at SSE2 versions that return bit identical results without touching the control word;
+// arguments they do not handle exactly still go to the library.
+//
 // The game rounds through msvcr71's floor and ceil (415 and 144 call sites), most of them in the pathfinder, the terrain
 // height lookup and the cell conversions. Both functions switch the x87 rounding mode with fldcw around frndint and
 // switch it back, and fldcw stalls the pipeline. In the slow frames of a profiled mid game that is a fifth of the samples
@@ -86,7 +94,7 @@ namespace {
     }
 }
 
-namespace sse_rounding {
+namespace sse_math {
 
     uintptr_t emitFloor(Cave &cave, const uintptr_t fallbackSlot) {
 
@@ -206,7 +214,7 @@ namespace sse_rounding {
     }
 }
 
-bool applySseRounding() {
+bool applySseMath() {
 
     const HMODULE runtime = GetModuleHandleW(L"msvcr71.dll");
     if (runtime == nullptr) {
@@ -219,10 +227,10 @@ bool applySseRounding() {
         uintptr_t (*emit)(Cave &cave, uintptr_t fallbackSlot);
     };
     const Replacement replacements[] = {
-        {"floor", FLOOR_IMPORT, sse_rounding::emitFloor},
-        {"ceil", CEIL_IMPORT, sse_rounding::emitCeil},
-        {"sqrt", SQRT_IMPORT, sse_rounding::emitSqrt},
-        {"fabs", FABS_IMPORT, sse_rounding::emitFabs}
+        {"floor", FLOOR_IMPORT, sse_math::emitFloor},
+        {"ceil", CEIL_IMPORT, sse_math::emitCeil},
+        {"sqrt", SQRT_IMPORT, sse_math::emitSqrt},
+        {"fabs", FABS_IMPORT, sse_math::emitFabs}
     };
     constexpr size_t COUNT = sizeof(replacements) / sizeof(replacements[0]);
 

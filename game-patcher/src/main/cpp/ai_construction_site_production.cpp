@@ -1,9 +1,16 @@
 #include <windows.h>
 #include <cstdint>
 
-#include "ai_construction_gate.h"
+#include "ai_construction_site_production.h"
 #include "patch_set.h"
 
+// AI production from construction sites
+//
+// Problem: the skirmish AI picks buildings that are still under construction to produce units and revive heroes, which the
+// player cannot do. It pays at once and blocks the building's queue, and the unit cannot leave before the building is done.
+// Fix: when the AI picks a building to use now, buildings under construction are skipped, so it uses a finished building or
+// waits.
+//
 // The skirmish AI picks the building that is to produce a unit or revive a hero in 0x009A0705. It walks the buildings that can
 // make the thing and takes the first one that is alive, has a production module, is not disabled and has an empty queue. It never
 // asks whether the building is still under construction, and a building enters that list the moment it is placed. So the AI
@@ -31,7 +38,7 @@ namespace {
     constexpr BYTE UNDER_CONSTRUCTION = 2;
 }
 
-bool applyAiConstructionGate() {
+bool applyAiConstructionSiteProduction() {
 
     BYTE *caveMemory = allocateCave();
     if (caveMemory == nullptr) {

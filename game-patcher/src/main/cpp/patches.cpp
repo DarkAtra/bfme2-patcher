@@ -1,20 +1,20 @@
 #include <windows.h>
 #include <cstdint>
 
-#include "ai_construction_gate.h"
-#include "ai_power_model_condition.h"
-#include "broad_phase_table.h"
-#include "cell_center.h"
-#include "contact_scan.h"
-#include "crowd_cost_memo.h"
-#include "device_lock.h"
+#include "ai_construction_site_production.h"
+#include "ai_ability_conditions.h"
+#include "collision_pair_table.h"
+#include "pathfinder_cell_centre.h"
+#include "collision_contact_handler.h"
+#include "pathfinder_crowd_cost.h"
+#include "render_lock.h"
 #include "features.h"
-#include "pace_sleep.h"
+#include "frame_limiter_sleep.h"
 #include "patches.h"
-#include "perf_scope_skip.h"
-#include "quad_batch_cap.h"
+#include "render_scope_names.h"
+#include "health_bar_crash_fix.h"
 #include "render_rate.h"
-#include "sse_rounding.h"
+#include "sse_math.h"
 
 size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
 
@@ -23,38 +23,38 @@ size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
     if (features::RENDER_RATE && !applyRenderRatePatch()) {
         failed[count++] = L"60 fps";
     }
-    if (features::PACE_SLEEP && !applyPaceSleep()) {
-        failed[count++] = L"frame limiter sleep";
+    if (features::FRAME_LIMITER_SLEEP && !applyFrameLimiterSleep()) {
+        failed[count++] = L"Frame limiter sleep";
     }
-    if (features::PERF_SCOPE_SKIP && !applyPerfScopeSkip()) {
-        failed[count++] = L"render scope names";
+    if (features::RENDER_SCOPE_NAMES && !applyRenderScopeNames()) {
+        failed[count++] = L"Render scope names";
     }
-    if (features::DEVICE_LOCK && !applyDeviceLock()) {
-        failed[count++] = L"render lock";
+    if (features::RENDER_LOCK && !applyRenderLock()) {
+        failed[count++] = L"Render lock";
     }
-    if (features::SSE_ROUNDING && !applySseRounding()) {
-        failed[count++] = L"floor and ceil";
+    if (features::SSE_MATH && !applySseMath()) {
+        failed[count++] = L"SSE math functions";
     }
-    if (features::CELL_CENTER && !applyCellCenter()) {
-        failed[count++] = L"pathfinder cell centre";
+    if (features::PATHFINDER_CELL_CENTRE && !applyPathfinderCellCentre()) {
+        failed[count++] = L"Pathfinder cell centre";
     }
-    if (features::CROWD_COST_MEMO && !applyCrowdCostMemo()) {
-        failed[count++] = L"pathfinder crowd cost";
+    if (features::PATHFINDER_CROWD_COST_MEMO && !applyPathfinderCrowdCost()) {
+        failed[count++] = L"Pathfinder crowd cost";
     }
-    if (features::BROAD_PHASE_TABLE && !applyBroadPhaseTable()) {
-        failed[count++] = L"broad phase pair table";
+    if (features::COLLISION_PAIR_TABLE && !applyCollisionPairTable()) {
+        failed[count++] = L"Collision pair table";
     }
-    if (features::CONTACT_SCAN && !applyContactScan()) {
-        failed[count++] = L"contact handler";
+    if (features::COLLISION_CONTACT_HANDLER && !applyCollisionContactHandler()) {
+        failed[count++] = L"Collision contact handler";
     }
-    if (features::QUAD_BATCH_CAP && !applyQuadBatchCap()) {
-        failed[count++] = L"overlay batch cap";
+    if (features::HEALTH_BAR_CRASH_FIX && !applyHealthBarCrashFix()) {
+        failed[count++] = L"Health bar crash fix";
     }
-    if (features::AI_CONSTRUCTION_GATE && !applyAiConstructionGate()) {
-        failed[count++] = L"AI construction gate";
+    if (features::AI_CONSTRUCTION_SITE_PRODUCTION && !applyAiConstructionSiteProduction()) {
+        failed[count++] = L"AI production from construction sites";
     }
-    if (features::AI_POWER_MODEL_CONDITION && !applyAiPowerModelCondition()) {
-        failed[count++] = L"AI power button conditions";
+    if (features::AI_ABILITY_CONDITIONS && !applyAiAbilityConditions()) {
+        failed[count++] = L"AI ability conditions";
     }
 
     return count;

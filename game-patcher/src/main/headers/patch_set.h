@@ -176,6 +176,7 @@ namespace patching {
     constexpr BYTE JAE = 0x83;
     constexpr BYTE JE = 0x84;
     constexpr BYTE JNE = 0x85;
+    constexpr BYTE JA = 0x87;
 
     inline BYTE *allocateCave() {
         return static_cast<BYTE *>(VirtualAlloc(nullptr, CAVE_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));

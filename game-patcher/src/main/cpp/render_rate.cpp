@@ -5,12 +5,19 @@
 #include "patch_set.h"
 #include "render_rate.h"
 
-// Lets the game draw at 60 frames per second without changing its pace. Derived from the render-rate patch of pySAGE
-// (https://github.com/ClementJ18/pySAGE), but applied to the process image instead of the file and with a different
-// frame limiter, see the comments below.
+// 60 fps
 //
-// Every site is verified before anything is written, and the patch is applied as a whole or not at all: a half moved
-// set of constants gives a game that runs at the wrong speed instead of one that crashes.
+// Problem: the game draws at most 30 frames per second, and the game pace and many client side steps (particles, camera
+// scrolling, the click window of the camera reset) are counted in frames, so a higher frame rate alone makes them faster.
+// Fix: draws 60 frames per second while the game logic keeps its stock pace (one logic frame every 165 ms), and scales what
+// is counted in client frames back to its speed at 30 fps: particles, the camera's scroll, rotation and drag zoom, and the
+// middle click camera reset. It also keeps the spell book filled (its buttons were sent before the menu could accept them)
+// and replaces the frame limiter's period.
+//
+// Derived from the render-rate patch of pySAGE (https://github.com/ClementJ18/pySAGE), but applied to the process image
+// instead of the file and with a different frame limiter. Every site is verified before anything is written, and the patch
+// is applied as a whole or not at all: a half moved set of constants gives a game that runs at the wrong speed instead of
+// one that crashes.
 
 using namespace patching;
 
@@ -127,7 +134,9 @@ namespace {
     }
 
     // CPU particles step once per client frame, i.e. twice as fast as authored. Stamps the manager with
-    // clientFrame * 30 / clientRate instead and lets the engine compare and store it.
+    // clientFrame * 30 / clientRate instead and lets the engine compare and store it. The stock code compares frames only
+    // while an option flag (GlobalData + 0xD45) is set and otherwise steps on every call; the cave compares always, so the
+    // particles step at the authored rate whatever that option says.
     void addParticleGate(PatchSet &set, Cave &cave) {
         const uintptr_t entry = cave.here();
         const uintptr_t resume = 0x005F5183;

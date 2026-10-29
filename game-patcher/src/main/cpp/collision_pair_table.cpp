@@ -2,9 +2,16 @@
 #include <cstdint>
 #include <cstring>
 
-#include "broad_phase_table.h"
+#include "collision_pair_table.h"
 #include "patch_set.h"
 
+// Collision pair table
+//
+// Problem: the collision broad phase tracks overlapping object pairs in a hash table of only 11131 buckets; with a big army
+// clumped together each lookup walks ten nodes or more, and the sweep took about 12 ms of every logic frame.
+// Fix: gives the table 262139 buckets in an extension of the broad phase object. Lookups find the same nodes, so the game
+// behaves exactly as before; the sweep drops to about 4 ms.
+//
 // The game's collision broad phase (0x00B6E6B0) counts for every pair of proxies on how many axes their bounds overlap in a
 // chained hash table of pair nodes: 11131 buckets (the hash is `(idLow * 0x10000 + idHigh) % 0x2B7B`) for 200 000 pairs and more
 // when a big army is clumped, so the sweep (0x00B6D8A0) walks ten nodes or more per lookup, and a walk is a cache miss per node.
@@ -20,7 +27,7 @@
 // Lookups find the same pair node as before, so the game behaves exactly as without the patch.
 
 using namespace patching;
-using namespace broad_phase_table;
+using namespace collision_pair_table;
 
 namespace {
 
@@ -39,7 +46,7 @@ namespace {
     constexpr uint32_t NEXT_IN_CHAIN = 0x30;
     constexpr uint32_t FREE_LIST = 0xADEC;
 
-    // the game's operator delete
+    // the game's operator delete; not const because the genuine code test (tools/tests/collision-pair-table) counts the releases
     uintptr_t deleteFunction = 0x0042F6A0;
 
     // Constructor: the game's memory is not cleared.
@@ -116,7 +123,7 @@ namespace {
     }
 }
 
-bool applyBroadPhaseTable() {
+bool applyCollisionPairTable() {
 
     BYTE *caveMemory = allocateCave();
     if (caveMemory == nullptr) {

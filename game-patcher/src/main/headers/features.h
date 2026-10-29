@@ -1,115 +1,118 @@
 #pragma once
 
 // Compile time switches for the patches game-patcher applies to the game process. Each one can be turned off on its own
-// by setting it to 0 here or on the compiler command line (e.g. /DGAME_PATCHER_DEVICE_LOCK=0). A disabled patch is not
+// by setting it to 0 here or on the compiler command line (e.g. /DGAME_PATCHER_RENDER_LOCK=0). A disabled patch is not
 // applied at all, so the game keeps its stock code for it.
 
 #ifndef GAME_PATCHER_RENDER_RATE
 #define GAME_PATCHER_RENDER_RATE 1
 #endif
 
-#ifndef GAME_PATCHER_PACE_SLEEP
-#define GAME_PATCHER_PACE_SLEEP 1
+#ifndef GAME_PATCHER_FRAME_LIMITER_SLEEP
+#define GAME_PATCHER_FRAME_LIMITER_SLEEP 1
 #endif
 
-#ifndef GAME_PATCHER_PERF_SCOPE_SKIP
-#define GAME_PATCHER_PERF_SCOPE_SKIP 1
+#ifndef GAME_PATCHER_RENDER_SCOPE_NAMES
+#define GAME_PATCHER_RENDER_SCOPE_NAMES 1
 #endif
 
-#ifndef GAME_PATCHER_DEVICE_LOCK
-#define GAME_PATCHER_DEVICE_LOCK 1
+#ifndef GAME_PATCHER_RENDER_LOCK
+#define GAME_PATCHER_RENDER_LOCK 1
 #endif
 
-#ifndef GAME_PATCHER_SSE_ROUNDING
-#define GAME_PATCHER_SSE_ROUNDING 1
+#ifndef GAME_PATCHER_SSE_MATH
+#define GAME_PATCHER_SSE_MATH 1
 #endif
 
-#ifndef GAME_PATCHER_CELL_CENTER
-#define GAME_PATCHER_CELL_CENTER 1
+#ifndef GAME_PATCHER_PATHFINDER_CELL_CENTRE
+#define GAME_PATCHER_PATHFINDER_CELL_CENTRE 1
 #endif
 
-#ifndef GAME_PATCHER_CROWD_COST_MEMO
-#define GAME_PATCHER_CROWD_COST_MEMO 1
+#ifndef GAME_PATCHER_PATHFINDER_CROWD_COST_MEMO
+#define GAME_PATCHER_PATHFINDER_CROWD_COST_MEMO 1
 #endif
 
-#ifndef GAME_PATCHER_CROWD_COST_REWRITE
-#define GAME_PATCHER_CROWD_COST_REWRITE 1
+#ifndef GAME_PATCHER_PATHFINDER_CROWD_COST_REWRITE
+#define GAME_PATCHER_PATHFINDER_CROWD_COST_REWRITE 1
 #endif
 
-#ifndef GAME_PATCHER_BROAD_PHASE_TABLE
-#define GAME_PATCHER_BROAD_PHASE_TABLE 1
+#ifndef GAME_PATCHER_COLLISION_PAIR_TABLE
+#define GAME_PATCHER_COLLISION_PAIR_TABLE 1
 #endif
 
-#ifndef GAME_PATCHER_CONTACT_SCAN
-#define GAME_PATCHER_CONTACT_SCAN 1
+#ifndef GAME_PATCHER_COLLISION_CONTACT_HANDLER
+#define GAME_PATCHER_COLLISION_CONTACT_HANDLER 1
 #endif
 
-#ifndef GAME_PATCHER_QUAD_BATCH_CAP
-#define GAME_PATCHER_QUAD_BATCH_CAP 1
+#ifndef GAME_PATCHER_HEALTH_BAR_CRASH_FIX
+#define GAME_PATCHER_HEALTH_BAR_CRASH_FIX 1
 #endif
 
-#ifndef GAME_PATCHER_QUAD_BATCH_FLUSH
-#define GAME_PATCHER_QUAD_BATCH_FLUSH 1
+#ifndef GAME_PATCHER_HEALTH_BAR_CRASH_FIX_FLUSH
+#define GAME_PATCHER_HEALTH_BAR_CRASH_FIX_FLUSH 1
 #endif
 
-#ifndef GAME_PATCHER_AI_CONSTRUCTION_GATE
-#define GAME_PATCHER_AI_CONSTRUCTION_GATE 1
+#ifndef GAME_PATCHER_AI_CONSTRUCTION_SITE_PRODUCTION
+#define GAME_PATCHER_AI_CONSTRUCTION_SITE_PRODUCTION 1
 #endif
 
-#ifndef GAME_PATCHER_AI_POWER_MODEL_CONDITION
-#define GAME_PATCHER_AI_POWER_MODEL_CONDITION 1
+#ifndef GAME_PATCHER_AI_ABILITY_CONDITIONS
+#define GAME_PATCHER_AI_ABILITY_CONDITIONS 1
 #endif
 
 namespace features {
 
-    // Draws at 60 frames per second without changing the game pace or the camera speed (render_rate.cpp).
+    // 60 fps: draws 60 frames per second at the stock game pace and keeps what the client counts in frames (particles, camera
+    // scrolling and rotation, the camera reset click) at its speed at 30 fps (render_rate.cpp).
     constexpr bool RENDER_RATE = GAME_PATCHER_RENDER_RATE != 0;
 
-    // The frame limiter sleeps through most of the time it has to wait instead of spinning on Sleep(0) (pace_sleep.cpp).
-    // Same frame rate, but the main thread no longer pins a core.
-    constexpr bool PACE_SLEEP = GAME_PATCHER_PACE_SLEEP != 0;
+    // Frame limiter sleep: the limiter sleeps through the rest of a frame instead of spinning on Sleep(0), so the main thread
+    // no longer pins a core (frame_limiter_sleep.cpp).
+    constexpr bool FRAME_LIMITER_SLEEP = GAME_PATCHER_FRAME_LIMITER_SLEEP != 0;
 
-    // Skips building the profiler event names of the render scopes, which nobody reads (perf_scope_skip.cpp).
-    constexpr bool PERF_SCOPE_SKIP = GAME_PATCHER_PERF_SCOPE_SKIP != 0;
+    // Render scope names: skips building the profiler event names of the render scopes, which nothing reads
+    // (render_scope_names.cpp).
+    constexpr bool RENDER_SCOPE_NAMES = GAME_PATCHER_RENDER_SCOPE_NAMES != 0;
 
-    // Replaces the kernel mutex that guards every render call with a user-mode lock (device_lock.cpp).
-    constexpr bool DEVICE_LOCK = GAME_PATCHER_DEVICE_LOCK != 0;
+    // Render lock: a user mode lock instead of the kernel mutex around every render call (render_lock.cpp).
+    constexpr bool RENDER_LOCK = GAME_PATCHER_RENDER_LOCK != 0;
 
-    // Rounds with SSE2 instead of msvcr71's floor and ceil, which switch the x87 rounding mode on every call (sse_rounding.cpp).
-    constexpr bool SSE_ROUNDING = GAME_PATCHER_SSE_ROUNDING != 0;
+    // SSE math functions: floor, ceil, sqrt and fabs without the x87 control word switches of msvcr71 (sse_math.cpp).
+    constexpr bool SSE_MATH = GAME_PATCHER_SSE_MATH != 0;
 
-    // Computes the pathfinder's cell centre once per crowd cost call instead of once per unit in the window (cell_center.cpp).
-    constexpr bool CELL_CENTER = GAME_PATCHER_CELL_CENTER != 0;
+    // Pathfinder cell centre: the crowd cost computes the cell centre once per call instead of once per unit
+    // (pathfinder_cell_centre.cpp).
+    constexpr bool PATHFINDER_CELL_CENTRE = GAME_PATCHER_PATHFINDER_CELL_CENTRE != 0;
 
-    // Remembers the crowd cost of a cell for the duration of one pathfinder search (crowd_cost_memo.cpp).
-    constexpr bool CROWD_COST_MEMO = GAME_PATCHER_CROWD_COST_MEMO != 0;
+    // Pathfinder crowd cost: remembers the answers about each unit for the duration of one pathfinder search
+    // (pathfinder_crowd_cost.cpp).
+    constexpr bool PATHFINDER_CROWD_COST_MEMO = GAME_PATCHER_PATHFINDER_CROWD_COST_MEMO != 0;
 
-    // Computes the pathfinder's crowd cost from one cached record per unit and search instead of asking the game's functions
-    // about every unit in every cell window (crowd_cost_memo.cpp).
-    constexpr bool CROWD_COST_REWRITE = GAME_PATCHER_CROWD_COST_REWRITE != 0;
+    // Pathfinder crowd cost, with PATHFINDER_CROWD_COST_MEMO: computes the crowd cost from one cached record per unit and
+    // search instead of asking the game about every unit in every cell window (pathfinder_crowd_cost.cpp).
+    constexpr bool PATHFINDER_CROWD_COST_REWRITE = GAME_PATCHER_PATHFINDER_CROWD_COST_REWRITE != 0;
 
-    // Gives the collision broad phase's first pair table 262139 buckets instead of 11131, so that the sweep's lookups no longer walk
-    // chains of ten nodes or more when a big army is on the map (broad_phase_table.cpp). The game behaves exactly as before.
-    constexpr bool BROAD_PHASE_TABLE = GAME_PATCHER_BROAD_PHASE_TABLE != 0;
+    // Collision pair table: the collision broad phase gets a pair table of 262139 buckets instead of 11131, so its lookups no
+    // longer walk long chains with a big army on the map (collision_pair_table.cpp). The game behaves exactly as before.
+    constexpr bool COLLISION_PAIR_TABLE = GAME_PATCHER_COLLISION_PAIR_TABLE != 0;
 
-    // Skips the modules whose collide interface getter is the game's default (always null) in the broad phase's contact handler
-    // instead of calling it, 34 of about 37 per object (contact_scan.cpp). The game behaves exactly as before.
-    constexpr bool CONTACT_SCAN = GAME_PATCHER_CONTACT_SCAN != 0;
+    // Collision contact handler: skips the modules whose collide interface getter always returns null instead of calling
+    // them (collision_contact_handler.cpp). The game behaves exactly as before.
+    constexpr bool COLLISION_CONTACT_HANDLER = GAME_PATCHER_COLLISION_CONTACT_HANDLER != 0;
 
-    // Stops the 2D overlay batch (health bars and the like) from taking more than the 65535 indices its 16 bit counters can hold:
-    // beyond that the game writes past the end of its dynamic index buffer and crashes when a big army is on screen
-    // (quad_batch_cap.cpp). QUAD_BATCH_FLUSH decides what happens to the rectangles that no longer fit.
-    constexpr bool QUAD_BATCH_CAP = GAME_PATCHER_QUAD_BATCH_CAP != 0;
+    // Health bar crash fix: stops the 2D overlay batch (health bars and the like) from taking more indices than its 16 bit
+    // counters hold, which crashes the stock game with a big army on screen (health_bar_crash_fix.cpp).
+    constexpr bool HEALTH_BAR_CRASH_FIX = GAME_PATCHER_HEALTH_BAR_CRASH_FIX != 0;
 
-    // With the cap: draws the batch collected so far and starts a new one instead of dropping the rectangles that no longer
-    // fit, so that every health bar stays visible (quad_batch_cap.cpp). Without it the excess rectangles are not drawn.
-    constexpr bool QUAD_BATCH_FLUSH = GAME_PATCHER_QUAD_BATCH_FLUSH != 0;
+    // Health bar crash fix, with HEALTH_BAR_CRASH_FIX: draws the full batch and starts a new one, so every health bar stays
+    // visible. Without it the rectangles beyond the limit are not drawn (health_bar_crash_fix.cpp).
+    constexpr bool HEALTH_BAR_CRASH_FIX_FLUSH = GAME_PATCHER_HEALTH_BAR_CRASH_FIX_FLUSH != 0;
 
-    // Stops the skirmish AI from picking a building that is still under construction to produce a unit or revive a hero, which
-    // the player cannot do either (ai_construction_gate.cpp). The AI uses a finished building instead or waits.
-    constexpr bool AI_CONSTRUCTION_GATE = GAME_PATCHER_AI_CONSTRUCTION_GATE != 0;
+    // AI production from construction sites: the skirmish AI no longer produces units or revives heroes in buildings that are
+    // still under construction, which the player cannot do either (ai_construction_site_production.cpp).
+    constexpr bool AI_CONSTRUCTION_SITE_PRODUCTION = GAME_PATCHER_AI_CONSTRUCTION_SITE_PRODUCTION != 0;
 
-    // The AI no longer casts a power whose button the model conditions of its object disable, which the player cannot press
-    // either, e.g. a silenced hero's abilities (ai_power_model_condition.cpp).
-    constexpr bool AI_POWER_MODEL_CONDITION = GAME_PATCHER_AI_POWER_MODEL_CONDITION != 0;
+    // AI ability conditions: the AI no longer casts abilities whose button the state of the unit disables, which the player
+    // cannot press either, e.g. a silenced hero's abilities (ai_ability_conditions.cpp).
+    constexpr bool AI_ABILITY_CONDITIONS = GAME_PATCHER_AI_ABILITY_CONDITIONS != 0;
 }

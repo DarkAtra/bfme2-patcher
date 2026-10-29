@@ -1,9 +1,17 @@
 #include <windows.h>
 #include <cstdint>
 
-#include "ai_power_model_condition.h"
+#include "ai_ability_conditions.h"
 #include "patch_set.h"
 
+// AI ability conditions
+//
+// Problem: an ability button can be disabled by the state of its unit (EnableOnModelCondition, DisableOnModelCondition).
+// The player cannot press such a button, but the AI casts the ability anyway, e.g. a silenced hero's abilities in 2.02, or a
+// weather spell while another one is active.
+// Fix: the AI checks the same rule right before it rolls its chance to cast, and treats a disabled ability like one that is
+// still recharging.
+//
 // A command button can be disabled by the model conditions of its object (EnableOnModelCondition, DisableOnModelCondition). The
 // control bar asks 0x00942490 for that before a player may press it. The AI casts its heroes' and buildings' powers through
 // AISpecialPowerUpdate, whose update (0x008B73B7) checks only that the power is ready and never asks about the button, so the AI
@@ -31,7 +39,7 @@ namespace {
     constexpr BYTE DISABLED = 3;
 }
 
-bool applyAiPowerModelCondition() {
+bool applyAiAbilityConditions() {
 
     BYTE *caveMemory = allocateCave();
     if (caveMemory == nullptr) {

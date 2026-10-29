@@ -1,9 +1,15 @@
 #include <windows.h>
 #include <cstdint>
 
-#include "cell_center.h"
+#include "pathfinder_cell_centre.h"
 #include "patch_set.h"
 
+// Pathfinder cell centre
+//
+// Problem: the pathfinder's crowd cost asks for the world position of the same cell centre once for every unit near the
+// cell (four floor calls and a terrain height lookup each), up to 200,000 times in a slow frame.
+// Fix: computes the position once per crowd cost call and reuses it. The results are the same.
+//
 // The pathfinder prices a step into a cell by counting the units around it (crowd cost, 0x006ED21E). For every unit it
 // finds in the cell window it first asks 0x006ED049 for the world position of the cell's centre: the footprint radius of
 // the moving unit, the cell to world conversion and a terrain height lookup, which is four floor calls plus the height
@@ -28,7 +34,7 @@ namespace {
     constexpr uintptr_t CELL_CENTER = 0x006ED049;
 }
 
-bool applyCellCenter() {
+bool applyPathfinderCellCentre() {
 
     BYTE *caveMemory = allocateCave();
     if (caveMemory == nullptr) {

@@ -3,9 +3,16 @@
 #include <cstdint>
 #include <cstring>
 
-#include "device_lock.h"
+#include "render_lock.h"
 #include "patch_set.h"
 
+// Render lock
+//
+// Problem: every call into the renderer's wrapper layer takes and releases a kernel mutex, a system call each time, several
+// hundred times per frame.
+// Fix: uses a recursive critical section instead, which needs no system call while the lock is free. The mutual exclusion
+// with the load screen's thread stays.
+//
 // Every call of the render's wrapper layer is bracketed by WW3D::Lock (0x0051EEC0) and WW3D::Unlock (0x005208D0), 123 and
 // 232 call sites. Each pair waits on and releases a kernel mutex (the handle at 0x00DD1FD8, created in 0x00524FD0), which
 // costs a system call each time, and then touches the owner id and recursion count (0x00DD34C8, 0x00DD34CC) under a
@@ -151,7 +158,7 @@ namespace {
     }
 }
 
-bool applyDeviceLock() {
+bool applyRenderLock() {
 
     const HMODULE kernel32 = GetModuleHandleA("kernel32");
     const auto tryEnterCriticalSection = reinterpret_cast<uintptr_t>(GetProcAddress(kernel32, "TryEnterCriticalSection"));

@@ -3,8 +3,15 @@
 
 #include "features.h"
 #include "patch_set.h"
-#include "quad_batch_cap.h"
+#include "health_bar_crash_fix.h"
 
+// Health bar crash fix
+//
+// Problem: the stock game crashes when a big army is on screen (about 1500 health bars): the batch that draws the 2D overlays
+// counts its indices in 16 bits, and beyond 65535 indices it copies the batch past the end of its index buffer.
+// Fix: when a rectangle would take the batch past that limit, draws the batch collected so far and starts a new one, so every
+// health bar stays visible (HEALTH_BAR_CRASH_FIX_FLUSH). With that switch off, the rectangles beyond the limit are not drawn.
+//
 // The game draws health bars, selection rectangles and other 2D overlays through one batch: every rectangle asks the batch
 // (0x0051B720) for four vertices and six indices and fills them in, and one function (0x005199E0) copies the indices of the whole
 // batch into a dynamic index buffer when the frame's overlays are flushed. The buffer is requested through a 16 bit count
@@ -16,8 +23,8 @@
 // The allocation function is entered through a cave that, when the batch would pass the limit, draws the batch collected so far
 // with the game's own flush (which also empties it) and then lets the allocation run on the empty batch, so every health bar
 // stays visible. The game itself flushes this batch in the middle of a drawing loop (0x00924DD1 every 1000 line segments), so
-// the batch is safe to flush between two rectangles. With QUAD_BATCH_FLUSH off the cave hands out a scratch area instead: the
-// rectangle is filled in there and never drawn, a health bar beyond the limit is missing, which beats a crash.
+// the batch is safe to flush between two rectangles. With HEALTH_BAR_CRASH_FIX_FLUSH off the cave hands out a scratch area
+// instead: the rectangle is filled in there and never drawn, a health bar beyond the limit is missing, which beats a crash.
 
 using namespace patching;
 
@@ -63,7 +70,7 @@ namespace {
         cave.emit8(0x3D);
         cave.emit32(INDEX_LIMIT);
         const size_t jumpToFull = cave.size;
-        cave.jcc(0x87, 0); // ja full
+        cave.jcc(JA, 0); // full
 
         // the replaced instructions must run with eax free again: they set up the frame and use eax themselves
         const uintptr_t original = cave.here();
@@ -75,12 +82,12 @@ namespace {
         const BYTE tooManyVertices[5] = {0x83, 0x7C, 0x24, 0x04, static_cast<BYTE>(MAX_VERTICES)};
         cave.emit(tooManyVertices);
         const size_t jumpOne = cave.size;
-        cave.jcc(0x87, 0);
+        cave.jcc(JA, 0);
         const BYTE tooManyIndices[4] = {0x81, 0x7C, 0x24, 0x08}; // cmp dword [esp + 8], MAX_INDICES
         cave.emit(tooManyIndices);
         cave.emit32(MAX_INDICES);
         const size_t jumpTwo = cave.size;
-        cave.jcc(0x87, 0);
+        cave.jcc(JA, 0);
         cave.resolveJcc(jumpOne, original);
         cave.resolveJcc(jumpTwo, original);
 
@@ -109,7 +116,7 @@ namespace {
     }
 }
 
-bool applyQuadBatchCap() {
+bool applyHealthBarCrashFix() {
 
     BYTE *caveMemory = allocateCave();
     if (caveMemory == nullptr) {
@@ -122,7 +129,7 @@ bool applyQuadBatchCap() {
     Cave cave(caveMemory);
     // push -1 / mov eax, fs:[0]
     const BYTE head[8] = {0x6A, 0xFF, 0x64, 0xA1, 0x00, 0x00, 0x00, 0x00};
-    const Mode mode = features::QUAD_BATCH_FLUSH ? Mode::Flush : Mode::Drop;
+    const Mode mode = features::HEALTH_BAR_CRASH_FIX_FLUSH ? Mode::Flush : Mode::Drop;
     const uintptr_t entry = emitHook(cave, scratch, ALLOCATE_RESUME, head, mode, FLUSH);
 
     static PatchSet set;

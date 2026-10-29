@@ -2,9 +2,9 @@
 
 #include <cstdint>
 
-bool applyBroadPhaseTable();
+bool applyCollisionPairTable();
 
-namespace broad_phase_table {
+namespace collision_pair_table {
 
     // the size of the game's broad phase object, and its first pair table (11131 buckets) right in front of it
     constexpr uint32_t OBJECT_SIZE = 0xC070;
