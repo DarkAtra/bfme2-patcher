@@ -60,6 +60,58 @@
 #define GAME_PATCHER_AI_ABILITY_CONDITIONS 1
 #endif
 
+#ifndef GAME_PATCHER_RENDER_INTERPOLATION
+#define GAME_PATCHER_RENDER_INTERPOLATION 1
+#endif
+
+#ifndef GAME_PATCHER_PRODUCTION_IDS
+#define GAME_PATCHER_PRODUCTION_IDS 0
+#endif
+
+#ifndef GAME_PATCHER_AI_BUILD_QUEUE
+#define GAME_PATCHER_AI_BUILD_QUEUE 1
+#endif
+
+#ifndef GAME_PATCHER_MOUNT_TOGGLE_CRASH_FIX
+#define GAME_PATCHER_MOUNT_TOGGLE_CRASH_FIX 1
+#endif
+
+#ifndef GAME_PATCHER_EVACUATE_CONTAINED_HEROES
+#define GAME_PATCHER_EVACUATE_CONTAINED_HEROES 1
+#endif
+
+#ifndef GAME_PATCHER_SIEGE_WALL_TELEPORT_FIX
+#define GAME_PATCHER_SIEGE_WALL_TELEPORT_FIX 1
+#endif
+
+#ifndef GAME_PATCHER_AI_REBUILD_TARGETS
+#define GAME_PATCHER_AI_REBUILD_TARGETS 1
+#endif
+
+#ifndef GAME_PATCHER_GROUP_ABILITY_CONDITIONS
+#define GAME_PATCHER_GROUP_ABILITY_CONDITIONS 1
+#endif
+
+#ifndef GAME_PATCHER_PATHFINDER_CLOSED_GATES
+#define GAME_PATCHER_PATHFINDER_CLOSED_GATES 1
+#endif
+
+#ifndef GAME_PATCHER_TOOLTIP_UPGRADE_DESCRIPTION
+#define GAME_PATCHER_TOOLTIP_UPGRADE_DESCRIPTION 1
+#endif
+
+#ifndef GAME_PATCHER_TOOLTIP_KILL_COUNT
+#define GAME_PATCHER_TOOLTIP_KILL_COUNT 1
+#endif
+
+#ifndef GAME_PATCHER_MOUNT_HEALTH_RATIO
+#define GAME_PATCHER_MOUNT_HEALTH_RATIO 1
+#endif
+
+#ifndef GAME_PATCHER_HERO_RECRUIT_QUEUE
+#define GAME_PATCHER_HERO_RECRUIT_QUEUE 1
+#endif
+
 namespace features {
 
     // 60 fps: draws 60 frames per second at the stock game pace and keeps what the client counts in frames (particles, camera
@@ -115,4 +167,58 @@ namespace features {
     // AI ability conditions: the AI no longer casts abilities whose button the state of the unit disables, which the player
     // cannot press either, e.g. a silenced hero's abilities (ai_ability_conditions.cpp).
     constexpr bool AI_ABILITY_CONDITIONS = GAME_PATCHER_AI_ABILITY_CONDITIONS != 0;
+
+    // Render interpolation: moving units, turning and animations no longer take a double step once per logic frame; the
+    // interpolation between two logic frames is spread evenly over the frames the client draws (render_interpolation.cpp).
+    constexpr bool RENDER_INTERPOLATION = GAME_PATCHER_RENDER_INTERPOLATION != 0;
+
+    // Game-wide production ids: production ids are counted for the whole game instead of per building, so recruiting a hero
+    // at a second building while another hero is coming no longer takes the money and starts nothing (production_ids.cpp).
+    // Off: in 2.02 heroes come only from fortress-type buildings, so it matters only when a player also owns a hero building
+    // a map places; kept for later.
+    constexpr bool PRODUCTION_IDS = GAME_PATCHER_PRODUCTION_IDS != 0;
+
+    // AI build queue: a skirmish AI build order that cannot get a builder is skipped instead of stopping every order behind it,
+    // so the AI no longer banks money with idle production buildings (ai_build_queue.cpp).
+    constexpr bool AI_BUILD_QUEUE = GAME_PATCHER_AI_BUILD_QUEUE != 0;
+
+    // Mount toggle crash fix: mounting, dismounting or changing form no longer crashes when the unit's last order was to move to
+    // an object that is gone, e.g. the One Ring after it was picked up (mount_toggle_crash_fix.cpp).
+    constexpr bool MOUNT_TOGGLE_CRASH_FIX = GAME_PATCHER_MOUNT_TOGGLE_CRASH_FIX != 0;
+
+    // Evacuate contained heroes: the EVACUATE button of a garrison or tunnel also sends out the heroes that can carry the One
+    // Ring, which it left inside (evacuate_contained_heroes.cpp).
+    constexpr bool EVACUATE_CONTAINED_HEROES = GAME_PATCHER_EVACUATE_CONTAINED_HEROES != 0;
+
+    // Siege wall teleport fix: a siege engine pushed against a wall is no longer lifted onto it; climbing a ramp onto the wall
+    // still works (siege_wall_teleport_fix.cpp).
+    constexpr bool SIEGE_WALL_TELEPORT_FIX = GAME_PATCHER_SIEGE_WALL_TELEPORT_FIX != 0;
+
+    // AI rebuild targets: the skirmish AI no longer casts Rebuild (and Snowbind and Untamed Allegiance, which use the same
+    // targeting) on buildings that are still under construction (ai_rebuild_targets.cpp).
+    constexpr bool AI_REBUILD_TARGETS = GAME_PATCHER_AI_REBUILD_TARGETS != 0;
+
+    // Group ability conditions: when a group casts an ability (OK_FOR_MULTI_EXECUTE), units whose own button is disabled by
+    // their state are skipped instead of casting too (group_ability_conditions.cpp).
+    constexpr bool GROUP_ABILITY_CONDITIONS = GAME_PATCHER_GROUP_ABILITY_CONDITIONS != 0;
+
+    // Paths through closed gates: when a gate closes, units whose path runs through it plan a new one instead of walking
+    // through the closed gate (pathfinder_closed_gates.cpp).
+    constexpr bool PATHFINDER_CLOSED_GATES = GAME_PATCHER_PATHFINDER_CLOSED_GATES != 0;
+
+    // Tooltip upgrade description: a researched upgrade's tooltip keeps its description, with "already researched" added below
+    // it instead of replacing it (tooltip_upgrade_description.cpp).
+    constexpr bool TOOLTIP_UPGRADE_DESCRIPTION = GAME_PATCHER_TOOLTIP_UPGRADE_DESCRIPTION != 0;
+
+    // Tooltip kill count: a unit's hover tooltip shows its kills (a battalion member its battalion's), formatted from the mod's
+    // TOOLTIP:Kills string; without that string nothing changes (tooltip_kill_count.cpp).
+    constexpr bool TOOLTIP_KILL_COUNT = GAME_PATCHER_TOOLTIP_KILL_COUNT != 0;
+
+    // Mount health ratio: mounting and dismounting hand the health to the other form as a fraction of the maximum health
+    // instead of as hit points, so toggling no longer heals or hurts the unit (mount_health_ratio.cpp).
+    constexpr bool MOUNT_HEALTH_RATIO = GAME_PATCHER_MOUNT_HEALTH_RATIO != 0;
+
+    // Hero recruits and the queue: a hero being recruited no longer holds up the units and upgrades queued behind it; its
+    // recruit time is unchanged (hero_recruit_queue.cpp).
+    constexpr bool HERO_RECRUIT_QUEUE = GAME_PATCHER_HERO_RECRUIT_QUEUE != 0;
 }

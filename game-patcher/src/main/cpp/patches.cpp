@@ -3,18 +3,31 @@
 
 #include "ai_construction_site_production.h"
 #include "ai_ability_conditions.h"
+#include "ai_build_queue.h"
+#include "ai_rebuild_targets.h"
 #include "collision_pair_table.h"
 #include "pathfinder_cell_centre.h"
+#include "pathfinder_closed_gates.h"
 #include "collision_contact_handler.h"
+#include "evacuate_contained_heroes.h"
+#include "group_ability_conditions.h"
 #include "pathfinder_crowd_cost.h"
 #include "render_lock.h"
 #include "features.h"
 #include "frame_limiter_sleep.h"
 #include "patches.h"
+#include "production_ids.h"
 #include "render_scope_names.h"
 #include "health_bar_crash_fix.h"
+#include "hero_recruit_queue.h"
+#include "mount_health_ratio.h"
+#include "siege_wall_teleport_fix.h"
+#include "mount_toggle_crash_fix.h"
+#include "render_interpolation.h"
 #include "render_rate.h"
 #include "sse_math.h"
+#include "tooltip_kill_count.h"
+#include "tooltip_upgrade_description.h"
 
 size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
 
@@ -55,6 +68,45 @@ size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
     }
     if (features::AI_ABILITY_CONDITIONS && !applyAiAbilityConditions()) {
         failed[count++] = L"AI ability conditions";
+    }
+    if (features::RENDER_INTERPOLATION && !applyRenderInterpolation()) {
+        failed[count++] = L"Render interpolation";
+    }
+    if (features::PRODUCTION_IDS && !applyProductionIds()) {
+        failed[count++] = L"Game-wide production ids";
+    }
+    if (features::AI_BUILD_QUEUE && !applyAiBuildQueue()) {
+        failed[count++] = L"AI build queue";
+    }
+    if (features::MOUNT_TOGGLE_CRASH_FIX && !applyMountToggleCrashFix()) {
+        failed[count++] = L"Mount toggle crash fix";
+    }
+    if (features::EVACUATE_CONTAINED_HEROES && !applyEvacuateContainedHeroes()) {
+        failed[count++] = L"Evacuate contained heroes";
+    }
+    if (features::SIEGE_WALL_TELEPORT_FIX && !applySiegeWallTeleportFix()) {
+        failed[count++] = L"Siege wall teleport fix";
+    }
+    if (features::AI_REBUILD_TARGETS && !applyAiRebuildTargets()) {
+        failed[count++] = L"AI rebuild targets";
+    }
+    if (features::GROUP_ABILITY_CONDITIONS && !applyGroupAbilityConditions()) {
+        failed[count++] = L"Group ability conditions";
+    }
+    if (features::PATHFINDER_CLOSED_GATES && !applyPathfinderClosedGates()) {
+        failed[count++] = L"Paths through closed gates";
+    }
+    if (features::TOOLTIP_UPGRADE_DESCRIPTION && !applyTooltipUpgradeDescription()) {
+        failed[count++] = L"Tooltip upgrade description";
+    }
+    if (features::TOOLTIP_KILL_COUNT && !applyTooltipKillCount()) {
+        failed[count++] = L"Tooltip kill count";
+    }
+    if (features::MOUNT_HEALTH_RATIO && !applyMountHealthRatio()) {
+        failed[count++] = L"Mount health ratio";
+    }
+    if (features::HERO_RECRUIT_QUEUE && !applyHeroRecruitQueue()) {
+        failed[count++] = L"Hero recruits and the queue";
     }
 
     return count;
