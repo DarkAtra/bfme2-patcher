@@ -136,6 +136,10 @@
 #define GAME_PATCHER_TOOLTIP_TIMERS 1
 #endif
 
+#ifndef GAME_PATCHER_FPS_COUNTER
+#define GAME_PATCHER_FPS_COUNTER 1
+#endif
+
 namespace features {
 
     // 60 fps: draws 60 frames per second at the stock game pace and keeps what the client counts in frames (particles, camera
@@ -270,4 +274,8 @@ namespace features {
     // research time, formatted from the mod's TOOLTIP:Cooldown, TOOLTIP:CooldownRemaining, TOOLTIP:BuildTime and
     // TOOLTIP:ResearchTime strings; without them nothing changes (tooltip_timers.cpp).
     constexpr bool TOOLTIP_TIMERS = GAME_PATCHER_TOOLTIP_TIMERS != 0;
+
+    // FPS counter: with -showfps on the game's command line (the updater adds it in debug mode), the frames per second are shown
+    // in the top left corner (fps_counter.cpp).
+    constexpr bool FPS_COUNTER = GAME_PATCHER_FPS_COUNTER != 0;
 }

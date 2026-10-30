@@ -38,10 +38,6 @@ namespace {
     constexpr BYTE FIRST_WALL_LAYER = 0x11;
     constexpr BYTE LAST_WALL_LAYER = 0x40;
 
-    void putShortJump(BYTE *cave, const size_t jumpOffset, const size_t target) {
-        cave[jumpOffset + 1] = static_cast<BYTE>(target - (jumpOffset + 2));
-    }
-
     void addSetLayerCall(PatchSet &set, const uintptr_t arguments, const BYTE (&stockCall)[5], const uintptr_t gate) {
         // push eax / mov ecx, esi: the layer and the object
         const BYTE layerAndObject[3] = {0x50, 0x8B, 0xCE};
@@ -127,13 +123,13 @@ bool applySiegeWallTeleportFix() {
     const BYTE refuse[3] = {0xC2, 0x04, 0x00}; // ret 4
     cave.emit(refuse);
 
-    putShortJump(caveMemory, belowWalls, allow);
-    putShortJump(caveMemory, aboveWalls, allow);
-    putShortJump(caveMemory, noTemplate, restoreAndAllow);
-    putShortJump(caveMemory, notMachine, restoreAndAllow);
-    putShortJump(caveMemory, noAi, restoreAndAllow);
-    putShortJump(caveMemory, noPathfinder, restoreAndAllow);
-    putShortJump(caveMemory, storeyAbove, restoreAndRefuse);
+    cave.resolveShortJump(belowWalls, allow);
+    cave.resolveShortJump(aboveWalls, allow);
+    cave.resolveShortJump(noTemplate, restoreAndAllow);
+    cave.resolveShortJump(notMachine, restoreAndAllow);
+    cave.resolveShortJump(noAi, restoreAndAllow);
+    cave.resolveShortJump(noPathfinder, restoreAndAllow);
+    cave.resolveShortJump(storeyAbove, restoreAndRefuse);
 
     const auto gate = reinterpret_cast<uintptr_t>(caveMemory);
 

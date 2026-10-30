@@ -44,7 +44,7 @@ bool applyRenderInterpolation() {
         0x76 // jbe noRange (the ratio is 1 until the engine computes it first)
     };
     cave.emit(observedRange);
-    const size_t noRangeJump = cave.size;
+    const size_t noRangeJump = cave.size - 1;
     cave.emit8(0x00);
     const BYTE alpha[42] = {
         0xF3, 0x0F, 0x2A, 0x41, 0x34, // cvtsi2ss xmm0, [ecx + 0x34]
@@ -58,7 +58,7 @@ bool applyRenderInterpolation() {
         0xC3 // ret
     };
     cave.emit(alpha);
-    caveMemory[noRangeJump] = static_cast<BYTE>(cave.size - (noRangeJump + 1));
+    cave.resolveShortJump(noRangeJump, cave.size);
     const BYTE noRange[14] = {
         0xF3, 0x0F, 0x10, 0x05, 0x08, 0x19, 0xBD, 0x00, // movss xmm0, [FLOAT_ONE]
         0xF3, 0x0F, 0x11, 0x41, 0x3C, // movss [ecx + 0x3C], xmm0

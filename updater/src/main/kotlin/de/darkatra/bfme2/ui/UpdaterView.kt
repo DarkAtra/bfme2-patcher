@@ -195,7 +195,7 @@ fun UpdaterView(
                         patchScope.launch {
                             runCatching {
                                 when (state.hookEnabled) {
-                                    true -> GameUtils.launchGameBypassingDebugger(rotwkHomeDir, patcherUserDir, state.hdEditionEnabled)
+                                    true -> GameUtils.launchGameBypassingDebugger(rotwkHomeDir, patcherUserDir, state.hdEditionEnabled, state.debugModeEnabled)
                                     false -> GameUtils.launchGame(rotwkHomeDir, patcherUserDir, state.hdEditionEnabled)
                                 }
                             }.also {

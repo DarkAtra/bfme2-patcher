@@ -1,6 +1,7 @@
 #pragma once
 
 #include <windows.h>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 
@@ -10,7 +11,7 @@
 namespace patching {
 
     constexpr size_t MAX_PATCH_LENGTH = 24;
-    constexpr size_t MAX_PATCHES = 48;
+    constexpr size_t MAX_PATCHES = 64;
     constexpr size_t CAVE_SIZE = 0x1000;
 
     struct Patch {
@@ -42,6 +43,21 @@ namespace patching {
             patch->length = N;
             memcpy(patch->expected, expected, N);
             patch->write = false;
+        }
+
+        // Expects a longer stretch of bytes, in pieces of at most MAX_PATCH_LENGTH.
+        template<size_t N>
+        void expectBytes(const uintptr_t address, const BYTE (&expected)[N]) {
+            for (size_t offset = 0; offset < N; offset += MAX_PATCH_LENGTH) {
+                Patch *patch = next();
+                if (patch == nullptr) {
+                    return;
+                }
+                patch->address = address + offset;
+                patch->length = N - offset < MAX_PATCH_LENGTH ? N - offset : MAX_PATCH_LENGTH;
+                memcpy(patch->expected, expected + offset, patch->length);
+                patch->write = false;
+            }
         }
 
         template<size_t N>
@@ -95,6 +111,8 @@ namespace patching {
         size_t size = 0;
         // set instead of writing past the allocation; commit() then refuses the patch
         bool overflow = false;
+        // set when a short jump cannot reach its target; commit() then refuses the patch
+        bool unreachable = false;
 
         explicit Cave(BYTE *base) : base(base) {}
 
@@ -166,6 +184,21 @@ namespace patching {
         void resolveJmp(const size_t jmpOffset, const uintptr_t target) {
             const auto displacement = static_cast<uint32_t>(target - (reinterpret_cast<uintptr_t>(base) + jmpOffset + 5));
             memcpy(base + jmpOffset + 1, &displacement, sizeof(displacement));
+        }
+
+        // Points the rel8 of a two byte jump emitted earlier (its opcode at `jumpOffset`) at `targetOffset`, both counted from the
+        // cave's base.
+        void resolveShortJump(const size_t jumpOffset, const size_t targetOffset) {
+            if (jumpOffset + 2 > size) {
+                overflow = true;
+                return;
+            }
+            const auto displacement = static_cast<ptrdiff_t>(targetOffset) - static_cast<ptrdiff_t>(jumpOffset + 2);
+            if (displacement < -128 || displacement > 127) {
+                unreachable = true;
+                return;
+            }
+            base[jumpOffset + 1] = static_cast<BYTE>(displacement);
         }
 
         // `inc dword [address]`
@@ -267,6 +300,6 @@ namespace patching {
     }
 
     inline bool commit(const PatchSet &set, const Cave &cave) {
-        return !set.overflow && !cave.overflow && cave.size <= CAVE_SIZE && verify(set) && write(set);
+        return !set.overflow && !cave.overflow && !cave.unreachable && cave.size <= CAVE_SIZE && verify(set) && write(set);
     }
 }

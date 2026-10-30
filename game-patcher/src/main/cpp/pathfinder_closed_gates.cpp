@@ -58,10 +58,6 @@ namespace {
         return offset;
     }
 
-    void resolveShortJump(Cave &cave, const size_t jumpOffset, const size_t targetOffset) {
-        cave.base[jumpOffset + 1] = static_cast<BYTE>(targetOffset - (jumpOffset + 2));
-    }
-
     size_t forwardJcc(Cave &cave, const BYTE condition) {
         const size_t offset = cave.size;
         cave.jcc(condition, 0);
@@ -235,9 +231,9 @@ bool applyPathfinderClosedGates() {
     cave.resolveJcc(waiting, nextEntry);
     cave.resolveJcc(noPath, nextEntry);
     cave.resolveJcc(noNode, nextEntry);
-    resolveShortJump(cave, startClosest, compare);
-    resolveShortJump(cave, endClosest, pastEnd);
-    resolveShortJump(cave, insideDone, compare);
+    cave.resolveShortJump(startClosest, compare);
+    cave.resolveShortJump(endClosest, pastEnd);
+    cave.resolveShortJump(insideDone, compare);
     cave.resolveJcc(throughGate, dropPath);
     cave.resolveJcc(pathDone, nextEntry);
     cave.resolveJcc(unsafe, nextEntry);

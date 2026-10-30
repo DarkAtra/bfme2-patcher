@@ -16,9 +16,10 @@
 // later through the body damage step (0x00697E50). A DOT registers a copy of its DamageInfo with the manager (0x00911477), whose
 // later ticks call attemptDamage on it directly. So the drain moves into the two calls of the body damage step (0x00698EBA,
 // 0x00697EEA), which every hit goes through, and the stock drain is skipped (0x0090E6E5). The info carries the drain in the three
-// padding bytes after the Bool at DamageInfo + 0x50: the input's constructor (0x00663492) and copy constructor (0x00662ADA) are
-// widened to write the whole dword, so every info starts with them zero and every copy (the delayed list's, the DOT manager's)
-// carries them. doDamage's attemptDamage call and the DOT registration stamp the multiplier there when the nugget drains.
+// padding bytes after the Bool at DamageInfo + 0x50: the input's constructor (0x00663492) and copy constructor (0x00662ADA), which
+// are handed the input at DamageInfo + 4 (0x00663661, 0x0066432D) and so see the Bool at + 0x4C, are widened to write the whole
+// dword, so every info starts with them zero and every copy (the delayed list's, the DOT manager's) carries them. doDamage's
+// attemptDamage call and the DOT registration stamp the multiplier there when the nugget drains.
 //
 // pySAGE stores the multiplier's top 24 bits, which changes 0.3 and the like slightly; this stores a 1-based index into a table
 // of the multipliers seen, so the drain uses the exact value. Table order depends on the process's history, the values it
@@ -32,6 +33,8 @@ namespace {
 
     constexpr uintptr_t INPUT_CONSTRUCTOR_STORE = 0x00663492;
     constexpr uintptr_t INPUT_COPY_MOVE = 0x00662ADA;
+    constexpr uintptr_t DAMAGE_INFO_CONSTRUCTOR_INPUT = 0x00663661;
+    constexpr uintptr_t DAMAGE_INFO_COPY_INPUT = 0x00664329;
     constexpr uintptr_t NUGGET_ATTEMPT_CALL = 0x0090E6C7;
     constexpr uintptr_t STOCK_DRAIN = 0x0090E6CC;
     constexpr uintptr_t STOCK_DRAIN_SKIP = 0x0090E6E5;
@@ -249,6 +252,12 @@ bool applyLifeDrain() {
     // mov eax, ecx / mov ecx, [esp + 4] / mov dword [eax], the input's vtable
     const BYTE copyHead[12] = {0x8B, 0xC1, 0x8B, 0x4C, 0x24, 0x04, 0xC7, 0x00, 0xA8, 0xF3, 0xC0, 0x00};
     set.expect(INPUT_COPY_MOVE - 0x7E, copyHead);
+    // lea ecx, [esi + 4] / mov dword [esi], the DamageInfo vtable / call the input's constructor: the input is at DamageInfo + 4
+    const BYTE constructorInput[14] = {0x8D, 0x4E, 0x04, 0xC7, 0x06, 0xB8, 0xF3, 0xC0, 0x00, 0xE8, 0xAD, 0xFD, 0xFF, 0xFF};
+    set.expect(DAMAGE_INFO_CONSTRUCTOR_INPUT, constructorInput);
+    // lea eax, [edi + 4] / push eax / lea ecx, [esi + 4] / mov dword [esi], the DamageInfo vtable / call the input's copy
+    const BYTE copyInput[18] = {0x8D, 0x47, 0x04, 0x50, 0x8D, 0x4E, 0x04, 0xC7, 0x06, 0xB8, 0xF3, 0xC0, 0x00, 0xE8, 0x21, 0xE7, 0xFF, 0xFF};
+    set.expect(DAMAGE_INFO_COPY_INPUT, copyInput);
 
     // lea eax, [ebp - 0x7C] / push eax / mov ecx, ebx
     const BYTE nuggetArguments[6] = {0x8D, 0x45, 0x84, 0x50, 0x8B, 0xCB};

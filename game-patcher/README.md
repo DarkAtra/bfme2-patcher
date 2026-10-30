@@ -78,6 +78,7 @@ Every patch can be switched off on its own in `src/main/headers/features.h` (e.g
 | `GROUP_ABILITY_COOLDOWN`                                      | A group ability stays usable while any selected unit has it ready.                                                                                                               |
 | `LIFE_DRAIN`                                                  | Life drain also heals on delayed hits and on every damage-over-time tick.                                                                                                        |
 | `TOOLTIP_TIMERS`                                              | Tooltips show cooldowns, build times and research times (needs the mod strings `TOOLTIP:Cooldown`, `TOOLTIP:CooldownRemaining`, `TOOLTIP:BuildTime` and `TOOLTIP:ResearchTime`). |
+| `FPS_COUNTER`                                                 | Shows the frames per second in the top left corner, only when the game is started with `-showfps` (the updater adds it in debug mode).                                           |
 
 ## References
 

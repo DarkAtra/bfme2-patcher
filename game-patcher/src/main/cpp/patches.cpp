@@ -17,6 +17,7 @@
 #include "pathfinder_crowd_cost.h"
 #include "render_lock.h"
 #include "features.h"
+#include "fps_counter.h"
 #include "frame_limiter_sleep.h"
 #include "patches.h"
 #include "production_ids.h"
@@ -131,6 +132,9 @@ size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
     }
     if (features::TOOLTIP_TIMERS && !applyTooltipTimers()) {
         failed[count++] = L"Tooltip timers";
+    }
+    if (features::FPS_COUNTER && fpsCounterRequested() && !applyFpsCounter()) {
+        failed[count++] = L"FPS counter";
     }
 
     return count;

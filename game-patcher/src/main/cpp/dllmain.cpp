@@ -1,67 +1,41 @@
 #include <winsock2.h>
 #include <easyhook.h>
 #include <cstdio>
+#include <cstring>
 #include <cwchar>
 
 #include "patches.h"
 
 using namespace std;
 
-// `patternEnd` points at the last byte of the pattern, not behind it.
-__forceinline static BYTE *findPattern(BYTE *srcStart, BYTE *srcEnd, const BYTE *patternStart, const BYTE *patternEnd) {
+// Counts the occurrences of the pattern in the executable pages of a loaded image and returns the first one.
+static BYTE *findInImage(HMODULE module, const BYTE *pattern, const size_t patternLength, size_t &count) {
 
-    const BYTE *end = srcEnd - (patternEnd - patternStart + 1);
+    auto *base = reinterpret_cast<BYTE *>(module);
+    const auto *dosHeader = reinterpret_cast<const IMAGE_DOS_HEADER *>(base);
+    const auto *ntHeaders = reinterpret_cast<const IMAGE_NT_HEADERS *>(base + dosHeader->e_lfanew);
+    const uintptr_t imageEnd = reinterpret_cast<uintptr_t>(base) + ntHeaders->OptionalHeader.SizeOfImage;
+    constexpr DWORD EXECUTABLE = PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY;
 
-    for (BYTE *pos = srcStart; pos <= end; pos++) {
-        const BYTE *s1 = pos - 1;
-        const BYTE *p1 = patternStart - 1;
-
-        while (*++s1 == *++p1) {
-            if (p1 == patternEnd) {
-                return pos;
-            }
-        }
-    }
-
-    return srcEnd;
-}
-
-__forceinline static BYTE *findPatternInProcessMemory(const BYTE *search, const BYTE *search_end) {
-
-    // start searching from the beginning of the process's memory
-    ULONG_PTR baseAddress = reinterpret_cast<ULONG_PTR>(GetModuleHandleA(nullptr));
-
+    BYTE *first = nullptr;
+    count = 0;
     MEMORY_BASIC_INFORMATION memoryInfo;
-
-    while (VirtualQuery(reinterpret_cast<void *>(baseAddress), &memoryInfo, sizeof(memoryInfo))) {
-
-        // skip noncommitted and guard pages, nonreadable or nonexecutable pages
-        if (
-            memoryInfo.State & MEM_COMMIT &&
-            memoryInfo.Protect == (
-                (memoryInfo.Protect & ~(PAGE_NOACCESS | PAGE_GUARD)) &
-                (memoryInfo.Protect & (PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY))
-            )
-        ) {
-
-            BYTE *res = findPattern(
-                static_cast<BYTE *>(memoryInfo.BaseAddress),
-                static_cast<BYTE *>(memoryInfo.BaseAddress) + memoryInfo.RegionSize,
-                search,
-                search_end
-            );
-            if (res != static_cast<BYTE *>(memoryInfo.BaseAddress) + memoryInfo.RegionSize && res != search) {
-                // found
-                return res;
+    uintptr_t address = reinterpret_cast<uintptr_t>(base);
+    while (address < imageEnd && VirtualQuery(reinterpret_cast<void *>(address), &memoryInfo, sizeof(memoryInfo))) {
+        const uintptr_t regionStart = reinterpret_cast<uintptr_t>(memoryInfo.BaseAddress);
+        const uintptr_t regionEnd = regionStart + memoryInfo.RegionSize < imageEnd ? regionStart + memoryInfo.RegionSize : imageEnd;
+        address = regionStart + memoryInfo.RegionSize;
+        if (memoryInfo.State != MEM_COMMIT || (memoryInfo.Protect & EXECUTABLE) == 0 || (memoryInfo.Protect & (PAGE_GUARD | PAGE_NOACCESS)) != 0) {
+            continue;
+        }
+        for (uintptr_t position = regionStart; position + patternLength <= regionEnd; position++) {
+            if (memcmp(reinterpret_cast<const void *>(position), pattern, patternLength) == 0 && count++ == 0) {
+                first = reinterpret_cast<BYTE *>(position);
             }
         }
-
-        // move to the next region
-        baseAddress = reinterpret_cast<ULONG_PTR>(memoryInfo.BaseAddress) + memoryInfo.RegionSize;
     }
 
-    // not found
-    return nullptr;
+    return first;
 }
 
 // See: https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-gethostbyname
@@ -200,12 +174,16 @@ BOOL APIENTRY DllMain(HINSTANCE /*hinstDLL*/, const DWORD fdwReason, LPVOID lpvR
             swprintf_s(message, L"Failed to hook gethostbyname (0x%08lX: %ls). Online gameplay might not be possible.", result, RtlGetLastErrorString());
             writeLog("SEVERE", message);
         } else {
+            // A new hook intercepts no thread until it gets an ACL; an exclusive ACL without thread ids intercepts every thread.
             ULONG ACLEntries[1] = {};
-            // the second parameter controls which threads are affected by the hook - use the following values depending on the way the dll is injected:
-            // 0 - if the dll is loaded via the main thread (i.e. by manipulating the import table of the process)
-            // 1 - if the dll is injected using a throwaway thread (i.e. via CreateRemoteThread and LoadLibraryA)
-            LhSetExclusiveACL(ACLEntries, 0, &hHook);
-            writeLog("INFO", L"Hooked gethostbyname.");
+            const NTSTATUS aclResult = LhSetExclusiveACL(ACLEntries, 0, &hHook);
+            if (FAILED(aclResult)) {
+                wchar_t message[384];
+                swprintf_s(message, L"Failed to activate the gethostbyname hook (0x%08lX: %ls). Online gameplay might not be possible.", aclResult, RtlGetLastErrorString());
+                writeLog("SEVERE", message);
+            } else {
+                writeLog("INFO", L"Hooked gethostbyname.");
+            }
         }
 
         const HANDLE currentProcess = GetCurrentProcess();
@@ -213,9 +191,14 @@ BOOL APIENTRY DllMain(HINSTANCE /*hinstDLL*/, const DWORD fdwReason, LPVOID lpvR
         const BYTE search[] = {0x89, 0x55, 0x88, 0x83, 0x7D, 0x88, 0x08, 0x74, 0x08};
         constexpr BYTE patch[] = {0xEB, 0x46, 0x90, 0x90};
 
-        BYTE *addressToModify = findPatternInProcessMemory(search, search + 8);
-        if (addressToModify == nullptr) {
+        size_t matches;
+        BYTE *addressToModify = findInImage(GetModuleHandleA(nullptr), search, sizeof(search), matches);
+        if (matches == 0) {
             writeLog("SEVERE", L"Failed to patch the certificate check: its code was not found. Online gameplay might not be possible.");
+        } else if (matches > 1) {
+            wchar_t message[256];
+            swprintf_s(message, L"Failed to patch the certificate check: its code was found %zu times. Online gameplay might not be possible.", matches);
+            writeLog("SEVERE", message);
         } else {
             SIZE_T bytesWritten;
             if (WriteProcessMemory(currentProcess, addressToModify + 3, patch, sizeof(patch), &bytesWritten)) {

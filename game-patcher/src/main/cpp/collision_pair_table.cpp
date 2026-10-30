@@ -46,8 +46,10 @@ namespace {
     constexpr uint32_t NEXT_IN_CHAIN = 0x30;
     constexpr uint32_t FREE_LIST = 0xADEC;
 
-    // the game's operator delete; not const because the genuine code test (tools/tests/collision-pair-table) counts the releases
-    uintptr_t deleteFunction = 0x0042F6A0;
+    // the game's operator delete
+    constexpr uintptr_t OPERATOR_DELETE = 0x0042F6A0;
+    // not const because the genuine code test (tools/tests/collision-pair-table) counts the releases
+    uintptr_t deleteFunction = OPERATOR_DELETE;
 
     // Constructor: the game's memory is not cleared.
     void __cdecl prepare(uint8_t *broad) {
@@ -176,6 +178,16 @@ bool applyCollisionPairTable() {
     // push esi / push edi / xor esi, esi / mov eax, [ecx + esi * 4]: the whole function is replaced
     const BYTE clearHead[7] = {0x56, 0x57, 0x33, 0xF6, 0x8B, 0x04, 0xB1};
     set.hook(CLEAR, clearHead, reinterpret_cast<uintptr_t>(&clear));
+    // the rest of it up to its ret, which clear reproduces: nodes onto the free list at + 0xADEC through + 0x30, 0x2B7B buckets
+    const BYTE clearBody[52] = {
+        0x85, 0xC0, 0x74, 0x1D, 0xEB, 0x03, 0x8D, 0x49, 0x00, 0x8B, 0x50, 0x30, 0x85, 0xD2, 0x8B, 0xB9, 0xEC, 0xAD, 0x00, 0x00,
+        0x89, 0x78, 0x30, 0x89, 0x81, 0xEC, 0xAD, 0x00, 0x00, 0x8B, 0xC2, 0x75, 0xE8, 0xC7, 0x04, 0xB1, 0x00, 0x00, 0x00, 0x00,
+        0x46, 0x81, 0xFE, 0x7B, 0x2B, 0x00, 0x00, 0x72, 0xCC, 0x5F, 0x5E, 0xC3
+    };
+    set.expectBytes(CLEAR + sizeof(clearHead), clearBody);
+    // mov eax, [esp + 4] / test eax, eax / je: the operator delete destroy releases the tail's nodes with
+    const BYTE deleteHead[8] = {0x8B, 0x44, 0x24, 0x04, 0x85, 0xC0, 0x74, 0x0C};
+    set.expect(OPERATOR_DELETE, deleteHead);
 
     // mov edx, ecx / push ebx / xor ebx, ebx / mov [edx], ebx
     const BYTE constructorHead[7] = {0x8B, 0xD1, 0x53, 0x33, 0xDB, 0x89, 0x1A};

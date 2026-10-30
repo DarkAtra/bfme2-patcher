@@ -101,6 +101,13 @@ bool applyPathfinderCellCentre() {
     // xorps xmm0, xmm0 / add esp, 0x10
     const BYTE resume[6] = {0x0F, 0x57, 0xC0, 0x83, 0xC4, 0x10};
     set.expect(CELL_CENTER_RESUME, resume);
+    // The reuse path leaves eax, the call's return value, unset: both paths from the resume point load eax before reading it.
+    // comiss xmm0, [ebp - 0xC] / jbe / fld [edi + 0x38] / mov eax, [edi + 0x260]
+    const BYTE resumeFallThrough[15] = {0x0F, 0x2F, 0x45, 0xF4, 0x76, 0x47, 0xD9, 0x47, 0x38, 0x8B, 0x87, 0x60, 0x02, 0x00, 0x00};
+    set.expect(CELL_CENTER_RESUME + 6, resumeFallThrough);
+    // the jbe's target: fld [esi + 0x38] / mov eax, [esi + 0x260]
+    const BYTE resumeBranch[9] = {0xD9, 0x46, 0x38, 0x8B, 0x86, 0x60, 0x02, 0x00, 0x00};
+    set.expect(CELL_CENTER_RESUME + 0x53, resumeBranch);
 
     // The function must still start at the address the hooks assume.
     const BYTE cellCenterStart[6] = {0x55, 0x8B, 0xEC, 0xFF, 0x75, 0x14};

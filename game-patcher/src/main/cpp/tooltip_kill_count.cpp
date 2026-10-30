@@ -135,8 +135,8 @@ bool applyTooltipKillCount() {
     cave.emit8(0x61); // popad
     cave.jmp(UNICODE_STRING_RELEASE);
 
-    caveMemory[noObject + 1] = static_cast<BYTE>(done - (noObject + 2));
-    caveMemory[noKills + 1] = static_cast<BYTE>(done - (noKills + 2));
+    cave.resolveShortJump(noObject, done);
+    cave.resolveShortJump(noKills, done);
     cave.resolveJcc(missingString, reinterpret_cast<uintptr_t>(caveMemory) + dropKills);
     cave.resolveJmp(formatted, reinterpret_cast<uintptr_t>(caveMemory) + freeLocalsAt);
 
