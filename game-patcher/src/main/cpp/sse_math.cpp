@@ -120,9 +120,9 @@ namespace sse_math {
         emitTruncate(cave, fallbackJccs[0]);
 
         // ceil is the truncation plus one when the argument is above it (positive, not an integer), which overflows for
-        // arguments just below 2^31.
-        // movapd xmm2, xmm1 / cmpltsd xmm2, xmm0 / movmskpd ecx, xmm2 / add eax, ecx / jo fallback
-        const BYTE step[13] = {0x66, 0x0F, 0x28, 0xD1, 0xF2, 0x0F, 0xC2, 0xD0, 0x01, 0x66, 0x0F, 0x50, 0xCA};
+        // arguments just below 2^31. cvtsi2sd leaves xmm1's upper lane as the caller had it, so only bit 0 of the mask counts.
+        // movapd xmm2, xmm1 / cmpltsd xmm2, xmm0 / movmskpd ecx, xmm2 / and ecx, 1 / add eax, ecx / jo fallback
+        const BYTE step[16] = {0x66, 0x0F, 0x28, 0xD1, 0xF2, 0x0F, 0xC2, 0xD0, 0x01, 0x66, 0x0F, 0x50, 0xCA, 0x83, 0xE1, 0x01};
         cave.emit(step);
         const BYTE add[2] = {0x03, 0xC1};
         cave.emit(add);

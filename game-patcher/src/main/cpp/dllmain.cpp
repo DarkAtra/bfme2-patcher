@@ -171,7 +171,7 @@ static void closeLog() {
 // however, it does not cause any harm even when the dll is still loaded via CreateRemoteThread and LoadLibraryA
 extern "C" __declspec(dllexport) void Noop() {}
 
-BOOL APIENTRY DllMain(HINSTANCE /*hinstDLL*/, const DWORD fdwReason, LPVOID /*lpvReserved*/) {
+BOOL APIENTRY DllMain(HINSTANCE /*hinstDLL*/, const DWORD fdwReason, LPVOID lpvReserved) {
 
     if (fdwReason == DLL_PROCESS_ATTACH) {
 
@@ -219,6 +219,7 @@ BOOL APIENTRY DllMain(HINSTANCE /*hinstDLL*/, const DWORD fdwReason, LPVOID /*lp
         } else {
             SIZE_T bytesWritten;
             if (WriteProcessMemory(currentProcess, addressToModify + 3, patch, sizeof(patch), &bytesWritten)) {
+                FlushInstructionCache(currentProcess, addressToModify + 3, sizeof(patch));
                 writeLog("INFO", L"Patched the certificate check.");
             } else {
                 writeLog("SEVERE", L"Failed to patch the certificate check: the write failed. Online gameplay might not be possible.");
@@ -227,7 +228,9 @@ BOOL APIENTRY DllMain(HINSTANCE /*hinstDLL*/, const DWORD fdwReason, LPVOID /*lp
 
         closeLog();
 
-    } else if (fdwReason == DLL_PROCESS_DETACH) {
+    } else if (fdwReason == DLL_PROCESS_DETACH && lpvReserved == nullptr) {
+        // Only when the dll is unloaded from a running process. At process exit the other threads are already gone and waiting
+        // under the loader lock could hang the exit, so nothing is cleaned up then.
         LhUninstallHook(&hHook);
         LhWaitForPendingRemovals();
     }

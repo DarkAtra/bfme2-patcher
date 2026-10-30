@@ -8,7 +8,8 @@
 //
 // Problem: the renderer builds a profiler event name for every render scope it opens, several hundred bytes of string
 // copying per mesh and frame, although nothing reads the names unless a profiler such as PIX is attached.
-// Fix: skips building the names. The only loss is that a PIX capture no longer shows the stage names.
+// Fix: skips building the names and the begin events. Without a profiler nothing changes; for a PIX capture build with
+// GAME_PATCHER_RENDER_SCOPE_NAMES=0.
 //
 // The render wraps thirty of its stages in a scope object (PerfScope, 0x00517690) that builds an event name for
 // D3DPERF_BeginEvent. For the two scopes that are opened per mesh that is two strncpy calls, one of which pads to 256
@@ -18,8 +19,10 @@
 // calls), so the name is never used.
 //
 // The constructor already has an exit that returns the object untouched, taken for a null name. This patch takes it
-// for every scope. The destructor still calls D3DPERF_EndEvent, which does nothing without a profiler. The cost is that
-// a PIX capture no longer shows the stage names. Derived from pySAGE's perf-scope-skip (https://github.com/ClementJ18/pySAGE).
+// for every scope, so no scope calls D3DPERF_BeginEvent (0x0051ECE0). The destructor (0x00517740) still calls
+// D3DPERF_EndEvent (0x0051ED60), which does nothing without a profiler, but with PIX attached every scope leaves an end event
+// without a begin. The destructor stays as it is because the instrumentation dll times the scopes through it. Unlike pySAGE's
+// perf-scope-skip (https://github.com/ClementJ18/pySAGE), which asks D3DPERF_GetStatus first, this does not detect a profiler.
 
 using namespace patching;
 

@@ -112,6 +112,30 @@
 #define GAME_PATCHER_HERO_RECRUIT_QUEUE 1
 #endif
 
+#ifndef GAME_PATCHER_HERO_BATTALION_ABSORPTION
+#define GAME_PATCHER_HERO_BATTALION_ABSORPTION 1
+#endif
+
+#ifndef GAME_PATCHER_CONSTRUCTION_INITIAL_HEALTH
+#define GAME_PATCHER_CONSTRUCTION_INITIAL_HEALTH 1
+#endif
+
+#ifndef GAME_PATCHER_COOLDOWN_MODIFIERS
+#define GAME_PATCHER_COOLDOWN_MODIFIERS 1
+#endif
+
+#ifndef GAME_PATCHER_GROUP_ABILITY_COOLDOWN
+#define GAME_PATCHER_GROUP_ABILITY_COOLDOWN 1
+#endif
+
+#ifndef GAME_PATCHER_LIFE_DRAIN
+#define GAME_PATCHER_LIFE_DRAIN 1
+#endif
+
+#ifndef GAME_PATCHER_TOOLTIP_TIMERS
+#define GAME_PATCHER_TOOLTIP_TIMERS 1
+#endif
+
 namespace features {
 
     // 60 fps: draws 60 frames per second at the stock game pace and keeps what the client counts in frames (particles, camera
@@ -221,4 +245,29 @@ namespace features {
     // Hero recruits and the queue: a hero being recruited no longer holds up the units and upgrades queued behind it; its
     // recruit time is unchanged (hero_recruit_queue.cpp).
     constexpr bool HERO_RECRUIT_QUEUE = GAME_PATCHER_HERO_RECRUIT_QUEUE != 0;
+
+    // Heroes joining battalions: a hero who leaves a building while a battalion (e.g. Mordor's Black Riders) is walking out of
+    // it no longer joins that battalion; only objects that fit one of its free slots do (hero_battalion_absorption.cpp).
+    constexpr bool HERO_BATTALION_ABSORPTION = GAME_PATCHER_HERO_BATTALION_ABSORPTION != 0;
+
+    // Construction initial health: a structure starts its construction at 10 % of its maximum health instead of 1 hit point;
+    // health still reaches the maximum when construction completes (construction_initial_health.cpp).
+    constexpr bool CONSTRUCTION_INITIAL_HEALTH = GAME_PATCHER_CONSTRUCTION_INITIAL_HEALTH != 0;
+
+    // Cooldowns follow recharge modifiers: a recharge modifier gained or lost while an ability recharges changes the rest of
+    // that cooldown instead of only the next one (cooldown_modifiers.cpp).
+    constexpr bool COOLDOWN_MODIFIERS = GAME_PATCHER_COOLDOWN_MODIFIERS != 0;
+
+    // Group ability cooldown: with several units selected, an ability the whole group may use (OK_FOR_MULTI_EXECUTE) stays
+    // ready and clickable while any of them has it ready, and fires on the ready ones only (group_ability_cooldown.cpp).
+    constexpr bool GROUP_ABILITY_COOLDOWN = GAME_PATCHER_GROUP_ABILITY_COOLDOWN != 0;
+
+    // Life drain on every hit: a DrainLife weapon heals its owner when each hit lands, so delayed hits (DelayTime) and every tick
+    // of damage over time drain too, not only the first tick (life_drain.cpp).
+    constexpr bool LIFE_DRAIN = GAME_PATCHER_LIFE_DRAIN != 0;
+
+    // Tooltip timers: a button's tooltip ends with its ability's cooldown (or the time left), its unit's build time or its upgrade's
+    // research time, formatted from the mod's TOOLTIP:Cooldown, TOOLTIP:CooldownRemaining, TOOLTIP:BuildTime and
+    // TOOLTIP:ResearchTime strings; without them nothing changes (tooltip_timers.cpp).
+    constexpr bool TOOLTIP_TIMERS = GAME_PATCHER_TOOLTIP_TIMERS != 0;
 }

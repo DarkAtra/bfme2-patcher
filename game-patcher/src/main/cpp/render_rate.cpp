@@ -29,6 +29,7 @@ namespace {
     constexpr uintptr_t LATCH_DIVISOR_ADDRESS = 0x00ECA400;
     constexpr uintptr_t GAME_CLIENT_ADDRESS = 0x00DE4388;
     constexpr uintptr_t FTOL_ADDRESS = 0x00A3CFA4;
+    constexpr uintptr_t W3D_STEP_ADDRESS = 0x00DC7A8C;
 
     constexpr int LOGIC_RATE = 5;
     constexpr int STOCK_CLIENT_RATE = 30;
@@ -257,6 +258,9 @@ namespace {
     // The stock limiter waits for ftol(1000 / (maxFramesPerSecond * slowdown)) milliseconds, where maxFramesPerSecond
     // comes from the INI (30 in every archive that ships with the mod) and is written back from there at several
     // points. This takes the period from a fixed 16 / 17 ms pattern instead and leaves the rest of the limiter alone.
+    // The W3D clock (animations, GPU particles) advances by a step per drawn frame (0x0044B911), set once to the truncated
+    // milliseconds per client frame (0x0044BF5C): 33, the stock limiter's period, but 16 at 60 fps, 3 % slower than the
+    // 16.5 ms frames. The step follows the period chosen here instead, so the clock keeps real time as in the stock game.
     void addFrameLimiter(PatchSet &set, Cave &cave, const CaveData *data) {
         const uintptr_t counterAddress = reinterpret_cast<uintptr_t>(&data->frameCounter);
         const uintptr_t entry = cave.here();
@@ -273,6 +277,8 @@ namespace {
         cave.emit(alternate);
         const BYTE period[3] = {0x83, 0xC0, FRAME_PERIOD_MS}; // add eax, FRAME_PERIOD_MS
         cave.emit(period);
+        cave.emit8(0xA3); // mov [w3dStep], eax
+        cave.emit32(W3D_STEP_ADDRESS);
         cave.emit8(0x50); // push eax
         const BYTE loadPeriod[3] = {0xDB, 0x04, 0x24}; // fild dword [esp]
         cave.emit(loadPeriod);
@@ -296,6 +302,13 @@ namespace {
         set.expect(0x0063A196, timeGetTimeCall);
         const BYTE landing[2] = {0x8B, 0xF0}; // mov esi, eax
         set.expect(resume, landing);
+
+        // cvttss2si eax, [esp + 4] / mov [w3dStep], eax / ret 4: the step's only writer
+        const BYTE stepSetter[14] = {0xF3, 0x0F, 0x2C, 0x44, 0x24, 0x04, 0xA3, 0x8C, 0x7A, 0xDC, 0x00, 0xC2, 0x04, 0x00};
+        set.expect(0x0044BF5C, stepSetter);
+        // mov eax, [w3dStep] / imul eax, esi: the frames since the last draw / add [w3dClock], eax
+        const BYTE clockAdvance[14] = {0xA1, 0x8C, 0x7A, 0xDC, 0x00, 0x0F, 0xAF, 0xC6, 0x01, 0x05, 0x80, 0x75, 0xDC, 0x00};
+        set.expect(0x0044B911, clockAdvance);
     }
 
     // movss xmm0, [ebp + offset] / mulss xmm0, [scale] / movss [ebp + offset], xmm0

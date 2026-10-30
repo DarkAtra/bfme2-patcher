@@ -17,7 +17,9 @@
 // it accepts. The gates check sciences, cost and recharge but are never given the button, so its model conditions are never
 // asked again. The two gate calls go through shims that first find the member's own button for the power (its current
 // command set, 33 slots, matched by the power's id like the control bar does) and ask the control bar's model condition test
-// (0x00942490) about it. A member without such a button (AI, scripts) is gated as before. Derived from pySAGE's
+// (0x00942490) about it. A member without such a button (AI, scripts) is gated as before. The walk reads TheControlBar from
+// the logic like the game's own logic does (0x0082DE20): the command sets it holds are the INI's, loaded the same on every
+// machine, observers included, and the button state only reads the button and the object. Derived from pySAGE's
 // multi-execute-gate (https://github.com/ClementJ18/pySAGE).
 
 using namespace patching;

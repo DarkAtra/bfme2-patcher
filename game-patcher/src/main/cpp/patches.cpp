@@ -9,8 +9,11 @@
 #include "pathfinder_cell_centre.h"
 #include "pathfinder_closed_gates.h"
 #include "collision_contact_handler.h"
+#include "construction_initial_health.h"
+#include "cooldown_modifiers.h"
 #include "evacuate_contained_heroes.h"
 #include "group_ability_conditions.h"
+#include "group_ability_cooldown.h"
 #include "pathfinder_crowd_cost.h"
 #include "render_lock.h"
 #include "features.h"
@@ -19,7 +22,9 @@
 #include "production_ids.h"
 #include "render_scope_names.h"
 #include "health_bar_crash_fix.h"
+#include "hero_battalion_absorption.h"
 #include "hero_recruit_queue.h"
+#include "life_drain.h"
 #include "mount_health_ratio.h"
 #include "siege_wall_teleport_fix.h"
 #include "mount_toggle_crash_fix.h"
@@ -27,6 +32,7 @@
 #include "render_rate.h"
 #include "sse_math.h"
 #include "tooltip_kill_count.h"
+#include "tooltip_timers.h"
 #include "tooltip_upgrade_description.h"
 
 size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
@@ -107,6 +113,24 @@ size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
     }
     if (features::HERO_RECRUIT_QUEUE && !applyHeroRecruitQueue()) {
         failed[count++] = L"Hero recruits and the queue";
+    }
+    if (features::HERO_BATTALION_ABSORPTION && !applyHeroBattalionAbsorption()) {
+        failed[count++] = L"Heroes joining battalions";
+    }
+    if (features::CONSTRUCTION_INITIAL_HEALTH && !applyConstructionInitialHealth()) {
+        failed[count++] = L"Construction initial health";
+    }
+    if (features::COOLDOWN_MODIFIERS && !applyCooldownModifiers()) {
+        failed[count++] = L"Cooldowns follow recharge modifiers";
+    }
+    if (features::GROUP_ABILITY_COOLDOWN && !applyGroupAbilityCooldown()) {
+        failed[count++] = L"Group ability cooldown";
+    }
+    if (features::LIFE_DRAIN && !applyLifeDrain()) {
+        failed[count++] = L"Life drain on every hit";
+    }
+    if (features::TOOLTIP_TIMERS && !applyTooltipTimers()) {
+        failed[count++] = L"Tooltip timers";
     }
 
     return count;

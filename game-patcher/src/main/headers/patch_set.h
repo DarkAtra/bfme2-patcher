@@ -93,6 +93,8 @@ namespace patching {
     struct Cave {
         BYTE *base;
         size_t size = 0;
+        // set instead of writing past the allocation; commit() then refuses the patch
+        bool overflow = false;
 
         explicit Cave(BYTE *base) : base(base) {}
 
@@ -102,16 +104,25 @@ namespace patching {
 
         template<size_t N>
         void emit(const BYTE (&bytes)[N]) {
+            if (!fits(N)) {
+                return;
+            }
             memcpy(base + size, bytes, N);
             size += N;
         }
 
         void emit32(const uint32_t value) {
+            if (!fits(sizeof(value))) {
+                return;
+            }
             memcpy(base + size, &value, sizeof(value));
             size += sizeof(value);
         }
 
         void emit8(const BYTE value) {
+            if (!fits(1)) {
+                return;
+            }
             base[size++] = value;
         }
 
@@ -167,6 +178,14 @@ namespace patching {
     private:
         void emitRelative(const uintptr_t target) {
             emit32(static_cast<uint32_t>(target - (here() + 4)));
+        }
+
+        bool fits(const size_t length) {
+            if (overflow || size + length > CAVE_SIZE) {
+                overflow = true;
+                return false;
+            }
+            return true;
         }
     };
 
@@ -248,6 +267,6 @@ namespace patching {
     }
 
     inline bool commit(const PatchSet &set, const Cave &cave) {
-        return !set.overflow && cave.size <= CAVE_SIZE && verify(set) && write(set);
+        return !set.overflow && !cave.overflow && cave.size <= CAVE_SIZE && verify(set) && write(set);
     }
 }
