@@ -29,7 +29,15 @@ object ProcessUtils {
         // create the process with debug flag to bypass IFEO
         val successful = Kernel32.INSTANCE.CreateProcess(
             null,
-            "$applicationName $commandLine",
+            buildString {
+                append('"')
+                append(applicationName)
+                append('"')
+                if (commandLine != null) {
+                    append(' ')
+                    append(commandLine)
+                }
+            },
             null,
             null,
             false,
