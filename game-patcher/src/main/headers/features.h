@@ -4,6 +4,10 @@
 // by setting it to 0 here or on the compiler command line (e.g. /DGAME_PATCHER_RENDER_LOCK=0). A disabled patch is not
 // applied at all, so the game keeps its stock code for it.
 
+#ifndef GAME_PATCHER_CRASH_DUMP
+#define GAME_PATCHER_CRASH_DUMP 1
+#endif
+
 #ifndef GAME_PATCHER_RENDER_RATE
 #define GAME_PATCHER_RENDER_RATE 1
 #endif
@@ -141,6 +145,10 @@
 #endif
 
 namespace features {
+
+    // Crash dumps: the dump the game writes when it crashes (DUMP_*.dmp in the game folder) also holds the memory around the
+    // crashed thread's registers and what its stack points to, the patches' code, and which patches were applied (crash_dump.cpp).
+    constexpr bool CRASH_DUMP = GAME_PATCHER_CRASH_DUMP != 0;
 
     // 60 fps: draws 60 frames per second at the stock game pace and keeps what the client counts in frames (particles, camera
     // scrolling and rotation, the camera reset click) at its speed at 30 fps (render_rate.cpp).

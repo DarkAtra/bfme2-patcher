@@ -234,6 +234,39 @@ namespace patching {
         return static_cast<BYTE *>(VirtualAlloc(nullptr, CAVE_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
     }
 
+    constexpr size_t MAX_RECORDS = 64;
+
+    struct PatchRecord {
+        const wchar_t *name;
+        bool applied;
+    };
+
+    struct CaveRecord {
+        const wchar_t *owner;
+        uintptr_t base;
+    };
+
+    // What applyPatches did, for the crash dumps: every patch it ran and the cave of each one applied.
+    struct Records {
+        PatchRecord patches[MAX_RECORDS];
+        size_t patchCount;
+        CaveRecord caves[MAX_RECORDS];
+        size_t caveCount;
+        const wchar_t *current;
+    };
+
+    inline Records &records() {
+        static Records instance;
+        return instance;
+    }
+
+    inline void recordCave(const Cave &cave) {
+        Records &r = records();
+        if (cave.size > 0 && r.caveCount < MAX_RECORDS) {
+            r.caves[r.caveCount++] = {r.current, reinterpret_cast<uintptr_t>(cave.base)};
+        }
+    }
+
     inline void putInt(BYTE *destination, const int value) {
         memcpy(destination, &value, sizeof(value));
     }
@@ -300,6 +333,10 @@ namespace patching {
     }
 
     inline bool commit(const PatchSet &set, const Cave &cave) {
-        return !set.overflow && !cave.overflow && !cave.unreachable && cave.size <= CAVE_SIZE && verify(set) && write(set);
+        if (set.overflow || cave.overflow || cave.unreachable || cave.size > CAVE_SIZE || !verify(set) || !write(set)) {
+            return false;
+        }
+        recordCave(cave);
+        return true;
     }
 }
