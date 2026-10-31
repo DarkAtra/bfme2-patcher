@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <cstdint>
+#include <cwchar>
 
 #include "patch_set.h"
 #include "tooltip_timers.h"
@@ -9,7 +10,10 @@
 // Problem: a button's tooltip does not say how long its ability recharges, its unit takes to build or its upgrade to research.
 // Fix: the description gets a last line with that time in whole seconds, formatted from the mod's strings TOOLTIP:Cooldown,
 // TOOLTIP:CooldownRemaining, TOOLTIP:BuildTime and TOOLTIP:ResearchTime (one %d each). A string the mod does not define means
-// no line, so without the strings nothing changes.
+// no line, so without the strings nothing changes. Where a description already states the time (2.02 writes lines like
+// "Recharge Time: 4m"), the mod lists the labels of such lines, '|' separated, in TOOLTIP:CooldownLabels, TOOLTIP:BuildTimeLabels
+// and TOOLTIP:ResearchTimeLabels: when the computed line is added, the lines starting with one of them are removed (with the
+// blank lines that would be left over), so the computed time replaces the stated one. Each language file lists its own labels.
 //
 // The button tooltip builder (0x00807A81) keeps the description at [ebp - 0x18], the selected object (or 0) at [ebp - 0x1C] and
 // its player (or the local player) at [ebp - 0x20]; every case joins at 0x008086AE, where the description is final. The button
@@ -75,6 +79,8 @@ namespace {
     constexpr uintptr_t FOR_EACH_TEAM_OBJECT = 0x006ABABD;
     // cdecl(destination, format string, ...): replaces the destination
     constexpr uintptr_t UNICODE_STRING_FORMAT = 0x00ADF7E0;
+    // cdecl(destination, const wchar_t *format, ...): replaces the destination
+    constexpr uintptr_t UNICODE_STRING_FORMAT_TEXT = 0x00ADF750;
     // thiscall(string, other), ret 4
     constexpr uintptr_t UNICODE_STRING_APPEND = 0x004065FE;
     // thiscall(string, wide characters), ret 4
@@ -89,6 +95,7 @@ namespace {
     constexpr uintptr_t WIDE_NEWLINE = 0x00BDBC40;
     constexpr uint32_t GAME_TEXT_FETCH = 0x44;
     constexpr uint32_t RECHARGE_TIME = 0xC;
+    constexpr size_t MAX_DESCRIPTION_LENGTH = 4096;
 
     typedef void *(__fastcall *GetPointer)(const void *self, void *);
     typedef void *(__fastcall *GetSpecialPowerModule)(void *object, void *, void *power);
@@ -100,6 +107,7 @@ namespace {
     typedef bool (__fastcall *ForEachTeamObject)(void *player, void *, uintptr_t callback, void *context);
     typedef void *(__fastcall *Fetch)(void *gameText, void *, const char *label, bool *exists);
     typedef void (__cdecl *Format)(void **destination, void *format, int value);
+    typedef void (__cdecl *FormatText)(void **destination, const wchar_t *format, const wchar_t *text);
     typedef void (__fastcall *Append)(void **string, void *, const void *other);
     typedef void (__fastcall *Release)(void **string, void *);
 
@@ -137,7 +145,106 @@ namespace {
         return frames;
     }
 
-    void addLine(uint8_t *frame, const char *label, const int frames) {
+    bool isBlank(const wchar_t *line, const size_t length) {
+        for (size_t i = 0; i < length; i++) {
+            if (line[i] != L' ' && line[i] != L'\t') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // whether the line starts, after spaces and tabs, with one of the '|' separated labels
+    bool startsWithLabel(const wchar_t *line, const size_t length, const wchar_t *labels, const size_t labelsLength) {
+        size_t start = 0;
+        while (start < length && (line[start] == L' ' || line[start] == L'\t')) {
+            start++;
+        }
+        for (size_t labelStart = 0; labelStart < labelsLength;) {
+            size_t labelEnd = labelStart;
+            while (labelEnd < labelsLength && labels[labelEnd] != L'|') {
+                labelEnd++;
+            }
+            const size_t labelLength = labelEnd - labelStart;
+            if (labelLength > 0 && length - start >= labelLength && wmemcmp(line + start, labels + labelStart, labelLength) == 0) {
+                return true;
+            }
+            labelStart = labelEnd + 1;
+        }
+        return false;
+    }
+
+    // Removes the lines (ended by '\n') that start with one of the labels, and the blank lines that would be left at the start, at
+    // the end or doubled where they were. Works in place and returns the new length; without such a line the text stays as it is.
+    size_t removeLabelledLines(wchar_t *text, const size_t length, const wchar_t *labels, const size_t labelsLength) {
+        size_t written = 0;
+        bool anyKept = false;
+        bool lastKeptBlank = false;
+        // a line was removed since the last kept line that is not blank
+        bool removed = false;
+        for (size_t start = 0; start <= length;) {
+            size_t end = start;
+            while (end < length && text[end] != L'\n') {
+                end++;
+            }
+            const size_t lineLength = end - start;
+            if (startsWithLabel(text + start, lineLength, labels, labelsLength)) {
+                removed = true;
+            } else {
+                const bool blank = isBlank(text + start, lineLength);
+                if (!(removed && blank && (!anyKept || lastKeptBlank))) {
+                    if (anyKept) {
+                        text[written++] = L'\n';
+                    }
+                    wmemmove(text + written, text + start, lineLength);
+                    written += lineLength;
+                    anyKept = true;
+                    lastKeptBlank = blank;
+                    if (!blank) {
+                        removed = false;
+                    }
+                }
+            }
+            start = end + 1;
+        }
+        // blank lines in front of a removed last line
+        while (removed && written > 0) {
+            size_t lineStart = written;
+            while (lineStart > 0 && text[lineStart - 1] != L'\n') {
+                lineStart--;
+            }
+            if (!isBlank(text + lineStart, written - lineStart)) {
+                break;
+            }
+            written = lineStart > 0 ? lineStart - 1 : 0;
+        }
+        return written;
+    }
+
+    // The lines the mod's string `labelsKey` names ('|' separated, e.g. the 2.02 descriptions' "Recharge Time:") are removed from
+    // the description, which gets the computed line instead.
+    void removeStockLines(void **description, void *gameText, const char *labelsKey) {
+        bool exists = false;
+        auto *labels = static_cast<void **>(reinterpret_cast<Fetch>(field<uintptr_t>(field<void *>(gameText, 0), GAME_TEXT_FETCH))(gameText, nullptr, labelsKey, &exists));
+        if (!exists || labels == nullptr || *labels == nullptr || *description == nullptr) {
+            return;
+        }
+        const size_t length = field<uint16_t>(*description, 4);
+        if (length > MAX_DESCRIPTION_LENGTH) {
+            return;
+        }
+        wchar_t text[MAX_DESCRIPTION_LENGTH + 1];
+        wmemcpy(text, reinterpret_cast<const wchar_t *>(static_cast<const uint8_t *>(*description) + 8), length);
+        const auto *labelText = reinterpret_cast<const wchar_t *>(static_cast<const uint8_t *>(*labels) + 8);
+        const size_t kept = removeLabelledLines(text, length, labelText, field<uint16_t>(*labels, 4));
+        if (kept == length) {
+            return;
+        }
+        text[kept] = L'\0';
+        reinterpret_cast<FormatText>(UNICODE_STRING_FORMAT_TEXT)(description, L"%ls", text);
+    }
+
+    void addLine(uint8_t *frame, const char *label, const char *labelsKey, const int frames) {
         const int rate = *reinterpret_cast<const int *>(LOGIC_FRAMES_PER_SECOND);
         void *gameText = *reinterpret_cast<void **>(THE_GAME_TEXT);
         if (rate <= 0 || frames < rate || gameText == nullptr) {
@@ -149,6 +256,7 @@ namespace {
             return;
         }
         auto **description = reinterpret_cast<void **>(frame - 0x18);
+        removeStockLines(description, gameText, labelsKey);
         if (*description != nullptr && field<uint16_t>(*description, 4) != 0) {
             reinterpret_cast<Append>(UNICODE_STRING_APPEND_WIDE)(description, nullptr, reinterpret_cast<const void *>(WIDE_NEWLINE));
         }
@@ -222,12 +330,12 @@ namespace {
             if (readyOffset != 0 && field<uint32_t>(module, pauseOffset) == 0 && logic != nullptr) {
                 const int remaining = field<int>(module, readyOffset) - field<int>(logic, 0x40);
                 if (remaining > 0) {
-                    addLine(frame, "TOOLTIP:CooldownRemaining", remaining);
+                    addLine(frame, "TOOLTIP:CooldownRemaining", "TOOLTIP:CooldownLabels", remaining);
                     return;
                 }
             }
         }
-        addLine(frame, "TOOLTIP:Cooldown", frames);
+        addLine(frame, "TOOLTIP:Cooldown", "TOOLTIP:CooldownLabels", frames);
     }
 
     void addResearchTime(uint8_t *frame, void *upgrade) {
@@ -245,7 +353,7 @@ namespace {
         }
         const int frames = reinterpret_cast<UpgradeBuildTime>(UPGRADE_BUILD_TIME)(upgrade, nullptr, player, object);
         if (frames > 0) {
-            addLine(frame, "TOOLTIP:ResearchTime", frames);
+            addLine(frame, "TOOLTIP:ResearchTime", "TOOLTIP:ResearchTimeLabels", frames);
         }
     }
 
@@ -260,7 +368,7 @@ namespace {
         }
         const int frames = reinterpret_cast<ThingBuildTime>(THING_BUILD_TIME)(thing, nullptr, field<void *>(frame, -0x20), field<void *>(frame, -0x1C), -1);
         if (frames > 0) {
-            addLine(frame, "TOOLTIP:BuildTime", frames);
+            addLine(frame, "TOOLTIP:BuildTime", "TOOLTIP:BuildTimeLabels", frames);
         }
     }
 
@@ -436,6 +544,9 @@ bool applyTooltipTimers() {
     // push esi / push edi / mov edi, ecx / mov eax, [edi + 0x34C]: the teams / mov esi, [eax]
     const BYTE forEachTeamObject[12] = {0x56, 0x57, 0x8B, 0xF9, 0x8B, 0x87, 0x4C, 0x03, 0x00, 0x00, 0x8B, 0x30};
     set.expect(FOR_EACH_TEAM_OBJECT, forEachTeamObject);
+    // mov ecx, [esp + 8]: the format / lea eax, [esp + 0xC]: the values / push eax / push ecx
+    const BYTE formatText[10] = {0x8B, 0x4C, 0x24, 0x08, 0x8D, 0x44, 0x24, 0x0C, 0x50, 0x51};
+    set.expect(UNICODE_STRING_FORMAT_TEXT, formatText);
     // mov eax, [esp + 8] / mov eax, [eax] / test eax, eax / je: the format is a UnicodeString
     const BYTE format[10] = {0x8B, 0x44, 0x24, 0x08, 0x8B, 0x00, 0x85, 0xC0, 0x74, 0x13};
     set.expect(UNICODE_STRING_FORMAT, format);
