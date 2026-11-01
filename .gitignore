@@ -44,6 +44,7 @@ bin/
 .DS_Store
 
 ### Claude ###
+game-patcher/CLAUDE.md
 game-patcher/HANDOFF.md
 game-patcher/tools/
 bfme-working-dir/
