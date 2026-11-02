@@ -31,6 +31,7 @@
 #include "mount_health_ratio.h"
 #include "siege_wall_teleport_fix.h"
 #include "mount_toggle_crash_fix.h"
+#include "network_stats.h"
 #include "render_interpolation.h"
 #include "render_rate.h"
 #include "sse_math.h"
@@ -96,6 +97,7 @@ size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
     run(features::GROUP_ABILITY_COOLDOWN, L"Group ability cooldown", applyGroupAbilityCooldown, failed, count);
     run(features::LIFE_DRAIN, L"Life drain on every hit", applyLifeDrain, failed, count);
     run(features::TOOLTIP_TIMERS, L"Tooltip timers", applyTooltipTimers, failed, count);
+    run(features::NETWORK_STATS, L"Network stats", applyNetworkStats, failed, count);
     run(features::FPS_COUNTER && fpsCounterRequested(), L"FPS counter", applyFpsCounter, failed, count);
 
     return count;

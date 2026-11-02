@@ -7,7 +7,7 @@
 // Render interpolation
 //
 // Problem: moving units, turning and animations take a step twice as large as the others once per logic frame, about six
-// times a second, at 30 and at 60 fps.
+// times a second, at 30 and at 60 fps. Only in the 2.02 delay fix build (lotrbfme2ep1.fix), the only one with that catch-up.
 // Fix: the interpolation alpha is spread evenly over the sub-frames the client actually draws.
 //
 // Between two logic frames the client draws every object between its previous and its current transform, at the fraction

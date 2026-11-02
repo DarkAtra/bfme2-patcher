@@ -65,7 +65,7 @@
 #endif
 
 #ifndef GAME_PATCHER_RENDER_INTERPOLATION
-#define GAME_PATCHER_RENDER_INTERPOLATION 1
+#define GAME_PATCHER_RENDER_INTERPOLATION 0
 #endif
 
 #ifndef GAME_PATCHER_PRODUCTION_IDS
@@ -140,6 +140,10 @@
 #define GAME_PATCHER_TOOLTIP_TIMERS 1
 #endif
 
+#ifndef GAME_PATCHER_NETWORK_STATS
+#define GAME_PATCHER_NETWORK_STATS 1
+#endif
+
 #ifndef GAME_PATCHER_FPS_COUNTER
 #define GAME_PATCHER_FPS_COUNTER 1
 #endif
@@ -206,6 +210,8 @@ namespace features {
 
     // Render interpolation: moving units, turning and animations no longer take a double step once per logic frame; the
     // interpolation between two logic frames is spread evenly over the frames the client draws (render_interpolation.cpp).
+    // Off: the double step only exists in the 2.02 delay fix build (lotrbfme2ep1.fix), which hides sub-frame 1; the build
+    // without it, which 60 fps is written for, already steps evenly.
     constexpr bool RENDER_INTERPOLATION = GAME_PATCHER_RENDER_INTERPOLATION != 0;
 
     // Game-wide production ids: production ids are counted for the whole game instead of per building, so recruiting a hero
@@ -282,6 +288,11 @@ namespace features {
     // research time, formatted from the mod's TOOLTIP:Cooldown, TOOLTIP:CooldownRemaining, TOOLTIP:BuildTime and
     // TOOLTIP:ResearchTime strings; without them nothing changes (tooltip_timers.cpp).
     constexpr bool TOOLTIP_TIMERS = GAME_PATCHER_TOOLTIP_TIMERS != 0;
+
+    // Network stats: in every networked match, records the local player's command delays and how each logic frame start went into
+    // <game folder>\.patcher\network-<date>-<time>.csv, to find where the delay of networked matches comes from
+    // (network_stats.cpp). Reads the game's state only.
+    constexpr bool NETWORK_STATS = GAME_PATCHER_NETWORK_STATS != 0;
 
     // FPS counter: with -showfps on the game's command line (the updater adds it in debug mode), the frames per second are shown
     // in the top left corner (fps_counter.cpp).

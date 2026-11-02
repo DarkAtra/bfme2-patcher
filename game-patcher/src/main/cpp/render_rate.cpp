@@ -9,10 +9,14 @@
 //
 // Problem: the game draws at most 30 frames per second, and the game pace and many client side steps (particles, camera
 // scrolling, the click window of the camera reset) are counted in frames, so a higher frame rate alone makes them faster.
-// Fix: draws 60 frames per second while the game logic keeps its stock pace (one logic frame every 165 ms), and scales what
+// Fix: draws 60 frames per second while the game logic keeps its stock pace (one logic frame every 198 ms), and scales what
 // is counted in client frames back to its speed at 30 fps: particles, the camera's scroll, rotation and drag zoom, and the
 // middle click camera reset. It also keeps the spell book filled (its buttons were sent before the menu could accept them)
 // and replaces the frame limiter's period.
+//
+// Written for the 2.02 build without the delay fix (lotrbfme2ep1.exe). The delay fix build (lotrbfme2ep1.fix) runs a second
+// logic phase in the frame that wraps and hides sub-frame 1, which the wrap below does not account for; it is refused at
+// the catch-up loop and the latch.
 //
 // Derived from the render-rate patch of pySAGE (https://github.com/ClementJ18/pySAGE), but applied to the process image
 // instead of the file and with a different frame limiter. Every site is verified before anything is written, and the patch
@@ -26,7 +30,6 @@ namespace {
     constexpr uintptr_t LOGIC_RATE_ADDRESS = 0x00D9F608;
     constexpr uintptr_t CLIENT_RATE_ADDRESS = 0x00D9F60C;
     constexpr uintptr_t SLOWDOWN_SCALAR_ADDRESS = 0x00D9F498;
-    constexpr uintptr_t LATCH_DIVISOR_ADDRESS = 0x00ECA400;
     constexpr uintptr_t GAME_CLIENT_ADDRESS = 0x00DE4388;
     constexpr uintptr_t FTOL_ADDRESS = 0x00A3CFA4;
     constexpr uintptr_t W3D_STEP_ADDRESS = 0x00DC7A8C;
@@ -35,11 +38,10 @@ namespace {
     constexpr int STOCK_CLIENT_RATE = 30;
     constexpr int CLIENT_RATE = 60;
 
-    // A logic frame ends when the sub-frame counter passes this value. The catch-up loop at 0x00632A9B steps the
-    // counter past 1 inside the frame that wraps it, so a logic frame spans (WRAP - 1) client frames. The stock game
-    // wraps at 6 and draws a frame every 33 ms, i.e. 5 * 33 ms = 165 ms per logic frame. 10 * 16.5 ms keeps that.
+    // A logic frame ends when the sub-frame counter passes this value, so it spans WRAP client frames. The stock game
+    // wraps at 6 and draws a frame every 33 ms, i.e. 6 * 33 ms = 198 ms per logic frame. 12 * 16.5 ms keeps that.
     constexpr BYTE STOCK_WRAP = 6;
-    constexpr BYTE WRAP = 11;
+    constexpr BYTE WRAP = 12;
 
     // The frame limiter alternates between these two periods, which averages to the 16.5 ms mentioned above. The
     // truncating conversion of the stock limiter cannot express that with a single integer period.
@@ -77,11 +79,10 @@ namespace {
         putFloat(replacement, 1.0 / CLIENT_RATE);
         set.replace(0x00D9F62C, expected, replacement);
 
-        // the once per logic frame latch answers "sub-frame == 6 / (clientRate / divisor)", which has to stay on the
-        // second sub-frame because the first one is never visible to client code
-        putInt(expected, 8);
-        putInt(replacement, CLIENT_RATE / 3);
-        set.replace(LATCH_DIVISOR_ADDRESS, expected, replacement);
+        // the once per logic frame latch (0x0063252F) answers "sub-frame == 1" as long as clientRate / logicRate is at
+        // least 6, which 60 / 5 keeps: idiv dword [logicRate]
+        const BYTE latchDivisor[6] = {0xF7, 0x3D, 0x08, 0xF6, 0xD9, 0x00};
+        set.expect(0x00632535, latchDivisor);
 
         const BYTE logicRate[4] = {LOGIC_RATE, 0x00, 0x00, 0x00};
         set.expect(LOGIC_RATE_ADDRESS, logicRate);
@@ -119,8 +120,14 @@ namespace {
         set.replace(0x00632631, stockStrideEcx, strideEcx);
         set.replace(0x00632ACF, stockStrideEcx, strideEcx);
 
-        // the catch-up loop that makes a logic frame span WRAP - 1 client frames
-        const BYTE catchUp[7] = {0xB8, 0x02, 0x00, 0x00, 0x00, 0xEB, 0x19};
+        // the catch-up loop, which would run several logic phases in one client frame, stays skipped because
+        // clientRate / logicRate is at least 6
+        const BYTE catchUp[13] = {
+            0xF7, 0x3D, 0x08, 0xF6, 0xD9, 0x00, // idiv dword [logicRate]
+            0x8B, 0xC8,                         // mov ecx, eax
+            0x83, 0xF9, 0x06,                   // cmp ecx, 6
+            0x7D, 0x5B                          // jge past the loop
+        };
         set.expect(0x00632A9B, catchUp);
     }
 
