@@ -144,6 +144,10 @@
 #define GAME_PATCHER_NETWORK_STATS 1
 #endif
 
+#ifndef GAME_PATCHER_MATERIAL_PARAMETERS
+#define GAME_PATCHER_MATERIAL_PARAMETERS 1
+#endif
+
 #ifndef GAME_PATCHER_FPS_COUNTER
 #define GAME_PATCHER_FPS_COUNTER 1
 #endif
@@ -293,6 +297,11 @@ namespace features {
     // <game folder>\.patcher\network-<date>-<time>.csv, to find where the delay of networked matches comes from
     // (network_stats.cpp). Reads the game's state only.
     constexpr bool NETWORK_STATS = GAME_PATCHER_NETWORK_STATS != 0;
+
+    // Material parameters: setting a model's colour or opacity to the value it already has no longer re-records the shader
+    // material's parameters, which made special effects built from W3D models (Type = DRAWABLE particles) slow
+    // (material_parameters.cpp). The picture is the same as before.
+    constexpr bool MATERIAL_PARAMETERS = GAME_PATCHER_MATERIAL_PARAMETERS != 0;
 
     // FPS counter: with -showfps on the game's command line (the updater adds it in debug mode), the frames per second are shown
     // in the top left corner (fps_counter.cpp).
