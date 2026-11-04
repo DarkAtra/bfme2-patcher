@@ -25,6 +25,7 @@
 #include "production_ids.h"
 #include "render_scope_names.h"
 #include "health_bar_crash_fix.h"
+#include "heat_haze_squares.h"
 #include "hero_battalion_absorption.h"
 #include "hero_recruit_queue.h"
 #include "life_drain.h"
@@ -100,6 +101,7 @@ size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
     run(features::TOOLTIP_TIMERS, L"Tooltip timers", applyTooltipTimers, failed, count);
     run(features::NETWORK_STATS, L"Network stats", applyNetworkStats, failed, count);
     run(features::MATERIAL_PARAMETERS, L"Material parameters", applyMaterialParameters, failed, count);
+    run(features::HEAT_HAZE_SQUARES, L"Heat haze squares", applyHeatHazeSquares, failed, count);
     run(features::FPS_COUNTER && fpsCounterRequested(), L"FPS counter", applyFpsCounter, failed, count);
 
     return count;
