@@ -33,6 +33,8 @@
 #include "mount_health_ratio.h"
 #include "siege_wall_teleport_fix.h"
 #include "mount_toggle_crash_fix.h"
+#include "network_catch_up.h"
+#include "network_command_send.h"
 #include "network_stats.h"
 #include "render_interpolation.h"
 #include "render_rate.h"
@@ -100,6 +102,8 @@ size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
     run(features::LIFE_DRAIN, L"Life drain on every hit", applyLifeDrain, failed, count);
     run(features::TOOLTIP_TIMERS, L"Tooltip timers", applyTooltipTimers, failed, count);
     run(features::NETWORK_STATS, L"Network stats", applyNetworkStats, failed, count);
+    run(features::NETWORK_CATCH_UP, L"Network catch-up", applyNetworkCatchUp, failed, count);
+    run(features::NETWORK_COMMAND_SEND, L"Network command send", applyNetworkCommandSend, failed, count);
     run(features::MATERIAL_PARAMETERS, L"Material parameters", applyMaterialParameters, failed, count);
     run(features::HEAT_HAZE_SQUARES, L"Heat haze squares", applyHeatHazeSquares, failed, count);
     run(features::FPS_COUNTER && fpsCounterRequested(), L"FPS counter", applyFpsCounter, failed, count);

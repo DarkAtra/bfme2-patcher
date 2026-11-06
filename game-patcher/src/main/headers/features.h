@@ -144,6 +144,14 @@
 #define GAME_PATCHER_NETWORK_STATS 1
 #endif
 
+#ifndef GAME_PATCHER_NETWORK_CATCH_UP
+#define GAME_PATCHER_NETWORK_CATCH_UP 1
+#endif
+
+#ifndef GAME_PATCHER_NETWORK_COMMAND_SEND
+#define GAME_PATCHER_NETWORK_COMMAND_SEND 1
+#endif
+
 #ifndef GAME_PATCHER_MATERIAL_PARAMETERS
 #define GAME_PATCHER_MATERIAL_PARAMETERS 1
 #endif
@@ -301,6 +309,16 @@ namespace features {
     // <game folder>\.patcher\network-<date>-<time>.csv, to find where the delay of networked matches comes from
     // (network_stats.cpp). Reads the game's state only.
     constexpr bool NETWORK_STATS = GAME_PATCHER_NETWORK_STATS != 0;
+
+    // Network catch-up: a player who does not host a networked match catches up with the host (pairs of phases share a client
+    // frame each, more pairs the further behind it is) and the network slowdown no longer holds that player back, which cuts their
+    // command delay. Changes the pace only; every phase runs once per logic frame (network_catch_up.cpp).
+    constexpr bool NETWORK_CATCH_UP = GAME_PATCHER_NETWORK_CATCH_UP != 0;
+
+    // Network command send: a player who does not host a networked match sends their commands every client frame instead of
+    // once per logic frame, which cuts about 0.1 s of their command delay on average. The host assigns every command's frame
+    // as before (network_command_send.cpp).
+    constexpr bool NETWORK_COMMAND_SEND = GAME_PATCHER_NETWORK_COMMAND_SEND != 0;
 
     // Material parameters: setting a model's colour or opacity to the value it already has no longer re-records the shader
     // material's parameters, which made special effects built from W3D models (Type = DRAWABLE particles) slow

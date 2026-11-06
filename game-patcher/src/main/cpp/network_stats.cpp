@@ -13,7 +13,9 @@
 // packet router, the frames an off-host peer keeps buffered, the frame limiter's network slowdown) cannot be told from playing.
 // Fix: records, in every networked match, when each of the local player's commands was created, sent and executed, and on every
 // attempt to start a logic frame whether the network allowed it, how many frames this peer has buffered and the slowdown, into
-// <game folder>\.patcher\network-<local date>-<time>.csv. Every player of a match writes their own file.
+// <game folder>\.patcher\network-<local date>-<time>.csv. Every player of a match writes their own file. A sent command carries
+// the player index the game stamped into it (+ 0x14), the one its execution shows; the player list is not read at the match
+// start, where it still names player 0.
 //
 // The hooks only read the game's memory and keep every register, so the game runs exactly as without them. Commands are the
 // messages of the types the network sends (1001 to 1998, 0x0065E45A): created by GameMessageList::appendMessage /
@@ -31,7 +33,6 @@ namespace {
     constexpr uintptr_t THE_NETWORK = 0x00DE4468;
     constexpr uintptr_t THE_GAME_LOGIC = 0x00DE412C;
     constexpr uintptr_t THE_GAME_ENGINE = 0x00DE4324;
-    constexpr uintptr_t THE_PLAYER_LIST = 0x00DE4928;
     constexpr uintptr_t SLOWDOWN_SCALAR = 0x00D9F498;
     constexpr uintptr_t LOGIC_RATE = 0x00D9F608;
     constexpr uintptr_t CLIENT_RATE = 0x00D9F60C;
@@ -135,12 +136,6 @@ namespace {
         recorder.network = 0;
     }
 
-    int localPlayerIndex() {
-        const auto players = read<uintptr_t>(THE_PLAYER_LIST);
-        const auto localPlayer = players != 0 ? read<uintptr_t>(players + 0x10) : 0;
-        return localPlayer != 0 ? read<int>(localPlayer + 0x54) : -1;
-    }
-
     void open(const uintptr_t network) {
         recorder.network = network;
         recorder.createdNext = 0;
@@ -172,18 +167,17 @@ namespace {
         GetSystemTimeAsFileTime(&systemTime);
 
         const auto connections = read<uintptr_t>(network + 0xC);
-        append("# game-patcher network stats 1\r\n");
+        append("# game-patcher network stats 2\r\n");
         append("# started %04u-%02u-%02u %02u:%02u:%02u.%03u local, UTC FILETIME %llu at us 0\r\n", now.wYear, now.wMonth, now.wDay,
             now.wHour, now.wMinute, now.wSecond, now.wMilliseconds,
             static_cast<unsigned long long>(systemTime.dwHighDateTime) << 32 | systemTime.dwLowDateTime);
-        append("# local slot %d, packet router slot %d, local player index %d\r\n",
-            connections != 0 ? read<int>(connections + 0x12028) : -1, connections != 0 ? read<int>(connections + 0x1202C) : -1,
-            localPlayerIndex());
+        append("# local slot %d, packet router slot %d\r\n",
+            connections != 0 ? read<int>(connections + 0x12028) : -1, connections != 0 ? read<int>(connections + 0x1202C) : -1);
         append("# client rate %d, logic rate %d, wrap %d, %s\r\n", read<int>(CLIENT_RATE), read<int>(LOGIC_RATE),
             read<BYTE>(WRAP_IMMEDIATE), read<BYTE>(CATCH_UP) == 0xB8 ? "2.02 delay fix build" : "build without the 2.02 delay fix");
         append("# A,us,frame,advance,refused attempts before,first refused us,subframe,ratio,buffered,slowdown,ceilinghits"
             "[,slot 0..7 frame on the packet router]: a frame start the network allowed\r\n");
-        append("# S,us,frame,type,created us,created frame: a local command handed to the network\r\n");
+        append("# S,us,frame,type,created us,created frame,player index: a local command handed to the network\r\n");
         append("# X,us,frame,type,player index: a command executed\r\n");
     }
 
@@ -227,15 +221,16 @@ namespace {
         }
         const int64_t now = microseconds(ticks());
         const int type = read<int>(message + 0x10);
+        const int player = read<int>(message + 0x14);
         // newest first: the memory of a deleted message can come back for a later one
         for (size_t i = 1; i <= CREATED_ENTRIES && i <= recorder.createdNext; i++) {
             const Created &entry = recorder.created[(recorder.createdNext - i) % CREATED_ENTRIES];
             if (entry.message == message) {
-                append("S,%lld,%d,%d,%lld,%d\r\n", now, logicFrame(), type, microseconds(entry.ticks), entry.frame);
+                append("S,%lld,%d,%d,%lld,%d,%d\r\n", now, logicFrame(), type, microseconds(entry.ticks), entry.frame, player);
                 return;
             }
         }
-        append("S,%lld,%d,%d,,\r\n", now, logicFrame(), type);
+        append("S,%lld,%d,%d,,,%d\r\n", now, logicFrame(), type, player);
     }
 
     void __cdecl onDispatch(const uintptr_t message) {
