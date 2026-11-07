@@ -86,7 +86,7 @@ object SelfUpdateService {
 
     fun applyUpdate() {
         if (updaterTempLocation.exists()) {
-            ProcessUtils.run(updaterTempLocation, arrayOf(UNINSTALL_CURRENT_PARAMETER))
+            ProcessUtils.run(updaterTempLocation, listOf(UNINSTALL_CURRENT_PARAMETER))
         }
     }
 
@@ -95,7 +95,7 @@ object SelfUpdateService {
             attemptRename(currentUpdaterLocation, oldUpdaterLocation, true)
         }
         if (oldUpdaterLocation.exists()) {
-            ProcessUtils.run(oldUpdaterLocation, arrayOf(INSTALL_PARAMETER))
+            ProcessUtils.run(oldUpdaterLocation, listOf(INSTALL_PARAMETER))
         }
     }
 

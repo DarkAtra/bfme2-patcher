@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <cstdint>
 
+#include "game_memory.h"
 #include "network_command_send.h"
 #include "patch_set.h"
 
@@ -45,11 +46,6 @@ namespace {
     typedef void *(__thiscall *DeleteInstance)(uintptr_t message, int flags);
     typedef void (__cdecl *Free)(void *memory);
     typedef void (__thiscall *LiteUpdate)(uintptr_t network, int argument);
-
-    template<typename T>
-    T read(const uintptr_t address) {
-        return *reinterpret_cast<const T *>(address);
-    }
 
     void __cdecl sendCommands() {
         const auto network = read<uintptr_t>(THE_NETWORK);

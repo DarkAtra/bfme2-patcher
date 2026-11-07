@@ -4,6 +4,9 @@
 
 bool applyCollisionPairTable();
 
+// whether the game allocates its broad phase object with the bigger first pair table behind it
+bool collisionPairTableApplied();
+
 namespace collision_pair_table {
 
     // the size of the game's broad phase object, and its first pair table (11131 buckets) right in front of it

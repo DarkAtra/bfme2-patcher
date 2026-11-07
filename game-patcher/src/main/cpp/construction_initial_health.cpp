@@ -43,14 +43,8 @@ namespace {
         float hundred;
     };
 
-    uint32_t address(const void *p) {
-        return static_cast<uint32_t>(reinterpret_cast<uintptr_t>(p));
-    }
-
     void emitWithAddress(Cave &cave, const BYTE *opcode, const size_t length, const void *operand) {
-        for (size_t i = 0; i < length; i++) {
-            cave.emit8(opcode[i]);
-        }
+        emitBytes(cave, opcode, length);
         cave.emit32(address(operand));
     }
 

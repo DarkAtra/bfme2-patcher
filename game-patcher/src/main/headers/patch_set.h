@@ -230,6 +230,23 @@ namespace patching {
     constexpr BYTE JNE = 0x85;
     constexpr BYTE JA = 0x87;
 
+    // Emits a jcc to be pointed at its target later with resolveJcc, and returns its offset for that.
+    inline size_t forwardJcc(Cave &cave, const BYTE condition) {
+        const size_t offset = cave.size;
+        cave.jcc(condition, 0);
+        return offset;
+    }
+
+    inline void emitBytes(Cave &cave, const BYTE *bytes, const size_t length) {
+        for (size_t i = 0; i < length; i++) {
+            cave.emit8(bytes[i]);
+        }
+    }
+
+    inline uint32_t address(const void *p) {
+        return static_cast<uint32_t>(reinterpret_cast<uintptr_t>(p));
+    }
+
     inline BYTE *allocateCave() {
         return static_cast<BYTE *>(VirtualAlloc(nullptr, CAVE_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
     }

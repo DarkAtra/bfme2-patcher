@@ -61,7 +61,6 @@ fun UpdaterView(
 ) {
 
     val rotwkHomeDir = UpdaterContext.context.getRotwkHomeDir()
-    val patcherUserDir = UpdaterContext.context.getPatcherUserDir()
 
     val patchScope = rememberCoroutineScope()
     val state by updaterModel.state.collectAsState()
@@ -151,9 +150,6 @@ fun UpdaterView(
                         patchScope.launch {
                             try {
                                 PatchService.patch(updaterModel, UpdaterContext.applicationVersion, buildSet {
-                                    if (state.hdEditionEnabled) {
-                                        add(Feature.HD_EDITION)
-                                    }
                                     if (state.timerEnabled) {
                                         add(Feature.TIMER)
                                     }
@@ -195,8 +191,8 @@ fun UpdaterView(
                         patchScope.launch {
                             runCatching {
                                 when (state.hookEnabled) {
-                                    true -> GameUtils.launchGameBypassingDebugger(rotwkHomeDir, patcherUserDir, state.hdEditionEnabled, state.debugModeEnabled)
-                                    false -> GameUtils.launchGame(rotwkHomeDir, patcherUserDir, state.hdEditionEnabled)
+                                    true -> GameUtils.launchGameBypassingDebugger(rotwkHomeDir, state.debugModeEnabled, state.modEnabled)
+                                    false -> GameUtils.launchGame(rotwkHomeDir)
                                 }
                             }.also {
                                 updaterModel.setGameRunning(false)

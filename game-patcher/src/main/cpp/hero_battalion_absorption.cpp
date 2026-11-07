@@ -40,12 +40,6 @@ namespace {
     constexpr uintptr_t FIND_TEMPLATE = 0x006D1305;
     // thiscall(template, other), ret 4
     constexpr uintptr_t IS_EQUIVALENT = 0x0073D5C2;
-
-    size_t forwardJcc(Cave &cave, const BYTE condition) {
-        const size_t offset = cave.size;
-        cave.jcc(condition, 0);
-        return offset;
-    }
 }
 
 bool applyHeroBattalionAbsorption() {

@@ -4,7 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class PersistentState(
-    val hdEditionEnabled: Boolean = false,
     val timerEnabled: Boolean = false,
     val skipIntroEnabled: Boolean = false,
     val newMusicEnabled: Boolean = false,

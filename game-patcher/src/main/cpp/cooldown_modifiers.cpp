@@ -60,12 +60,6 @@ namespace {
 
     constexpr BYTE JLE = 0x8E;
 
-    size_t forwardJcc(Cave &cave, const BYTE condition) {
-        const size_t offset = cave.size;
-        cave.jcc(condition, 0);
-        return offset;
-    }
-
     // power(eax = special power interface, esi = object). Frame: -4 the RECHARGE_TIME multiplier, -8 the player's discount,
     // -0xC ReloadTime, -0x10 the frames a cast would get now, -0x14 the stored frames, -0x18 the current frame, -0x1C the frames
     // left, -0x20 the template. Keeps esi and edi.

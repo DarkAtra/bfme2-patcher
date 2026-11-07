@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <cwchar>
 
+#include "game_memory.h"
 #include "patch_set.h"
 #include "tooltip_timers.h"
 
@@ -113,11 +114,6 @@ namespace {
 
     // the button whose tooltip is being built, from the builder's prologue; the builder runs on the main thread and only on hover
     const uint8_t *capturedButton;
-
-    template<typename T>
-    T field(const void *base, const uint32_t offset) {
-        return *reinterpret_cast<const T *>(static_cast<const uint8_t *>(base) + offset);
-    }
 
     // startPowerRecharge's arithmetic on the x87 stack, so it rounds under the game's precision control like the cast: the
     // discount (0x00896ECC) and the frames (0x00896EEB)

@@ -17,7 +17,7 @@ internal class PersistentStateTest {
         val persistentState = json.decodeFromString<PersistentState>(
             """
             {
-              "hdEditionEnabled": true,
+              "skipIntroEnabled": true,
               "unknownSetting": true
             }
             """.trimIndent()
@@ -25,7 +25,7 @@ internal class PersistentStateTest {
 
         assertThat(persistentState).isEqualTo(
             PersistentState(
-                hdEditionEnabled = true,
+                skipIntroEnabled = true,
                 patch202Enabled = true,
                 modEnabled = true
             )
@@ -42,7 +42,6 @@ internal class PersistentStateTest {
             )
         )
 
-        assertThat(content).contains("\"hdEditionEnabled\":false")
         assertThat(content).contains("\"patch202Enabled\":true")
         assertThat(content).contains("\"timerEnabled\":true")
         assertThat(content).contains("\"modEnabled\":false")

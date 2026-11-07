@@ -6,24 +6,15 @@ import de.darkatra.injector.Injector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.file.Path
-import kotlin.io.path.absolutePathString
 
 object GameUtils {
 
-    suspend fun launchGame(rotwkHomeDir: Path, patcherUserDir: Path, hdEditionEnabled: Boolean): Unit = withContext(Dispatchers.IO) {
+    suspend fun launchGame(rotwkHomeDir: Path): Unit = withContext(Dispatchers.IO) {
 
         LOGGER.info("Launching game without game-patcher...")
 
         val gameProcess = ProcessUtils.run(
             rotwkHomeDir.resolve(UpdaterContext.ROTWK_EXE_NAME).normalize(),
-            when (hdEditionEnabled) {
-                true -> arrayOf(
-                    "-mod",
-                    "\"${patcherUserDir.resolve("HDEdition.big").normalize().absolutePathString()}\""
-                )
-
-                false -> emptyArray()
-            }
         )
 
         gameProcess.waitFor()
@@ -31,30 +22,24 @@ object GameUtils {
 
     suspend fun launchGameBypassingDebugger(
         rotwkHomeDir: Path,
-        patcherUserDir: Path,
-        hdEditionEnabled: Boolean,
-        debugModeEnabled: Boolean
+        debugModeEnabled: Boolean,
+        fpsCounterEnabled: Boolean,
     ): Unit = withContext(Dispatchers.IO) {
 
         LOGGER.info("Launching game with game-patcher...")
 
-        val hdEditionArgs = when (hdEditionEnabled) {
-            true -> arrayOf(
-                "-mod",
-                "\"${patcherUserDir.resolve("HDEdition.big").normalize().absolutePathString()}\""
-            )
-
-            false -> emptyArray()
-        }
-
-        val debugArgs = when (debugModeEnabled) {
-            true -> arrayOf("-showfps")
-            false -> emptyArray()
+        val gameArgs = buildList {
+            if (debugModeEnabled) {
+                add("-debugmode")
+            }
+            if (fpsCounterEnabled) {
+                add("-showfps")
+            }
         }
 
         val gameProcess = ProcessUtils.runSuspendedBypassingDebugger(
             rotwkHomeDir.resolve(UpdaterContext.ROTWK_EXE_NAME).normalize(),
-            hdEditionArgs + debugArgs
+            gameArgs
         ) { gameProcessId ->
             LOGGER.info("Injecting patches via game-patcher...")
 

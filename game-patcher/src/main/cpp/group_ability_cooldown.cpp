@@ -49,12 +49,6 @@ namespace {
 
     constexpr BYTE JBE = 0x86;
 
-    size_t forwardJcc(Cave &cave, const BYTE condition) {
-        const size_t offset = cave.size;
-        cave.jcc(condition, 0);
-        return offset;
-    }
-
     size_t forwardJmp(Cave &cave) {
         const size_t offset = cave.size;
         cave.jmp(0);

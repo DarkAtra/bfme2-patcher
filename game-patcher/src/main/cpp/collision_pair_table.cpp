@@ -51,6 +51,8 @@ namespace {
     // not const because the genuine code test (tools/tests/collision-pair-table) counts the releases
     uintptr_t deleteFunction = OPERATOR_DELETE;
 
+    bool applied = false;
+
     // Constructor: the game's memory is not cleared.
     void __cdecl prepare(uint8_t *broad) {
         memset(broad + TABLE, 0, sizeof(uint32_t) * BUCKETS);
@@ -202,5 +204,10 @@ bool applyCollisionPairTable() {
         return false;
     }
 
+    applied = true;
     return true;
+}
+
+bool collisionPairTableApplied() {
+    return applied;
 }

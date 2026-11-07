@@ -4,6 +4,7 @@
 #include <cstring>
 #include <cwchar>
 
+#include "patcher_folder.h"
 #include "patches.h"
 
 using namespace std;
@@ -102,16 +103,7 @@ static HANDLE logFile = INVALID_HANDLE_VALUE;
 static void openLog() {
 
     wchar_t path[MAX_PATH];
-    const DWORD length = GetModuleFileNameW(nullptr, path, MAX_PATH);
-    if (length == 0 || length >= MAX_PATH) {
-        return;
-    }
-    wchar_t *folderEnd = wcsrchr(path, L'\\');
-    if (folderEnd == nullptr) {
-        return;
-    }
-    folderEnd[1] = L'\0';
-    if (wcscat_s(path, L".patcher\\game-patcher-log.txt") != 0) {
+    if (patcherFolder(path) == 0 || wcscat_s(path, L"game-patcher-log.txt") != 0) {
         return;
     }
     logFile = CreateFileW(path, GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);

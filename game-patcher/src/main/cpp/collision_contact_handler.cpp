@@ -2,6 +2,7 @@
 #include <cstdint>
 
 #include "collision_contact_handler.h"
+#include "game_memory.h"
 #include "patch_set.h"
 
 // Collision contact handler
@@ -36,24 +37,20 @@ namespace {
     typedef bool (__fastcall *StatusTest)(void *object, void *, uint32_t bit);
     typedef void (__fastcall *Collide)(void *collide, void *, void *other, void *second, void *third);
 
-    uint32_t word(const uint8_t *base, const uint32_t offset) {
-        return *reinterpret_cast<const uint32_t *>(base + offset);
-    }
-
     // thiscall(collider, other, second, third), ret 0xC
     void __fastcall contactHandler(uint8_t *collider, void *, uint8_t *other, void *second, void *third) {
 
-        if (word(collider, 0x434) == word(other, 0x74)) {
+        if (field<uint32_t>(collider, 0x434) == field<uint32_t>(other, 0x74)) {
             return;
         }
-        if (word(other, 0x4A4) != 0 && word(collider, 4) != 0) {
+        if (field<uint32_t>(other, 0x4A4) != 0 && field<uint32_t>(collider, 4) != 0) {
             return;
         }
 
-        const auto *modules = reinterpret_cast<const uint32_t *>(word(collider, 0x1DC));
+        const auto *modules = reinterpret_cast<const uint32_t *>(field<uint32_t>(collider, 0x1DC));
         for (; *modules != 0; modules++) {
             const auto *module = reinterpret_cast<const uint8_t *>(*modules);
-            const uint32_t getter = word(reinterpret_cast<const uint8_t *>(word(module, 0xC)), 4);
+            const uint32_t getter = field<uint32_t>(reinterpret_cast<const uint8_t *>(field<uint32_t>(module, 0xC)), 4);
             if (getter == DEFAULT_GETTER) {
                 continue;
             }
@@ -64,7 +61,7 @@ namespace {
             if (reinterpret_cast<StatusTest>(STATUS_TEST)(collider - OBJECT_OF_COLLIDER, nullptr, 4)) {
                 return;
             }
-            const uint32_t onCollide = word(reinterpret_cast<const uint8_t *>(word(reinterpret_cast<const uint8_t *>(collide), 0)), 0);
+            const uint32_t onCollide = field<uint32_t>(reinterpret_cast<const uint8_t *>(field<uint32_t>(collide, 0)), 0);
             reinterpret_cast<Collide>(onCollide)(collide, nullptr, other, second, third);
         }
     }

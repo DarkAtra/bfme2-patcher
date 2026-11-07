@@ -57,12 +57,6 @@ namespace {
         cave.emit8(0x00);
         return offset;
     }
-
-    size_t forwardJcc(Cave &cave, const BYTE condition) {
-        const size_t offset = cave.size;
-        cave.jcc(condition, 0);
-        return offset;
-    }
 }
 
 bool applyPathfinderClosedGates() {

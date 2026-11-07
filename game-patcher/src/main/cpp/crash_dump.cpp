@@ -37,11 +37,6 @@ namespace {
     constexpr size_t MAX_RANGES = 192;
     constexpr size_t COMMENT_SIZE = 8192;
 
-    typedef BOOL (WINAPI *MiniDumpWriteDumpFunction)(HANDLE process, DWORD processId, HANDLE file, MINIDUMP_TYPE type,
-                                                     PMINIDUMP_EXCEPTION_INFORMATION exception,
-                                                     PMINIDUMP_USER_STREAM_INFORMATION userStreams,
-                                                     PMINIDUMP_CALLBACK_INFORMATION callback);
-
     struct Range {
         uintptr_t base;
         uintptr_t end;
@@ -206,24 +201,27 @@ namespace {
                 return TRUE;
         }
     }
+}
 
-    MiniDumpWriteDumpFunction systemWriter() {
-        wchar_t path[MAX_PATH];
-        const UINT length = GetSystemDirectoryW(path, MAX_PATH);
-        if (length == 0 || length + 13 >= MAX_PATH) {
-            return nullptr;
-        }
-        wcscat_s(path, L"\\dbghelp.dll");
-        const HMODULE dbghelp = LoadLibraryW(path);
-        if (dbghelp == nullptr) {
-            return nullptr;
-        }
-        return reinterpret_cast<MiniDumpWriteDumpFunction>(GetProcAddress(dbghelp, "MiniDumpWriteDump"));
+MiniDumpWriteDumpFunction systemDumpWriter() {
+    wchar_t path[MAX_PATH];
+    const UINT length = GetSystemDirectoryW(path, MAX_PATH);
+    if (length == 0 || length + 13 >= MAX_PATH) {
+        return nullptr;
     }
+    wcscat_s(path, L"\\dbghelp.dll");
+    const HMODULE dbghelp = LoadLibraryW(path);
+    if (dbghelp == nullptr) {
+        return nullptr;
+    }
+    return reinterpret_cast<MiniDumpWriteDumpFunction>(GetProcAddress(dbghelp, "MiniDumpWriteDump"));
+}
+
+namespace {
 
     bool writeExtendedDump(HANDLE process, const DWORD processId, HANDLE file, const MINIDUMP_TYPE gameType,
                            PMINIDUMP_EXCEPTION_INFORMATION exception) {
-        const MiniDumpWriteDumpFunction writer = systemWriter();
+        const MiniDumpWriteDumpFunction writer = systemDumpWriter();
         if (writer == nullptr) {
             return false;
         }

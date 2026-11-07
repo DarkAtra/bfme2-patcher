@@ -140,10 +140,6 @@
 #define GAME_PATCHER_TOOLTIP_TIMERS 1
 #endif
 
-#ifndef GAME_PATCHER_NETWORK_STATS
-#define GAME_PATCHER_NETWORK_STATS 0
-#endif
-
 #ifndef GAME_PATCHER_NETWORK_CATCH_UP
 #define GAME_PATCHER_NETWORK_CATCH_UP 1
 #endif
@@ -305,11 +301,6 @@ namespace features {
     // TOOLTIP:ResearchTime strings; without them nothing changes (tooltip_timers.cpp).
     constexpr bool TOOLTIP_TIMERS = GAME_PATCHER_TOOLTIP_TIMERS != 0;
 
-    // Network stats: in every networked match, records the local player's command delays and how each logic frame start went into
-    // <game folder>\.patcher\network-<date>-<time>.csv, to find where the delay of networked matches comes from
-    // (network_stats.cpp). Reads the game's state only.
-    constexpr bool NETWORK_STATS = GAME_PATCHER_NETWORK_STATS != 0;
-
     // Network catch-up: a player who does not host a networked match catches up with the host (pairs of phases share a client
     // frame each, more pairs the further behind it is) and the network slowdown no longer holds that player back, which cuts their
     // command delay. Changes the pace only; every phase runs once per logic frame (network_catch_up.cpp).
@@ -329,7 +320,7 @@ namespace features {
     // frame instead of the texture it draws into, and half a texel closer to where it is drawn (heat_haze_squares.cpp).
     constexpr bool HEAT_HAZE_SQUARES = GAME_PATCHER_HEAT_HAZE_SQUARES != 0;
 
-    // FPS counter: with -showfps on the game's command line (the updater adds it in debug mode), the frames per second are shown
-    // in the top left corner (fps_counter.cpp).
+    // FPS counter: with -showfps on the game's command line, the frames per second are shown in the top left corner
+    // (fps_counter.cpp).
     constexpr bool FPS_COUNTER = GAME_PATCHER_FPS_COUNTER != 0;
 }

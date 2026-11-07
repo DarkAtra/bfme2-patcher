@@ -59,16 +59,6 @@ namespace {
     uint32_t multipliers[MAX_MULTIPLIERS];
     uint32_t multiplierCount;
 
-    size_t forwardJcc(Cave &cave, const BYTE condition) {
-        const size_t offset = cave.size;
-        cave.jcc(condition, 0);
-        return offset;
-    }
-
-    uint32_t address(const void *p) {
-        return static_cast<uint32_t>(reinterpret_cast<uintptr_t>(p));
-    }
-
     // With esi the nugget and the DamageInfo at [esp + infoArgument] on entry: when the nugget drains, writes the index of its
     // multiplier into DamageInfo + 0x51..0x53, then jumps to `target`. Keeps every register but eax.
     void emitStamp(Cave &cave, const BYTE infoArgument, const uintptr_t target) {

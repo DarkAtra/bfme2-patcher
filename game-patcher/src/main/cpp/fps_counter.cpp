@@ -7,8 +7,7 @@
 
 // FPS counter
 //
-// Shows the frames drawn per second in the top left corner when the game is started with -showfps (the updater adds it in debug
-// mode). The game's command line parser skips arguments it does not know (0x007BA7E1), so the game itself ignores it.
+// Shows the frames drawn per second in the top left corner when the game is started with -showfps (patches.cpp checks for it).
 //
 // W3DDisplay::draw (0x00449CF8) draws the views and the windows, then the text of a debug view when one is active (0x0044A21B,
 // 0x00449C5A) and ends the frame (0x0044A227). The hook in front of the debug view draws a DisplayString made the way that debug
@@ -48,7 +47,6 @@ namespace {
     constexpr uintptr_t DISPLAY_STRING_SET_COLORS = 0x0050569A;
     constexpr uintptr_t DISPLAY_STRING_DRAW = 0x00505CFA;
 
-    constexpr wchar_t ARGUMENT[] = L"-showfps";
     constexpr char FONT_NAME[] = "Arial";
     constexpr float FONT_SIZE = 12.0f;
     constexpr bool FONT_BOLD = true;
@@ -129,33 +127,6 @@ namespace {
         }
         slot<Draw>(counterText, DRAW)(counterText, nullptr, POSITION, POSITION, DROP_OFFSET, DROP_OFFSET);
     }
-
-    bool isArgumentEnd(const wchar_t character) {
-        return character == L'\0' || character == L' ' || character == L'\t';
-    }
-}
-
-bool fpsCounterRequested() {
-    const wchar_t *position = GetCommandLineW();
-    constexpr size_t length = sizeof(ARGUMENT) / sizeof(ARGUMENT[0]) - 1;
-    bool quoted = false;
-    bool argumentStart = true;
-    for (; *position != L'\0'; position++) {
-        if (*position == L'"') {
-            quoted = !quoted;
-            argumentStart = false;
-            continue;
-        }
-        if (!quoted && (*position == L' ' || *position == L'\t')) {
-            argumentStart = true;
-            continue;
-        }
-        if (argumentStart && !quoted && _wcsnicmp(position, ARGUMENT, length) == 0 && isArgumentEnd(position[length])) {
-            return true;
-        }
-        argumentStart = false;
-    }
-    return false;
 }
 
 bool applyFpsCounter() {

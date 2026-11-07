@@ -21,7 +21,7 @@
 // The constructor already has an exit that returns the object untouched, taken for a null name. This patch takes it
 // for every scope, so no scope calls D3DPERF_BeginEvent (0x0051ECE0). The destructor (0x00517740) still calls
 // D3DPERF_EndEvent (0x0051ED60), which does nothing without a profiler, but with PIX attached every scope leaves an end event
-// without a begin. The destructor stays as it is because the instrumentation dll times the scopes through it. Unlike pySAGE's
+// without a begin. The destructor stays as it is because the call timers (debug mode) time the scopes through it. Unlike pySAGE's
 // perf-scope-skip (https://github.com/ClementJ18/pySAGE), which asks D3DPERF_GetStatus first, this does not detect a profiler.
 
 using namespace patching;

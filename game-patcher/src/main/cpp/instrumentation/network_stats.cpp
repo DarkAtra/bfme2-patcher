@@ -4,10 +4,12 @@
 #include <cstdio>
 #include <cwchar>
 
-#include "network_stats.h"
+#include "game_memory.h"
+#include "instrumentation/network_stats.h"
 #include "patch_set.h"
+#include "patcher_folder.h"
 
-// Network stats
+// Network stats (debug mode)
 //
 // Problem: where the command delay of a networked match comes from (the wait for the network update, the trip to and from the
 // packet router, the frames an off-host peer keeps buffered, the frame limiter's network slowdown) cannot be told from playing.
@@ -55,11 +57,6 @@ namespace {
     constexpr int SLOTS = 8;
     constexpr size_t CREATED_ENTRIES = 64;
     constexpr int64_t FLUSH_INTERVAL_US = 2000000;
-
-    template<typename T>
-    T read(const uintptr_t address) {
-        return *reinterpret_cast<const T *>(address);
-    }
 
     struct Created {
         uintptr_t message;
@@ -143,15 +140,13 @@ namespace {
         memset(recorder.created, 0, sizeof(recorder.created));
 
         wchar_t path[MAX_PATH];
-        const DWORD length = GetModuleFileNameW(nullptr, path, MAX_PATH);
-        wchar_t *folderEnd = length > 0 && length < MAX_PATH ? wcsrchr(path, L'\\') : nullptr;
-        if (folderEnd == nullptr) {
+        const size_t folderLength = patcherFolder(path);
+        if (folderLength == 0) {
             return;
         }
         SYSTEMTIME now;
         GetLocalTime(&now);
-        const size_t folderLength = folderEnd + 1 - path;
-        if (swprintf_s(folderEnd + 1, MAX_PATH - folderLength, L".patcher\\network-%04u%02u%02u-%02u%02u%02u.csv",
+        if (swprintf_s(path + folderLength, MAX_PATH - folderLength, L"network-%04u%02u%02u-%02u%02u%02u.csv",
             now.wYear, now.wMonth, now.wDay, now.wHour, now.wMinute, now.wSecond) < 0) {
             return;
         }
@@ -288,7 +283,7 @@ namespace {
     }
 }
 
-bool applyNetworkStats() {
+bool instrumentation::applyNetworkStats() {
 
     BYTE *caveMemory = allocateCave();
     if (caveMemory == nullptr) {

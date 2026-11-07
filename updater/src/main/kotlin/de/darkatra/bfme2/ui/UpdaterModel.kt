@@ -26,8 +26,6 @@ class UpdaterModel : PatchProgressListener {
         configureLogLevel(it.debugModeEnabled)
         MutableStateFlow(
             State(
-                // FIXME: enable when HDEdition is fixed
-                hdEditionEnabled = false,// it.hdEditionEnabled,
                 timerEnabled = it.timerEnabled,
                 skipIntroEnabled = it.skipIntroEnabled,
                 newMusicEnabled = it.newMusicEnabled,
@@ -116,11 +114,6 @@ class UpdaterModel : PatchProgressListener {
         _state.update { it.copy(progress = progress, progressText = progressText) }
     }
 
-    fun setHdEditionEnabled(hdEditionEnabled: Boolean) {
-        _state.update { it.copy(hdEditionEnabled = hdEditionEnabled, patchedOnce = false) }
-        updatePersistentState()
-    }
-
     fun setTimerEnabled(timerEnabled: Boolean) {
         _state.update { it.copy(timerEnabled = timerEnabled, patchedOnce = false) }
         updatePersistentState()
@@ -171,7 +164,6 @@ class UpdaterModel : PatchProgressListener {
     private fun updatePersistentState() {
         PersistenceService.savePersistentState(
             PersistentState(
-                hdEditionEnabled = _state.value.hdEditionEnabled,
                 timerEnabled = _state.value.timerEnabled,
                 skipIntroEnabled = _state.value.skipIntroEnabled,
                 newMusicEnabled = _state.value.newMusicEnabled,
@@ -198,7 +190,6 @@ class UpdaterModel : PatchProgressListener {
         val progress: Float = 0f,
         val progressText: String = "Waiting for user input.",
 
-        val hdEditionEnabled: Boolean = false,
         val timerEnabled: Boolean = false,
         val skipIntroEnabled: Boolean = false,
         val newMusicEnabled: Boolean = false,

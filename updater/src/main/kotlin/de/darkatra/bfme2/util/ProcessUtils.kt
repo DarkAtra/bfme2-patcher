@@ -10,7 +10,7 @@ object ProcessUtils {
 
     fun runSuspendedBypassingDebugger(
         executable: Path,
-        args: Array<String> = emptyArray(),
+        args: List<String> = emptyList(),
         beforeResume: (gameProcessId: Long) -> Unit
     ): ProcessHandle {
 
@@ -76,9 +76,9 @@ object ProcessUtils {
         }
     }
 
-    fun run(executable: Path, args: Array<String> = emptyArray()): Process {
+    fun run(executable: Path, args: List<String> = emptyList()): Process {
         return run(
-            listOf(executable.absolutePathString(), *args),
+            listOf(executable.absolutePathString()) + args,
             executable.parent
         )
     }

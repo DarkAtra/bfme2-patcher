@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <cstdint>
 
+#include "game_memory.h"
 #include "network_catch_up.h"
 #include "patch_set.h"
 
@@ -56,11 +57,6 @@ namespace {
     const float slowdownBase = 1.0f;
 
     constexpr BYTE JGE = 0x8D;
-
-    template<typename T>
-    T read(const uintptr_t address) {
-        return *reinterpret_cast<const T *>(address);
-    }
 
     // The phase that the catch-up loop should run up to after `phase` in the same client frame, or 0 for none. Pair k (from 1)
     // starts at phase wrap + 1 - 2k and needs k buffered frames; phase 1 is never paired.
