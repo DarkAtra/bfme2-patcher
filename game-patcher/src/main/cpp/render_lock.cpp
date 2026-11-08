@@ -59,7 +59,7 @@ namespace {
     uintptr_t emitLock(Cave &cave, const CaveData *data) {
         const uintptr_t entry = cave.here();
         cave.emit8(0x68); // push section
-        cave.emit32(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&data->section)));
+        cave.emit32(address(&data->section));
         cave.callThrough(ENTER_CRITICAL_SECTION_IAT);
         const BYTE waitObject0[2] = {0x33, 0xC0}; // xor eax, eax
         cave.emit(waitObject0);
@@ -92,8 +92,7 @@ namespace {
         pushSection();
         cave.callThrough(tryEnter);
         cave.emit(testResult);
-        const size_t jumpToAcquired = cave.size;
-        cave.jcc(JNE, 0); // jnz acquired
+        const size_t jumpToAcquired = forwardJcc(cave, JNE); // jnz acquired
 
         cave.callThrough(getTickCount);
         const BYTE keepStart[2] = {0x8B, 0xD8}; // mov ebx, eax
@@ -106,8 +105,7 @@ namespace {
             0x3B, 0xC6  // cmp eax, esi
         };
         cave.emit(elapsed);
-        const size_t jumpToTimeout = cave.size;
-        cave.jcc(JAE, 0); // jae timeout
+        const size_t jumpToTimeout = forwardJcc(cave, JAE); // jae timeout
 
         const BYTE sleepOne[2] = {0x6A, 0x01}; // push 1
         cave.emit(sleepOne);
@@ -148,11 +146,13 @@ namespace {
         const BYTE compare[2] = {0x3B, 0x05}; // cmp eax, [owner]
         cave.emit(compare);
         cave.emit32(static_cast<uint32_t>(owner));
-        const BYTE skipLeave[2] = {0x75, 0x0B}; // jne resume, over the push and the call below
-        cave.emit(skipLeave);
+        const size_t skipLeave = cave.size;
+        const BYTE notOwner[2] = {0x75, 0x00}; // jne resume, over the push and the call below
+        cave.emit(notOwner);
         cave.emit8(0x68); // push section
         cave.emit32(static_cast<uint32_t>(section));
         cave.callThrough(LEAVE_CRITICAL_SECTION_IAT);
+        cave.resolveShortJump(skipLeave, cave.size);
         cave.jmp(resume);
         return entry;
     }
@@ -236,6 +236,15 @@ bool applyRenderLock() {
     // mov ecx, [esp + 0x14]
     const BYTE afterInit[4] = {0x8B, 0x4C, 0x24, 0x14};
     set.expect(INIT_RESUME, afterInit);
+
+    // the import slots the caves call through, where the game calls through them: WW3D::Lock's bookkeeping (call
+    // [EnterCriticalSection], call [LeaveCriticalSection]) and a wrapper of Sleep (call [Sleep] / ret)
+    const BYTE enterCriticalSection[6] = {0xFF, 0x15, 0x00, 0x02, 0xBD, 0x00};
+    set.expect(0x0051EF21, enterCriticalSection);
+    const BYTE leaveCriticalSection[6] = {0xFF, 0x15, 0x04, 0x02, 0xBD, 0x00};
+    set.expect(0x0051EF43, leaveCriticalSection);
+    const BYTE sleep[7] = {0xFF, 0x15, 0xB4, 0x03, 0xBD, 0x00, 0xC3};
+    set.expect(0x00406FEB, sleep);
 
     if (!commit(set, cave)) {
         DeleteCriticalSection(&data->section);

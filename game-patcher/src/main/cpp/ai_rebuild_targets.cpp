@@ -63,17 +63,13 @@ bool applyAiRebuildTargets() {
     set.reset();
 
     // the type's factory case calls the constructor, which sets the vtable whose slot 7 is the picker
-    BYTE caseAddress[4];
-    putInt(caseAddress, static_cast<int>(FACTORY_CASE));
-    set.expect(FACTORY_CASE_SLOT, caseAddress);
+    set.expectSlot(FACTORY_CASE_SLOT, FACTORY_CASE);
     const BYTE factoryCall[5] = {0xE8, 0x9A, 0x49, 0x05, 0x00};
     set.expect(FACTORY_CASE_CALL, factoryCall);
     // push esi / mov esi, ecx / call / mov dword [esi], 0x00C8DEEC
     const BYTE constructor[14] = {0x56, 0x8B, 0xF1, 0xE8, 0x58, 0xA5, 0x01, 0x00, 0xC7, 0x06, 0xEC, 0xDE, 0xC8, 0x00};
     set.expect(BEHAVIOUR_CONSTRUCTOR, constructor);
-    BYTE pickerAddress[4];
-    putInt(pickerAddress, static_cast<int>(PICKER));
-    set.expect(PICKER_SLOT, pickerAddress);
+    set.expectSlot(PICKER_SLOT, PICKER);
 
     // push ebx / push ebp / push esi / mov ebp, ecx
     const BYTE picker[5] = {0x53, 0x55, 0x56, 0x8B, 0xE9};

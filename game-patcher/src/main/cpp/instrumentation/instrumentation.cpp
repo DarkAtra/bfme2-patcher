@@ -16,8 +16,9 @@
 
 // The measuring tools, applied after the patches when the game is started with -debugmode (the updater adds it in debug mode).
 // They record what the game does (the timers in a file mapping that the harness reads, the network stats in files) and change
-// nothing about how it runs; their hooks sit on functions and call sites the patches leave alone. Without -debugmode none of
-// this is applied.
+// nothing about how it runs, except the two test aids: the auto skirmish (only with -autoskirmish) presses menu buttons, and the
+// test banner draws the harness's line on the screen. Their hooks sit on functions and call sites the patches leave alone. Without
+// -debugmode none of this is applied.
 
 namespace {
 
@@ -50,7 +51,6 @@ instrumentation::Stats *instrumentation::createStats() {
 
     statsBlock = static_cast<Stats *>(view);
     memset(statsBlock, 0, sizeof(Stats));
-    memcpy(statsBlock->magic, "GPSTATS1", sizeof(statsBlock->magic));
 
     LARGE_INTEGER frequency, before, after;
     QueryPerformanceFrequency(&frequency);
@@ -60,6 +60,8 @@ instrumentation::Stats *instrumentation::createStats() {
     QueryPerformanceCounter(&after);
     const uint64_t cyclesAfter = __rdtsc();
     statsBlock->tscKHz = static_cast<uint32_t>((cyclesAfter - cyclesBefore) * frequency.QuadPart / ((after.QuadPart - before.QuadPart) * 1000));
+    // last: a reader that finds the magic finds the block complete
+    memcpy(statsBlock->magic, "GPSTATS1", sizeof(statsBlock->magic));
     return statsBlock;
 }
 

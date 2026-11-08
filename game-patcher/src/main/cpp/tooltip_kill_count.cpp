@@ -25,8 +25,10 @@ namespace {
 
     constexpr uintptr_t KILL_SCORER_COUNT = 0x00695701;
     constexpr uintptr_t KILL_SCORER_BATTALION_TEST = 0x00695713;
+    constexpr uintptr_t HOVERED_OBJECT_LOAD = 0x008EC046;
     constexpr uintptr_t BATTLES_FOUGHT_LINE = 0x008EC052;
     constexpr uintptr_t BATTLES_FOUGHT_FETCH = 0x008EC06A;
+    constexpr uintptr_t DESCRIPTION_LINE = 0x008EC10A;
     constexpr uintptr_t DESCRIPTION_RELEASE = 0x008EC120;
     // cdecl(lines, line)
     constexpr uintptr_t ADD_LINE = 0x008EBC3B;
@@ -100,8 +102,7 @@ bool applyTooltipKillCount() {
         0x83, 0x3B, 0x00 // cmp dword [ebx], 0
     };
     cave.emit(fetchCall);
-    const size_t missingString = cave.size;
-    cave.jcc(JE, 0);
+    const size_t missingString = forwardJcc(cave, JE);
     const BYTE format[5] = {
         0x50, // push eax: the format
         0x8D, 0x43, 0x04, // lea eax, [ebx + 4]
@@ -150,6 +151,9 @@ bool applyTooltipKillCount() {
     const BYTE battalionTest[14] = {0x85, 0xC0, 0x74, 0x18, 0x8B, 0x48, 0x04, 0xF6, 0x81, 0x15, 0x01, 0x00, 0x00, 0x20};
     set.expect(KILL_SCORER_BATTALION_TEST, battalionTest);
 
+    // mov esi, [ebp - 0x18]: the hovered object the cave reads
+    const BYTE hoveredObject[3] = {0x8B, 0x75, 0xE8};
+    set.expect(HOVERED_OBJECT_LOAD, hoveredObject);
     // mov eax, [esi + 0x488] / cmp eax, ebx / pop edi / jle / mov [ebp - 0x2C], ebx / mov ecx, [THE_GAME_TEXT] / push eax /
     // mov eax, [ecx] / push ebx
     const BYTE battlesFought[24] = {
@@ -158,12 +162,19 @@ bool applyTooltipKillCount() {
     };
     set.expect(BATTLES_FOUGHT_LINE, battlesFought);
     // push "TOOLTIP:BattlesFought" / mov byte [ebp - 4], 0xB / call [eax + 0x44] / push eax / lea eax, [ebp - 0x2C] / push eax /
-    // call UNICODE_STRING_FORMAT / ... / lea eax, [ebp - 0x1C] / push eax / call ADD_LINE
+    // call UNICODE_STRING_FORMAT / lea eax, ...
     const BYTE battlesFoughtLine[24] = {
         0x68, 0x00, 0x92, 0xC7, 0x00, 0xC6, 0x45, 0xFC, 0x0B, 0xFF, 0x50, 0x44, 0x50, 0x8D, 0x45, 0xD4, 0x50, 0xE8, 0x60, 0x37,
         0x1F, 0x00, 0x8D, 0x45
     };
     set.expect(BATTLES_FOUGHT_FETCH, battlesFoughtLine);
+    // lea eax, [ebp - 0x28] / push eax / lea eax, [ebp - 0x1C] / push eax / call ADD_LINE / pop ecx / pop ecx / lea ecx, [ebp - 0x28] /
+    // mov byte [ebp - 4], 0xC: the description's line, added to the lines the cave adds to
+    const BYTE descriptionLine[22] = {
+        0x8D, 0x45, 0xD8, 0x50, 0x8D, 0x45, 0xE4, 0x50, 0xE8, 0x24, 0xFB, 0xFF, 0xFF, 0x59, 0x59, 0x8D, 0x4D, 0xD8, 0xC6, 0x45,
+        0xFC, 0x0C
+    };
+    set.expect(DESCRIPTION_LINE, descriptionLine);
 
     const BYTE descriptionRelease[5] = {0xE8, 0x8B, 0xA6, 0xB4, 0xFF};
     set.redirectCall(DESCRIPTION_RELEASE, descriptionRelease, reinterpret_cast<uintptr_t>(caveMemory) + CODE_OFFSET);

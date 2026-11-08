@@ -7,8 +7,6 @@
 #include "patcher_folder.h"
 #include "patches.h"
 
-using namespace std;
-
 // Counts the occurrences of the pattern in the executable pages of a loaded image and returns the first one.
 static BYTE *findInImage(HMODULE module, const BYTE *pattern, const size_t patternLength, size_t &count) {
 
@@ -45,7 +43,9 @@ static BYTE *findInImage(HMODULE module, const BYTE *pattern, const size_t patte
 // );
 hostent *WSAAPI Hooked_gethostbyname(const char *name) {
 
-    if (strcmp("gpcm.gamespy.com", name) == 0) {
+    if (name == nullptr) {
+        return gethostbyname(name);
+    } else if (strcmp("gpcm.gamespy.com", name) == 0) {
         return gethostbyname("gpcm.server.cnc-online.net");
     } else if (strcmp("peerchat.gamespy.com", name) == 0) {
         return gethostbyname("peerchat.server.cnc-online.net");
@@ -103,7 +103,7 @@ static HANDLE logFile = INVALID_HANDLE_VALUE;
 static void openLog() {
 
     wchar_t path[MAX_PATH];
-    if (patcherFolder(path) == 0 || wcscat_s(path, L"game-patcher-log.txt") != 0) {
+    if (patcherFolder(path) == 0 || !appendToPath(path, L"game-patcher-log.txt")) {
         return;
     }
     logFile = CreateFileW(path, GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);

@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-constexpr size_t MAX_FAILED_PATCHES = 48;
+constexpr size_t MAX_FAILED_PATCHES = 64;
 
 // Applies every patch that features.h enables, and with -debugmode on the game's command line the measuring tools after them
 // (instrumentation.cpp). Each patch is applied as a whole or not at all, and one failing does not stop the others. Returns how

@@ -54,8 +54,7 @@ bool applyPathfinderCellCentre() {
     // cmp dword [ebp - 0x28], 0 / jne reuse
     const BYTE flagSet[4] = {0x83, 0x7D, 0xD8, 0x00};
     cave.emit(flagSet);
-    const size_t reuseJcc = cave.size;
-    cave.jcc(JNE, 0);
+    const size_t reuseJcc = forwardJcc(cave, JNE);
 
     // The original call with its arguments: push 1 / push [ebp + 0x10] / lea eax, [ebp - 0x30] / push edi / push eax /
     // call. The code at the resume point removes the four arguments.

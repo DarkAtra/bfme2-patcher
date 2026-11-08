@@ -1,6 +1,5 @@
 #include <windows.h>
 #include <cstdint>
-#include <cwchar>
 
 #include "display_text.h"
 #include "fps_counter.h"

@@ -55,7 +55,8 @@ namespace {
         return offset;
     }
 
-    // jumps to the returned jcc unless the button in `reg` (modrm register number) is a SPECIAL_POWER with OK_FOR_MULTI_EXECUTE
+    // jumps through the jccs in `fail` unless the button in `reg` (modrm register number) is a SPECIAL_POWER with
+    // OK_FOR_MULTI_EXECUTE
     void emitMultiExecutePower(Cave &cave, const BYTE reg, size_t (&fail)[2]) {
         const BYTE command[4] = {0x83, static_cast<BYTE>(0x78 | reg), 0x14, 0x18}; // cmp dword [reg + 0x14], 0x18
         cave.emit(command);
@@ -65,7 +66,7 @@ namespace {
         fail[1] = forwardJcc(cave, JE);
     }
 
-    // eax = the selected drawables' list head, or a jump to the returned jccs
+    // eax = the selected drawables' list head, or a jump through the jccs in `empty`
     void emitSelection(Cave &cave, size_t (&empty)[2]) {
         const BYTE inGameUi[8] = {
             0x8B, 0x0D, 0x30, 0x48, 0xDE, 0x00, // mov ecx, [0x00DE4830]: TheInGameUI
@@ -84,7 +85,7 @@ namespace {
         cave.emit(head);
     }
 
-    // eax = the object of the list node in esi, or a jump to the returned jccs
+    // eax = the object of the list node in esi, or a jump through the jccs in `skip`
     void emitMemberObject(Cave &cave, size_t (&skip)[2]) {
         const BYTE drawable[5] = {
             0x8B, 0x46, 0x08, // mov eax, [esi + 8]: the drawable

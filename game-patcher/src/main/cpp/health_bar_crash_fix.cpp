@@ -69,8 +69,7 @@ namespace {
         cave.emit(add);
         cave.emit8(0x3D);
         cave.emit32(INDEX_LIMIT);
-        const size_t jumpToFull = cave.size;
-        cave.jcc(JA, 0); // full
+        const size_t jumpToFull = forwardJcc(cave, JA); // full
 
         // the replaced instructions must run with eax free again: they set up the frame and use eax themselves
         const uintptr_t original = cave.here();
@@ -81,13 +80,11 @@ namespace {
         cave.resolveJcc(jumpToFull, full);
         const BYTE tooManyVertices[5] = {0x83, 0x7C, 0x24, 0x04, static_cast<BYTE>(MAX_VERTICES)};
         cave.emit(tooManyVertices);
-        const size_t jumpOne = cave.size;
-        cave.jcc(JA, 0);
+        const size_t jumpOne = forwardJcc(cave, JA);
         const BYTE tooManyIndices[4] = {0x81, 0x7C, 0x24, 0x08}; // cmp dword [esp + 8], MAX_INDICES
         cave.emit(tooManyIndices);
         cave.emit32(MAX_INDICES);
-        const size_t jumpTwo = cave.size;
-        cave.jcc(JA, 0);
+        const size_t jumpTwo = forwardJcc(cave, JA);
         cave.resolveJcc(jumpOne, original);
         cave.resolveJcc(jumpTwo, original);
 

@@ -99,11 +99,13 @@ namespace {
     }
 
     void flush() {
-        if (recorder.file != INVALID_HANDLE_VALUE && recorder.used > 0) {
-            DWORD written;
-            WriteFile(recorder.file, recorder.buffer, static_cast<DWORD>(recorder.used), &written, nullptr);
-        }
+        // emptied first: a write cut off by another thread ending the process is not repeated by the flush at exit
+        const size_t length = recorder.used;
         recorder.used = 0;
+        if (recorder.file != INVALID_HANDLE_VALUE && length > 0) {
+            DWORD written;
+            WriteFile(recorder.file, recorder.buffer, static_cast<DWORD>(length), &written, nullptr);
+        }
     }
 
     void append(const char *format, ...) {
@@ -133,21 +135,28 @@ namespace {
         recorder.network = 0;
     }
 
+    // Writes out the rows of the last flush interval when the game exits: the C runtime runs it at DLL_PROCESS_DETACH, after
+    // ExitProcess has ended every other thread.
+    struct CloseAtExit {
+        ~CloseAtExit() {
+            close();
+        }
+    };
+
+    CloseAtExit closeAtExit;
+
     void open(const uintptr_t network) {
         recorder.network = network;
         recorder.createdNext = 0;
         recorder.refused = 0;
         memset(recorder.created, 0, sizeof(recorder.created));
 
-        wchar_t path[MAX_PATH];
-        const size_t folderLength = patcherFolder(path);
-        if (folderLength == 0) {
-            return;
-        }
         SYSTEMTIME now;
         GetLocalTime(&now);
-        if (swprintf_s(path + folderLength, MAX_PATH - folderLength, L"network-%04u%02u%02u-%02u%02u%02u.csv",
-            now.wYear, now.wMonth, now.wDay, now.wHour, now.wMinute, now.wSecond) < 0) {
+        wchar_t name[32];
+        swprintf_s(name, L"network-%04u%02u%02u-%02u%02u%02u.csv", now.wYear, now.wMonth, now.wDay, now.wHour, now.wMinute, now.wSecond);
+        wchar_t path[MAX_PATH];
+        if (patcherFolder(path) == 0 || !appendToPath(path, name)) {
             return;
         }
         recorder.file = CreateFileW(path, GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);

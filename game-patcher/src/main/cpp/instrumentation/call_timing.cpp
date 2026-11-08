@@ -526,7 +526,8 @@ namespace {
     using SetArrayFunction = HRESULT (__stdcall *)(void *, uint32_t, const void *, UINT);
 
     HRESULT __stdcall timedSetValue(void *effect, const uint32_t handle, const void *data, const UINT bytes) {
-        EffectSet set(SET_VALUE, effect, handle, data, bytes);
+        // a null value is D3DX's to refuse, not the wrapper's to read
+        EffectSet set(SET_VALUE, effect, handle, data, data != nullptr ? bytes : 0);
         return original<SetValueFunction>(SET_VALUE)(effect, handle, data, bytes);
     }
 
@@ -1309,12 +1310,7 @@ namespace {
                 return false;
             }
             *static_cast<uint32_t *>(import.original) = library;
-            BYTE expected[4];
-            BYTE replacement[4];
-            const auto wrapper = reinterpret_cast<uint32_t>(import.wrapper);
-            memcpy(expected, &library, sizeof(expected));
-            memcpy(replacement, &wrapper, sizeof(replacement));
-            set.replace(import.slot, expected, replacement);
+            set.replaceSlot(import.slot, library, reinterpret_cast<uintptr_t>(import.wrapper));
         }
         return true;
     }
@@ -1327,13 +1323,19 @@ namespace {
         Cave cave(memory);
         static PatchSet set;
         set.reset();
+        const uint32_t firstSite = siteCount;
         bool ok = time(set, cave);
         if (extra != nullptr) {
             extra(set, cave);
         }
         if (!ok || !commit(set, cave)) {
             VirtualFree(memory, 0, MEM_RELEASE);
+            siteCount = firstSite;
             return false;
+        }
+        // a group of import slots (timeFiles) emits no code
+        if (cave.size == 0) {
+            VirtualFree(memory, 0, MEM_RELEASE);
         }
         return true;
     }

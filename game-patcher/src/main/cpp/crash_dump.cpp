@@ -3,7 +3,6 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cstdio>
-#include <cstring>
 
 #include "crash_dump.h"
 #include "patch_set.h"

@@ -1,20 +1,23 @@
 #include <windows.h>
 #include <cstdint>
 
-#include "evacuate_contained_heroes.h"
+#include "evacuate_all_passengers.h"
 #include "patch_set.h"
 
-// Evacuate contained heroes
+// Evacuate all passengers
 //
-// Problem: the EVACUATE button of a garrison or tunnel leaves heroes that can carry the One Ring inside.
-// Fix: such heroes leave like every other unit.
+// Problem: the EVACUATE button of a tunnel, garrison or transport leaves a passenger inside when it has a contain of its own
+// that is not a battalion's: in 2.02 the Dwarven battle wagon in a mine shaft or on a ship, and Sharku on a ship.
+// Fix: such passengers leave like every other unit, as their own exit button would send them.
 //
-// The exit-all loop (0x00991027, from 0x0087A56A and 0x0087CEA0) sends each passenger out by one of two arms: a passenger
-// without a contain module of its own gets an exit order from its AI (0x00991086), a passenger whose contain is a battalion's
-// sends the whole battalion out. A passenger with any other contain is skipped. Ring-capable heroes carry a
-// CitadelSlaughterHordeContain for the Ring pickup, which is not a battalion contain, so they stay. The hook sends such a
-// passenger down the exit order arm instead. A passenger without an AI is still skipped, like one without a contain.
-// Derived from pySAGE's evacuate-contained-heroes (https://github.com/ClementJ18/pySAGE).
+// The exit-all loop (0x00991027) is the evacuate of the tunnel contain and four other contains (0x0087CEA0, in 0x0087CE8F,
+// slot + 0x80 of vtable 0x00C5DCE0 and others) and of two transport contains (0x0087A56A, in 0x0087A559). It sends each
+// passenger out by one of two arms: a passenger without a contain module of its own gets an exit order from its AI
+// (0x00991086), a passenger whose contain is a battalion's sends the whole battalion out. A passenger with any other contain
+// (a TransportContain, RiderChangeContain, CitadelSlaughterHordeContain, ...) is skipped. The hook sends such a passenger down
+// the exit order arm instead. A passenger without an AI is still skipped, like one without a contain. pySAGE's
+// evacuate-contained-heroes, which this derives from (https://github.com/ClementJ18/pySAGE), aims at mods whose Ring heroes
+// carry a CitadelSlaughterHordeContain; no 2.02 unit does.
 
 using namespace patching;
 
@@ -25,11 +28,11 @@ namespace {
     constexpr uintptr_t BATTALION_EXIT = 0x00991077;
     constexpr uintptr_t EXIT_ORDER = 0x00991086;
     constexpr uintptr_t EXIT_ORDER_REST = 0x0099108E;
-    constexpr uintptr_t GARRISON_CALL = 0x0087A56A;
+    constexpr uintptr_t TRANSPORT_CALL = 0x0087A56A;
     constexpr uintptr_t TUNNEL_CALL = 0x0087CEA0;
 }
 
-bool applyEvacuateContainedHeroes() {
+bool applyEvacuateAllPassengers() {
 
     BYTE *caveMemory = allocateCave();
     if (caveMemory == nullptr) {
@@ -76,8 +79,8 @@ bool applyEvacuateContainedHeroes() {
     set.expect(EXIT_ORDER_REST, exitOrderRest);
 
     // call 0x00991027
-    const BYTE garrisonCall[5] = {0xE8, 0xB8, 0x6A, 0x11, 0x00};
-    set.expect(GARRISON_CALL, garrisonCall);
+    const BYTE transportCall[5] = {0xE8, 0xB8, 0x6A, 0x11, 0x00};
+    set.expect(TRANSPORT_CALL, transportCall);
     const BYTE tunnelCall[5] = {0xE8, 0x82, 0x41, 0x11, 0x00};
     set.expect(TUNNEL_CALL, tunnelCall);
 

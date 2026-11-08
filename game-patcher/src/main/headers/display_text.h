@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <cstdint>
 
+#include "game_memory.h"
 #include "patch_set.h"
 
 // A line of text drawn on the client's screen the way the debug view draws its own (0x0044A2C7): TheDisplayStringManager's
@@ -10,6 +11,8 @@
 // drop shadow (+ 0x38), on the W3DDisplayString vtable (0x00BE58D8). Draw it while the display draws a frame.
 
 namespace display_text {
+
+    using patching::slot;
 
     constexpr uintptr_t THE_DISPLAY_STRING_MANAGER = 0x00DE4518;
     constexpr uintptr_t THE_FONT_LIBRARY = 0x00DE3D7C;
@@ -54,15 +57,10 @@ namespace display_text {
     typedef void (__fastcall *SetColors)(void *displayString, void *, uint32_t color, uint32_t dropColor);
     typedef void (__fastcall *Draw)(void *displayString, void *, int x, int y, int xDrop, int yDrop);
 
-    template<typename T>
-    T slot(const void *object, const uint32_t offset) {
-        return reinterpret_cast<T>(*reinterpret_cast<const uintptr_t *>(*reinterpret_cast<const uint8_t *const *>(object) + offset));
-    }
-
     // a display string in the font and colour, or null while the display has no string manager or font library yet
     inline void *create(const uint32_t color) {
-        void *manager = *reinterpret_cast<void **>(THE_DISPLAY_STRING_MANAGER);
-        void *library = *reinterpret_cast<void **>(THE_FONT_LIBRARY);
+        void *manager = patching::read<void *>(THE_DISPLAY_STRING_MANAGER);
+        void *library = patching::read<void *>(THE_FONT_LIBRARY);
         if (manager == nullptr || library == nullptr) {
             return nullptr;
         }
@@ -99,8 +97,6 @@ namespace display_text {
 
     // the bytes the functions above rely on
     inline void expect(patching::PatchSet &set) {
-        using patching::putInt;
-
         // the debug view's text, made the same way: newDisplayString through + 0x38, then setFont through + 0x18
         const BYTE debugViewText[23] = {
             0x8B, 0x0D, 0x18, 0x45, 0xDE, 0x00, 0x8B, 0x01, 0xFF, 0x50, 0x38, 0x89, 0x83, 0xCC, 0x01, 0x00, 0x00, 0x8B, 0x10, 0x57,
@@ -123,9 +119,7 @@ namespace display_text {
         set.expect(0x00449C37, debugViewDrawCall);
 
         // the manager's newDisplayString, which builds a W3DDisplayString: push 0x1F8 / call / ... / call its constructor
-        BYTE newDisplayStringSlot[4];
-        putInt(newDisplayStringSlot, static_cast<int>(NEW_DISPLAY_STRING));
-        set.expect(DISPLAY_STRING_MANAGER_VTABLE + NEW_DISPLAY_STRING_SLOT, newDisplayStringSlot);
+        set.expectSlot(DISPLAY_STRING_MANAGER_VTABLE + NEW_DISPLAY_STRING_SLOT, NEW_DISPLAY_STRING);
         const BYTE newDisplayString[8] = {0xB8, 0xAB, 0x40, 0xB7, 0x00, 0xE8, 0x3C, 0xCF};
         set.expect(NEW_DISPLAY_STRING, newDisplayString);
         // mov dword [esi], the W3DDisplayString vtable, in that constructor
@@ -133,18 +127,10 @@ namespace display_text {
         set.expect(0x00505981, displayStringVtable);
 
         // the four slots and the functions behind them
-        BYTE setTextSlot[4];
-        putInt(setTextSlot, static_cast<int>(DISPLAY_STRING_SET_TEXT));
-        set.expect(DISPLAY_STRING_VTABLE + SET_TEXT, setTextSlot);
-        BYTE setFontSlot[4];
-        putInt(setFontSlot, static_cast<int>(DISPLAY_STRING_SET_FONT));
-        set.expect(DISPLAY_STRING_VTABLE + SET_FONT, setFontSlot);
-        BYTE setColorsSlot[4];
-        putInt(setColorsSlot, static_cast<int>(DISPLAY_STRING_SET_COLORS));
-        set.expect(DISPLAY_STRING_VTABLE + SET_COLORS, setColorsSlot);
-        BYTE drawSlot[4];
-        putInt(drawSlot, static_cast<int>(DISPLAY_STRING_DRAW));
-        set.expect(DISPLAY_STRING_VTABLE + DRAW, drawSlot);
+        set.expectSlot(DISPLAY_STRING_VTABLE + SET_TEXT, DISPLAY_STRING_SET_TEXT);
+        set.expectSlot(DISPLAY_STRING_VTABLE + SET_FONT, DISPLAY_STRING_SET_FONT);
+        set.expectSlot(DISPLAY_STRING_VTABLE + SET_COLORS, DISPLAY_STRING_SET_COLORS);
+        set.expectSlot(DISPLAY_STRING_VTABLE + DRAW, DISPLAY_STRING_DRAW);
         // ... / lea ecx, [ebp + 8]: the text / call releaseBuffer / ... / ret 4
         const BYTE setTextRelease[16] = {0x83, 0x4D, 0xFC, 0xFF, 0x8D, 0x4D, 0x08, 0xE8, 0x7C, 0xC2, 0xCD, 0xFF, 0x8B, 0x4D, 0xF4, 0x5F};
         set.expect(DISPLAY_STRING_SET_TEXT + 0x34, setTextRelease);
@@ -153,8 +139,8 @@ namespace display_text {
         // mov edx, [esp + 4] / push esi / push 4 / lea eax, [ecx + 0x1B8]: four text colours, then four drop colours
         const BYTE setColors[13] = {0x8B, 0x54, 0x24, 0x04, 0x56, 0x6A, 0x04, 0x8D, 0x81, 0xB8, 0x01, 0x00, 0x00};
         set.expect(DISPLAY_STRING_SET_COLORS, setColors);
-        const BYTE draw[8] = {0x55, 0x8B, 0xEC, 0x51, 0x51, 0x56, 0x8B, 0xF1};
-        set.expect(DISPLAY_STRING_DRAW, draw);
+        const BYTE drawCode[8] = {0x55, 0x8B, 0xEC, 0x51, 0x51, 0x56, 0x8B, 0xF1};
+        set.expect(DISPLAY_STRING_DRAW, drawCode);
 
         // push ebp / mov ebp, esp / fld [ebp + 0xC]: the size
         const BYTE getFont[6] = {0x55, 0x8B, 0xEC, 0xD9, 0x45, 0x0C};

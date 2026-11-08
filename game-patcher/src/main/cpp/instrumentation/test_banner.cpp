@@ -52,8 +52,8 @@ namespace {
                 return;
             }
             shared = static_cast<const wchar_t *>(MapViewOfFile(mapping, FILE_MAP_READ, 0, 0, TEXT_LENGTH * sizeof(wchar_t)));
+            CloseHandle(mapping);
             if (shared == nullptr) {
-                CloseHandle(mapping);
                 return;
             }
         }
@@ -65,7 +65,6 @@ namespace {
         }
         wchar_t current[TEXT_LENGTH];
         wcsncpy_s(current, shared, TEXT_LENGTH - 1);
-        current[TEXT_LENGTH - 1] = L'\0';
         if (wcscmp(current, shown) != 0) {
             wcscpy_s(shown, current);
             display_text::setText(bannerText, shown);
@@ -86,11 +85,7 @@ bool instrumentation::applyTestBanner() {
     static PatchSet set;
     set.reset();
 
-    BYTE stockDraw[4];
-    putInt(stockDraw, static_cast<int>(WINDOW_MANAGER_DRAW));
-    BYTE bannerDraw[4];
-    putInt(bannerDraw, static_cast<int>(reinterpret_cast<uintptr_t>(&onDrawWindows)));
-    set.replace(WINDOW_MANAGER_VTABLE + DRAW_SLOT, stockDraw, bannerDraw);
+    set.replaceSlot(WINDOW_MANAGER_VTABLE + DRAW_SLOT, WINDOW_MANAGER_DRAW, reinterpret_cast<uintptr_t>(&onDrawWindows));
 
     // push esi / mov esi, ecx / mov ecx, [esi + 0x30]: draws its two window lists, takes no argument
     const BYTE draw[6] = {0x56, 0x8B, 0xF1, 0x8B, 0x4E, 0x30};

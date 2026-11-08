@@ -213,6 +213,11 @@ bool applyHeatHazeSquares() {
                                0xF8, 0x05, 0x7C, 0xB5, 0x8B, 0x45};
     set.expect(UV_COPY_RESUME, copyTail);
 
+    // the device smudgeSource reads, in 0x004754C3 (the render texture made the render target): mov eax, [THE_DEVICE] / cmp eax, ebx /
+    // je / mov ecx, [eax] / push eax / call [ecx + 0x0C] (TestCooperativeLevel)
+    const BYTE deviceRead[15] = {0xA1, 0x74, 0x34, 0xDD, 0x00, 0x3B, 0xC3, 0x74, 0x0E, 0x8B, 0x08, 0x50, 0xFF, 0x51, 0x0C};
+    set.expect(0x004754F0, deviceRead);
+
     if (!commit(set, cave)) {
         VirtualFree(caveMemory, 0, MEM_RELEASE);
         return false;

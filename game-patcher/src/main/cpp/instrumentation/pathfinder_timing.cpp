@@ -35,9 +35,7 @@ namespace {
     // the scopes whose time AdjustDestination's records break down
     constexpr uint32_t ADJUST_SUB[ADJUST_SUBSCOPES] = {1, 2, 3, 4, 5, PATH_EXISTS, CHECK_DESTINATION};
 
-    // the collision broad phase: its sweep (29), the contact callbacks over the active pairs (30), the pair clean up (31) and
-    // counted: pair counter increments (32) and decrements (33) in the first pair table, inserts into (34) and removals from (35)
-    // the second table, proxy bound updates (36)
+    // the broad phase's pair tables are sampled on every SAMPLE_EVERY-th broad phase update
     constexpr uint32_t SAMPLE_EVERY = 32;
 
     struct Definition {

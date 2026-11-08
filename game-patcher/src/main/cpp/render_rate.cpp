@@ -11,8 +11,8 @@
 // scrolling, the click window of the camera reset) are counted in frames, so a higher frame rate alone makes them faster.
 // Fix: draws 60 frames per second while the game logic keeps its stock pace (one logic frame every 198 ms), and scales what
 // is counted in client frames back to its speed at 30 fps: particles, the camera's scroll, rotation and drag zoom, and the
-// middle click camera reset. It also keeps the spell book filled (its buttons were sent before the menu could accept them)
-// and replaces the frame limiter's period.
+// middle click camera reset, and the War of the Ring map's drag distance. It also keeps the spell book filled (its buttons were
+// sent before the menu could accept them) and replaces the frame limiter's period.
 //
 // Written for the 2.02 build without the delay fix (lotrbfme2ep1.exe). The delay fix build (lotrbfme2ep1.fix) runs a second
 // logic phase in the frame that wraps and hides sub-frame 1, which the wrap below does not account for; it is refused at
@@ -53,6 +53,8 @@ namespace {
         uint32_t spellStoreTick;
         uint32_t getTickCount;
         float scrollScale;
+        int32_t dragHalfSteps[2];
+        int32_t dragTotals[2];
     };
 
     void addRate(PatchSet &set) {
@@ -156,8 +158,7 @@ namespace {
         cave.emit32(GAME_CLIENT_ADDRESS);
         const BYTE testClient[2] = {0x85, 0xC9}; // test ecx, ecx
         cave.emit(testClient);
-        const size_t jumpToRun = cave.size;
-        cave.jcc(JE, 0); // patched below
+        const size_t jumpToRun = forwardJcc(cave, JE);
         const BYTE getFrame[7] = {
             0x8B, 0x01,       // mov eax, [ecx]
             0xFF, 0x50, 0x7C, // call [eax + 0x7C]   GameClient::getFrame
@@ -175,9 +176,7 @@ namespace {
         const uintptr_t runLabel = cave.here();
         cave.jmp(run);
 
-        // resolve the je above
-        const auto displacement = static_cast<uint32_t>(runLabel - (reinterpret_cast<uintptr_t>(cave.base) + jumpToRun + 6));
-        memcpy(cave.base + jumpToRun + 2, &displacement, sizeof(displacement));
+        cave.resolveJcc(jumpToRun, runLabel);
 
         const BYTE stock[17] = {
             0xA1, 0x64, 0x43, 0xDE, 0x00, 0x3B, 0xC3, 0x74, 0x27, 0x38, 0x98, 0x45, 0x0D, 0x00, 0x00, 0x74, 0x1F
@@ -243,8 +242,7 @@ namespace {
         cave.emit32(tickAddress);
         cave.emit8(0x3D); // cmp eax, DEFER_MS
         cave.emit32(DEFER_MS);
-        const size_t jumpToDefer = cave.size;
-        cave.jcc(JB, 0); // patched below
+        const size_t jumpToDefer = forwardJcc(cave, JB);
         const BYTE stockLoopHead[10] = {0x83, 0x65, 0xEC, 0x00, 0x8D, 0xBE, 0xAC, 0x02, 0x00, 0x00};
         cave.emit(stockLoopHead);
         const uintptr_t loopTop = 0x008231D4;
@@ -253,8 +251,7 @@ namespace {
         const uintptr_t loopDone = 0x0082325E;
         cave.jmp(loopDone);
 
-        const auto displacement = static_cast<uint32_t>(deferLabel - (reinterpret_cast<uintptr_t>(cave.base) + jumpToDefer + 6));
-        memcpy(cave.base + jumpToDefer + 2, &displacement, sizeof(displacement));
+        cave.resolveJcc(jumpToDefer, deferLabel);
 
         set.hook(0x008231CA, stockLoopHead, deferEntry);
         const BYTE loopTopBytes[3] = {0x8B, 0x47, 0xFC};
@@ -266,9 +263,10 @@ namespace {
     // The stock limiter waits for ftol(1000 / (maxFramesPerSecond * slowdown)) milliseconds, where maxFramesPerSecond
     // comes from the INI (30 in every archive that ships with the mod) and is written back from there at several
     // points. This takes the period from a fixed 16 / 17 ms pattern instead and leaves the rest of the limiter alone.
-    // The W3D clock (animations, GPU particles) advances by a step per drawn frame (0x0044B911), set once to the truncated
-    // milliseconds per client frame (0x0044BF5C): 33, the stock limiter's period, but 16 at 60 fps, 3 % slower than the
-    // 16.5 ms frames. The step follows the period chosen here instead, so the clock keeps real time as in the stock game.
+    // The W3D clock (animations, GPU particles) advances by a step per drawn frame (0x0044B911), set to the truncated
+    // milliseconds per client frame (0x0044BF5C, a GameClient vtable slot that runs at every point that sets the frame rate):
+    // 33, the stock limiter's period, but 16 at 60 fps, 3 % slower than the 16.5 ms frames. The step follows the period
+    // chosen here instead, rewritten every limited frame, so the clock keeps real time as in the stock game.
     void addFrameLimiter(PatchSet &set, Cave &cave, const CaveData *data) {
         const uintptr_t counterAddress = reinterpret_cast<uintptr_t>(&data->frameCounter);
         const uintptr_t entry = cave.here();
@@ -311,7 +309,7 @@ namespace {
         const BYTE landing[2] = {0x8B, 0xF0}; // mov esi, eax
         set.expect(resume, landing);
 
-        // cvttss2si eax, [esp + 4] / mov [w3dStep], eax / ret 4: the step's only writer
+        // cvttss2si eax, [esp + 4] / mov [w3dStep], eax / ret 4: the step's stock writer
         const BYTE stepSetter[14] = {0xF3, 0x0F, 0x2C, 0x44, 0x24, 0x04, 0xA3, 0x8C, 0x7A, 0xDC, 0x00, 0xC2, 0x04, 0x00};
         set.expect(0x0044BF5C, stepSetter);
         // mov eax, [w3dStep] / imul eax, esi: the frames since the last draw / add [w3dClock], eax
@@ -325,7 +323,7 @@ namespace {
         cave.emit(load);
         const BYTE multiply[4] = {0xF3, 0x0F, 0x59, 0x05};
         cave.emit(multiply);
-        cave.emit32(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&data->scrollScale)));
+        cave.emit32(address(&data->scrollScale));
         const BYTE store[5] = {0xF3, 0x0F, 0x11, 0x45, offset};
         cave.emit(store);
     }
@@ -349,7 +347,7 @@ namespace {
         cave.emit(loadStep);
         const BYTE multiply[2] = {0xD8, 0x0D}; // fmul dword [scale]
         cave.emit(multiply);
-        cave.emit32(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&data->scrollScale)));
+        cave.emit32(address(&data->scrollScale));
         const BYTE apply[2] = {0xDE, popOperation}; // fsubp/faddp st(1), st(0)
         cave.emit(apply);
         cave.jmp(resume);
@@ -385,7 +383,7 @@ namespace {
         const uintptr_t rotation = cave.here();
         const BYTE scaleStep[4] = {0xF3, 0x0F, 0x59, 0x05}; // mulss xmm0, [scale]
         cave.emit(scaleStep);
-        cave.emit32(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&data->scrollScale)));
+        cave.emit32(address(&data->scrollScale));
         cave.emit(loadController);
         cave.jmp(0x00839657);
         set.hook(0x00839651, loadController, rotation);
@@ -396,6 +394,90 @@ namespace {
         // movss [esp], xmm0 / push edx / call [eax + 0x2C]: the rotation the second site leads to
         const BYTE controllerRotateCall[9] = {0xF3, 0x0F, 0x11, 0x04, 0x24, 0x52, 0xFF, 0x50, 0x2C};
         set.expect(0x0083965D, controllerRotateCall);
+    }
+
+    // The War of the Ring map's camera input (0x008392A7) adds the truncated size of each frame's scroll step to two ints
+    // (translator + 0x30 / + 0x34, zeroed when the right button goes down, 0x00838FCC); when the button comes up, totals below a
+    // threshold make the press a click rather than a drag (0x0083911F). The step is halved at 60 fps, and truncating the halves
+    // loses them: a slow drag that adds 1 a frame at 30 fps adds 0. So the totals count half steps instead, the stock step
+    // truncated as at 30 fps, and keep half of that: every two frames add what one stock frame added. A total the game wrote
+    // itself (its resets) restarts the count from it; the two resets that write 0 also mark the count as stale, as a total of
+    // 0 alone would not tell.
+    void addDragTotals(PatchSet &set, Cave &cave, const CaveData *data) {
+        static_assert(CLIENT_RATE == 2 * STOCK_CLIENT_RATE, "the totals keep half of the half steps");
+        const uintptr_t totals = cave.here();
+        const BYTE fields[2] = {0x30, 0x34};
+        const BYTE steps[2] = {0xF4, 0xF8};
+        for (size_t axis = 0; axis < 2; axis++) {
+            const BYTE written[2] = {0x8B, 0x46}; // mov eax, [esi + field]
+            cave.emit(written);
+            cave.emit8(fields[axis]);
+            cave.emit8(0x3B); // cmp eax, [dragTotals]
+            cave.emit8(0x05);
+            cave.emit32(address(&data->dragTotals[axis]));
+            const BYTE unchanged[2] = {0x74, 0x07}; // je: the total is still the one written here
+            cave.emit(unchanged);
+            const BYTE restart[2] = {0x01, 0xC0}; // add eax, eax
+            cave.emit(restart);
+            cave.emit8(0xA3); // mov [dragHalfSteps], eax
+            cave.emit32(address(&data->dragHalfSteps[axis]));
+            const BYTE step[12] = {
+                0x8B, 0x45, steps[axis], // mov eax, [ebp + step]: this frame's scaled step
+                0x25, 0xFF, 0xFF, 0xFF, 0x7F, // and eax, 0x7FFFFFFF: fabs
+                0x66, 0x0F, 0x6E, 0xC0 // movd xmm0, eax
+            };
+            cave.emit(step);
+            const BYTE unscale[4] = {0xF3, 0x0F, 0x5E, 0x05}; // divss xmm0, [scale]: the stock step, exactly
+            cave.emit(unscale);
+            cave.emit32(address(&data->scrollScale));
+            const BYTE truncate[4] = {0xF3, 0x0F, 0x2C, 0xC0}; // cvttss2si eax, xmm0: as ftol truncates it
+            cave.emit(truncate);
+            cave.emit8(0x03); // add eax, [dragHalfSteps]
+            cave.emit8(0x05);
+            cave.emit32(address(&data->dragHalfSteps[axis]));
+            cave.emit8(0xA3); // mov [dragHalfSteps], eax
+            cave.emit32(address(&data->dragHalfSteps[axis]));
+            const BYTE half[5] = {
+                0xD1, 0xF8, // sar eax, 1
+                0x89, 0x46, fields[axis] // mov [esi + field], eax
+            };
+            cave.emit(half);
+            cave.emit8(0xA3); // mov [dragTotals], eax
+            cave.emit32(address(&data->dragTotals[axis]));
+        }
+        cave.jmp(0x00839632);
+
+        // fld [ebp - 0xC] / push ecx / push ecx / fstp qword [esp]: the stock totals, ftol(fabs(step) + total) for each
+        const BYTE stockTotals[8] = {0xD9, 0x45, 0xF4, 0x51, 0x51, 0xDD, 0x1C, 0x24};
+        set.hook(0x00839602, stockTotals, totals);
+        // call fabs / fiadd [esi + 0x30] / call ftol / fld [ebp - 8] / fstp qword [esp] / mov [esi + 0x30], eax / call fabs /
+        // fiadd [esi + 0x34] / pop ecx / pop ecx / call ftol / mov [esi + 0x34], eax / pop edi / jmp: the rest, skipped
+        const BYTE stockTotalsRest[43] = {
+            0xE8, 0x7B, 0x39, 0x20, 0x00, 0xDA, 0x46, 0x30, 0xE8, 0x8D, 0x39, 0x20, 0x00, 0xD9, 0x45, 0xF8, 0xDD, 0x1C, 0x24, 0x89,
+            0x46, 0x30, 0xE8, 0x65, 0x39, 0x20, 0x00, 0xDA, 0x46, 0x34, 0x59, 0x59, 0xE8, 0x75, 0x39, 0x20, 0x00, 0x89, 0x46, 0x34,
+            0x5F, 0xEB, 0x6E
+        };
+        set.expectBytes(0x0083960A, stockTotalsRest);
+
+        // mov [this + 0x30], ebx / mov [this + 0x34], ebx: the resets of the right button going down (esi) and of the drag mode
+        // ending (ecx), which then mark the counts as stale: the complement of what they wrote never equals the total
+        const BYTE baseRegisters[2] = {0x5E, 0x59};
+        const uintptr_t resets[2] = {0x00838FCC, 0x00838DEB};
+        for (size_t i = 0; i < 2; i++) {
+            const BYTE reset[6] = {0x89, baseRegisters[i], 0x30, 0x89, baseRegisters[i], 0x34};
+            const uintptr_t entry = cave.here();
+            cave.emit(reset);
+            for (size_t axis = 0; axis < 2; axis++) {
+                cave.emit8(0x89); // mov [dragTotals], ebx
+                cave.emit8(0x1D);
+                cave.emit32(address(&data->dragTotals[axis]));
+                cave.emit8(0xF7); // not dword [dragTotals]
+                cave.emit8(0x15);
+                cave.emit32(address(&data->dragTotals[axis]));
+            }
+            cave.jmp(resets[i] + sizeof(reset));
+            set.hook(resets[i], reset, entry);
+        }
     }
 
     // A middle mouse click resets the camera rotation if the button comes up within 5 client frames of going down (0x0083ADF4
@@ -448,6 +530,7 @@ bool applyRenderRatePatch() {
     addSpellStore(set, cave, data);
     addFrameLimiter(set, cave, data);
     addCameraScroll(set, cave, data);
+    addDragTotals(set, cave, data);
     addMiddleClick(set);
 
     if (!commit(set, cave)) {

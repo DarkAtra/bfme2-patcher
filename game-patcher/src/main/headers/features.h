@@ -1,8 +1,8 @@
 #pragma once
 
 // Compile time switches for the patches game-patcher applies to the game process. Each one can be turned off on its own
-// by setting it to 0 here or on the compiler command line (e.g. /DGAME_PATCHER_RENDER_LOCK=0). A disabled patch is not
-// applied at all, so the game keeps its stock code for it.
+// by setting it to 0 here (e.g. #define GAME_PATCHER_RENDER_LOCK 0). A disabled patch is not applied at all, so the game keeps
+// its stock code for it.
 
 #ifndef GAME_PATCHER_CRASH_DUMP
 #define GAME_PATCHER_CRASH_DUMP 1
@@ -26,6 +26,10 @@
 
 #ifndef GAME_PATCHER_SSE_MATH
 #define GAME_PATCHER_SSE_MATH 1
+#endif
+
+#ifndef GAME_PATCHER_SSE_CONTROL_RESET
+#define GAME_PATCHER_SSE_CONTROL_RESET 1
 #endif
 
 #ifndef GAME_PATCHER_PATHFINDER_CELL_CENTRE
@@ -76,8 +80,8 @@
 #define GAME_PATCHER_MOUNT_TOGGLE_CRASH_FIX 1
 #endif
 
-#ifndef GAME_PATCHER_EVACUATE_CONTAINED_HEROES
-#define GAME_PATCHER_EVACUATE_CONTAINED_HEROES 1
+#ifndef GAME_PATCHER_EVACUATE_ALL_PASSENGERS
+#define GAME_PATCHER_EVACUATE_ALL_PASSENGERS 1
 #endif
 
 #ifndef GAME_PATCHER_SIEGE_WALL_TELEPORT_FIX
@@ -188,6 +192,11 @@ namespace features {
     // SSE math functions: floor, ceil, sqrt and fabs without the x87 control word switches of msvcr71 (sse_math.cpp).
     constexpr bool SSE_MATH = GAME_PATCHER_SSE_MATH != 0;
 
+    // SSE control reset: where the game resets the x87 control word (every logic frame among others), the SSE control
+    // register is reset to the Windows default too, so a driver that changed it cannot make this machine compute differently
+    // (sse_control_reset.cpp).
+    constexpr bool SSE_CONTROL_RESET = GAME_PATCHER_SSE_CONTROL_RESET != 0;
+
     // Pathfinder cell centre: the crowd cost computes the cell centre once per call instead of once per unit
     // (pathfinder_cell_centre.cpp).
     constexpr bool PATHFINDER_CELL_CENTRE = GAME_PATCHER_PATHFINDER_CELL_CENTRE != 0;
@@ -238,9 +247,9 @@ namespace features {
     // an object that is gone, e.g. the One Ring after it was picked up (mount_toggle_crash_fix.cpp).
     constexpr bool MOUNT_TOGGLE_CRASH_FIX = GAME_PATCHER_MOUNT_TOGGLE_CRASH_FIX != 0;
 
-    // Evacuate contained heroes: the EVACUATE button of a garrison or tunnel also sends out the heroes that can carry the One
-    // Ring, which it left inside (evacuate_contained_heroes.cpp).
-    constexpr bool EVACUATE_CONTAINED_HEROES = GAME_PATCHER_EVACUATE_CONTAINED_HEROES != 0;
+    // Evacuate all passengers: the EVACUATE button of a tunnel, garrison or transport also sends out passengers with a contain of
+    // their own, e.g. a Dwarven battle wagon, which it left inside (evacuate_all_passengers.cpp).
+    constexpr bool EVACUATE_ALL_PASSENGERS = GAME_PATCHER_EVACUATE_ALL_PASSENGERS != 0;
 
     // Siege wall teleport fix: a siege engine pushed against a wall is no longer lifted onto it; climbing a ramp onto the wall
     // still works (siege_wall_teleport_fix.cpp).

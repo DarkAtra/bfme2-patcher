@@ -30,10 +30,7 @@ namespace {
         set.expect(sequence, bodies);
         // mov eax, [ecx] / call [eax + 0x10]: the old body's health
         const BYTE health[5] = {0x8B, 0x01, 0xFF, 0x50, 0x10};
-        BYTE call[5] = {0xE8};
-        const auto displacement = static_cast<int32_t>(cave - (sequence + HEALTH_CALL + 5));
-        memcpy(call + 1, &displacement, sizeof(displacement));
-        set.replace(sequence + HEALTH_CALL, health, call);
+        set.redirectCall(sequence + HEALTH_CALL, health, cave);
         // push ecx / mov ecx, [ebp - 0x14] / fstp dword [esp] / call [ebx + 0xAC]: set it on the new body
         const BYTE setHealth[13] = {0x51, 0x8B, 0x4D, 0xEC, 0xD9, 0x1C, 0x24, 0xFF, 0x93, 0xAC, 0x00, 0x00, 0x00};
         set.expect(sequence + HEALTH_CALL + 5, setHealth);

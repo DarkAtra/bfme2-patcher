@@ -8,8 +8,9 @@
 //
 // Problem: without the Windows XP compatibility mode the game crashes before its first frame. The startup hardware report
 // (0x00A26C50) names the Windows version through 0x00A25630, which knows the NT major versions 4 and 5 and returns without
-// writing the name for any other; the report then prints the uninitialised pointer with "%s\t" (0x00A26C77). Windows 10 and 11
-// report major 10 to a process without the compatibility mode; the mode avoids the crash only by reporting 5.1.
+// writing the name for any other; the report then prints the uninitialised pointer with "%s\t" (0x00A26C77). The exe has no
+// manifest, so Windows 8 and later report 6.2 to it without the compatibility mode; the mode avoids the crash only by
+// reporting 5.1.
 // Fix: an NT major other than 4 and 5 takes the major 5 arm's last case, which names it "WINXX", the name the engine already gives
 // an NT version it does not list, and returns through the same four pops.
 //

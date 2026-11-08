@@ -17,7 +17,8 @@ namespace collision_pair_table {
     // the bigger table the patch puts behind the object (a prime: the game hashes with a remainder), and the factor of the hash
     // `idLow * MULTIPLIER + idHigh` that replaces the game's `idLow * 0x10000 + idHigh`: 0x10000 is nearly a quarter of this table's
     // size (4 * 0x10000 = BUCKETS + 5), so the game's hash would put whole families of pairs into the same bucket; the multiplier
-    // is the table size over the golden ratio, which spreads them evenly
+    // is the table size over the golden ratio, which spreads them evenly (for large ids the product wraps at 2^32 before the
+    // unsigned remainder; insertion, lookup and removal all hash the same way, so a pair is always found)
     constexpr uint32_t BUCKETS = 262139;
     constexpr uint32_t MULTIPLIER = 162011;
     constexpr uint32_t TABLE = OBJECT_SIZE;

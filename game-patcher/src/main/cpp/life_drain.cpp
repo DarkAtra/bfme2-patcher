@@ -152,6 +152,11 @@ bool applyLifeDrain() {
     };
     cave.emit(drainIndex);
     const size_t noDrain = forwardJcc(cave, JE);
+    // an index the table does not hold (padding some other path left set) is no drain either, rather than a read past the table
+    cave.emit8(0x3B); // cmp eax, [multiplierCount]
+    cave.emit8(0x05);
+    cave.emit32(address(&multiplierCount));
+    const size_t unknownIndex = forwardJcc(cave, JA);
     const BYTE damageStep[6] = {
         0x83, 0x66, 0x70, 0x00, // and dword [esi + 0x70], 0: the damage dealt
         0x50, // push eax
@@ -218,6 +223,7 @@ bool applyLifeDrain() {
     cave.jmp(DAMAGE_NOW);
 
     cave.resolveJcc(noDrain, plain);
+    cave.resolveJcc(unknownIndex, plain);
     cave.resolveJcc(heals, done);
     cave.resolveJcc(zero, done);
     cave.resolveJcc(noSource, drop);

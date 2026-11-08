@@ -1,7 +1,6 @@
 #include <windows.h>
 #include <dbghelp.h>
 #include <cstdint>
-#include <cstdio>
 #include <cwchar>
 
 #include "crash_dump.h"

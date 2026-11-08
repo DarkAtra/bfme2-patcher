@@ -76,14 +76,6 @@ namespace {
         }
         return reinterpret_cast<Update>(SKIRMISH_UPDATE)(screen, nullptr);
     }
-
-    void replaceUpdate(PatchSet &set, const uintptr_t vtable, const uintptr_t stock, const void *replacement) {
-        BYTE expected[4];
-        putInt(expected, static_cast<int>(stock));
-        BYTE replaced[4];
-        putInt(replaced, static_cast<int>(reinterpret_cast<uintptr_t>(replacement)));
-        set.replace(vtable + UPDATE_SLOT, expected, replaced);
-    }
 }
 
 bool instrumentation::applyAutoSkirmish() {
@@ -91,8 +83,8 @@ bool instrumentation::applyAutoSkirmish() {
     static PatchSet set;
     set.reset();
 
-    replaceUpdate(set, MAIN_MENU_VTABLE, MAIN_MENU_UPDATE, reinterpret_cast<const void *>(&onMainMenuUpdate));
-    replaceUpdate(set, SKIRMISH_VTABLE, SKIRMISH_UPDATE, reinterpret_cast<const void *>(&onSkirmishUpdate));
+    set.replaceSlot(MAIN_MENU_VTABLE + UPDATE_SLOT, MAIN_MENU_UPDATE, reinterpret_cast<uintptr_t>(&onMainMenuUpdate));
+    set.replaceSlot(SKIRMISH_VTABLE + UPDATE_SLOT, SKIRMISH_UPDATE, reinterpret_cast<uintptr_t>(&onSkirmishUpdate));
 
     // mov eax, the exception frame's handler / call / sub esp, 0x48 / push ebx / mov ebx, ecx / mov eax, [ebx + 0x288]: the state
     const BYTE mainMenuUpdate[22] = {

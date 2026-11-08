@@ -14,7 +14,7 @@
 #include "construction_initial_health.h"
 #include "crash_dump.h"
 #include "cooldown_modifiers.h"
-#include "evacuate_contained_heroes.h"
+#include "evacuate_all_passengers.h"
 #include "group_ability_conditions.h"
 #include "group_ability_cooldown.h"
 #include "pathfinder_crowd_cost.h"
@@ -41,6 +41,7 @@
 #include "os_name_fallback.h"
 #include "render_rate.h"
 #include "sse_math.h"
+#include "sse_control_reset.h"
 #include "tooltip_kill_count.h"
 #include "tooltip_timers.h"
 #include "tooltip_upgrade_description.h"
@@ -56,8 +57,13 @@ void runPatch(const bool enabled, const wchar_t *name, bool (*apply)(), const wc
     if (recorded.patchCount < patching::MAX_RECORDS) {
         recorded.patches[recorded.patchCount++] = {name, applied};
     }
-    if (!applied && count < MAX_FAILED_PATCHES) {
+    if (applied) {
+        return;
+    }
+    if (count < MAX_FAILED_PATCHES) {
         failed[count++] = name;
+    } else {
+        failed[MAX_FAILED_PATCHES - 1] = L"(more failed patches than MAX_FAILED_PATCHES holds)";
     }
 }
 
@@ -74,6 +80,7 @@ size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
     runPatch(features::RENDER_SCOPE_NAMES, L"Render scope names", applyRenderScopeNames, failed, count);
     runPatch(features::RENDER_LOCK, L"Render lock", applyRenderLock, failed, count);
     runPatch(features::SSE_MATH, L"SSE math functions", applySseMath, failed, count);
+    runPatch(features::SSE_CONTROL_RESET, L"SSE control reset", applySseControlReset, failed, count);
     runPatch(features::PATHFINDER_CELL_CENTRE, L"Pathfinder cell centre", applyPathfinderCellCentre, failed, count);
     runPatch(features::PATHFINDER_CROWD_COST_MEMO, L"Pathfinder crowd cost", applyPathfinderCrowdCost, failed, count);
     runPatch(features::COLLISION_PAIR_TABLE, L"Collision pair table", applyCollisionPairTable, failed, count);
@@ -84,7 +91,7 @@ size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
     runPatch(features::PRODUCTION_IDS, L"Game-wide production ids", applyProductionIds, failed, count);
     runPatch(features::AI_BUILD_QUEUE, L"AI build queue", applyAiBuildQueue, failed, count);
     runPatch(features::MOUNT_TOGGLE_CRASH_FIX, L"Mount toggle crash fix", applyMountToggleCrashFix, failed, count);
-    runPatch(features::EVACUATE_CONTAINED_HEROES, L"Evacuate contained heroes", applyEvacuateContainedHeroes, failed, count);
+    runPatch(features::EVACUATE_ALL_PASSENGERS, L"Evacuate all passengers", applyEvacuateAllPassengers, failed, count);
     runPatch(features::SIEGE_WALL_TELEPORT_FIX, L"Siege wall teleport fix", applySiegeWallTeleportFix, failed, count);
     runPatch(features::AI_REBUILD_TARGETS, L"AI rebuild targets", applyAiRebuildTargets, failed, count);
     runPatch(features::GROUP_ABILITY_CONDITIONS, L"Group ability conditions", applyGroupAbilityConditions, failed, count);

@@ -72,14 +72,12 @@ namespace {
             0x85, 0xC9 // test ecx, ecx
         };
         cave.emit(controlBar);
-        const size_t noControlBar = cave.size;
-        cave.jcc(JE, 0);
+        const size_t noControlBar = forwardJcc(cave, JE);
         cave.emit8(0x50); // push eax
         cave.call(FIND_COMMAND_SET);
         const BYTE commandSetTest[2] = {0x85, 0xC0}; // test eax, eax
         cave.emit(commandSetTest);
-        const size_t noCommandSet = cave.size;
-        cave.jcc(JE, 0);
+        const size_t noCommandSet = forwardJcc(cave, JE);
         const BYTE firstSlot[4] = {0x8B, 0xF0, 0x33, 0xDB}; // mov esi, eax / xor ebx, ebx
         cave.emit(firstSlot);
 
@@ -89,16 +87,13 @@ namespace {
         cave.call(COMMAND_BUTTON);
         const BYTE buttonTest[4] = {0x8B, 0xF8, 0x85, 0xFF}; // mov edi, eax / test edi, edi
         cave.emit(buttonTest);
-        const size_t emptySlot = cave.size;
-        cave.jcc(JE, 0);
+        const size_t emptySlot = forwardJcc(cave, JE);
         const BYTE commandTest[4] = {0x83, 0x7F, 0x14, SPECIAL_POWER_COMMAND}; // cmp dword [edi + 0x14], 0x18
         cave.emit(commandTest);
-        const size_t otherCommand = cave.size;
-        cave.jcc(JNE, 0);
+        const size_t otherCommand = forwardJcc(cave, JNE);
         const BYTE powerTest[5] = {0x8B, 0x4F, 0x44, 0x85, 0xC9}; // mov ecx, [edi + 0x44] / test ecx, ecx
         cave.emit(powerTest);
-        const size_t noPower = cave.size;
-        cave.jcc(JE, 0);
+        const size_t noPower = forwardJcc(cave, JE);
         cave.call(FINAL_OVERRIDE);
         const BYTE samePower[9] = {
             0x8B, 0x40, 0x14, // mov eax, [eax + 0x14]: the button's power id
@@ -106,15 +101,13 @@ namespace {
             0x3B, 0x41, 0x14 // cmp eax, [ecx + 0x14]
         };
         cave.emit(samePower);
-        const size_t otherPower = cave.size;
-        cave.jcc(JNE, 0);
+        const size_t otherPower = forwardJcc(cave, JNE);
         const BYTE stateArguments[4] = {0xFF, 0x75, 0x08, 0x57}; // push [ebp + 8] / push edi
         cave.emit(stateArguments);
         cave.call(BUTTON_STATE);
         const BYTE disabledTest[3] = {0x83, 0xF8, DISABLED}; // cmp eax, 3
         cave.emit(disabledTest);
-        const size_t notDisabled = cave.size;
-        cave.jcc(JNE, 0);
+        const size_t notDisabled = forwardJcc(cave, JNE);
         const BYTE refuse[2] = {0x32, 0xC0}; // xor al, al
         cave.emit(refuse);
         const size_t refused = cave.size;

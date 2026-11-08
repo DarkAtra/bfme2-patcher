@@ -21,9 +21,10 @@
 // A partial recharge (startPowerRecharge's argument below 1, 0x00896F16) stores only a ready frame computed from today's frames
 // and leaves + 4 at the last full recharge's: the hook there stores today's frames too, so + 4 always belongs to the running
 // cooldown (otherwise the sweep would apply a changed modifier a second time) and the button clock divides by the right frames.
-// Left alone: paused cooldowns (+ 0xC), SharedSyncedTimer powers (template + 0x59), and the second startPowerRecharge
-// (0x00991500, 3 vtables), which keeps no duration. With no recharge modifier changing during a cooldown nothing changes. The
-// sweep costs one indirect call per module per logic frame. Derived from pySAGE's recharge-rescale
+// Left alone: paused cooldowns (+ 0xC), SharedSyncedTimer powers (template + 0x59), objects without a controlling player (a cast
+// starts no recharge for them, 0x00896E60), and the second startPowerRecharge (0x00991500, 3 vtables), which keeps no duration.
+// With no recharge modifier changing during a cooldown nothing changes. The sweep costs one indirect call per module per logic
+// frame. Derived from pySAGE's recharge-rescale
 // (https://github.com/ClementJ18/pySAGE).
 
 using namespace patching;
@@ -141,7 +142,7 @@ namespace {
         cave.emit(player);
         cave.call(GET_CONTROLLING_PLAYER);
         cave.emit(resultTest);
-        const size_t noPlayer = forwardJcc(cave, JE);
+        out[outs++] = forwardJcc(cave, JE);
         const BYTE respectsDiscount[7] = {
             0x8B, 0x4D, 0xE0, // mov ecx, [ebp - 0x20]
             0xF6, 0x41, 0x18, 0x20 // test byte [ecx + 0x18], 0x20: RESPECT_RECHARGE_TIME_DISCOUNT
@@ -207,7 +208,6 @@ namespace {
         for (size_t i = 0; i < outs; i++) {
             cave.resolveJcc(out[i], powerOut);
         }
-        cave.resolveJcc(noPlayer, framesNow);
         cave.resolveJcc(noDiscount, framesNow);
 
         return power;
@@ -407,12 +407,8 @@ bool applyCooldownModifiers() {
     set.expect(START_POWER_RECHARGE_OTHER, rechargeOther);
     const BYTE rechargeOtherStore[8] = {0x89, 0x46, 0x04, 0x5B, 0x5F, 0x5E, 0xC9, 0xC2};
     set.expect(START_POWER_RECHARGE_OTHER + 0x11C, rechargeOtherStore);
-    BYTE slot[4];
-    putInt(slot, static_cast<int>(START_POWER_RECHARGE));
-    set.expect(START_POWER_RECHARGE_SLOT, slot);
-    BYTE otherSlot[4];
-    putInt(otherSlot, static_cast<int>(START_POWER_RECHARGE_OTHER));
-    set.expect(START_POWER_RECHARGE_OTHER_SLOT, otherSlot);
+    set.expectSlot(START_POWER_RECHARGE_SLOT, START_POWER_RECHARGE);
+    set.expectSlot(START_POWER_RECHARGE_OTHER_SLOT, START_POWER_RECHARGE_OTHER);
 
     // the callees
     const BYTE modifierMultiplier[14] = {0xE8, 0x74, 0xFC, 0xFF, 0xFF, 0x85, 0xC0, 0x75, 0x05, 0x32, 0xC0, 0xC2, 0x10, 0x00};

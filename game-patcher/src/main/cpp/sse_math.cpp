@@ -11,7 +11,7 @@
 // Fix: points the four imports at SSE2 versions that return bit identical results without touching the control word;
 // arguments they do not handle exactly still go to the library.
 //
-// The game rounds through msvcr71's floor and ceil (415 and 144 call sites), most of them in the pathfinder, the terrain
+// The game rounds through msvcr71's floor and ceil (416 and 144 call sites), most of them in the pathfinder, the terrain
 // height lookup and the cell conversions. Both functions switch the x87 rounding mode with fldcw around frndint and
 // switch it back, and fldcw stalls the pipeline. In the slow frames of a profiled mid game that is a fifth of the samples
 // of the game thread.
@@ -22,9 +22,10 @@
 // infinities, magnitudes of 2^31 and above) is handed to the original function, so those keep the library's behaviour.
 //
 // sqrt (205 call sites, two per unit the pathfinder's crowd cost looks at) pays the same price: when the control word is
-// not the 0x27F it wants, it loads 0x27F, takes the root with fsqrt and loads the old word back. A double precision fsqrt
-// is correctly rounded, which is what sqrtsd computes, so the roots are the same bits. Negative arguments and NaN keep
-// going through the library.
+// not 0x27F, it loads one with the caller's precision bits, all exceptions masked and rounding to nearest (_load_CW,
+// 0x7F | precision), takes the root with fsqrt and loads the old word back. fsqrt rounds once to that precision: at 53 bits
+// that is what sqrtsd computes, at 24 bits what sqrtss computes for an argument that is a float, so the roots are the same
+// bits. Other precisions, other arguments at 24 bits, negative arguments and NaN keep going through the library.
 //
 // fabs changes the control word too (about 100 ns a call). The replacement clears the sign bit, infinities and NaN keep going
 // through the library.
@@ -58,8 +59,7 @@ namespace {
         // test eax, eax
         const BYTE testResult[2] = {0x85, 0xC0};
         cave.emit(testResult);
-        const size_t nonZeroJcc = cave.size;
-        cave.jcc(JNE, 0);
+        const size_t nonZeroJcc = forwardJcc(cave, JNE);
 
         // The result is zero, which is -0.0 or +0.0 depending on the argument: keep only its sign bit.
         // psrlq xmm0, 63 / psllq xmm0, 63 / movapd xmm1, xmm0
@@ -143,8 +143,7 @@ namespace sse_math {
         cave.emit(exponent);
         const BYTE exponentEnd[2] = {0xF0, 0x7F};
         cave.emit(exponentEnd);
-        const size_t fallbackJcc = cave.size;
-        cave.jcc(JE, 0);
+        const size_t fallbackJcc = forwardJcc(cave, JE);
 
         // and eax, 0x7FFFFFFF / mov ecx, [esp + 4] / push eax / push ecx / fld qword [esp] / add esp, 8 / ret
         const BYTE clearSign[5] = {0x25, 0xFF, 0xFF, 0xFF, 0x7F};
@@ -169,8 +168,7 @@ namespace sse_math {
         cave.emit(load);
         const BYTE compare[8] = {0x66, 0x0F, 0xEF, 0xC9, 0x66, 0x0F, 0x2F, 0xC1};
         cave.emit(compare);
-        const size_t negativeJcc = cave.size;
-        cave.jcc(JB, 0);
+        const size_t negativeJcc = forwardJcc(cave, JB);
 
         // The library keeps the precision bits of the caller's control word, so the root comes out rounded to 24 or to 53
         // bits depending on them. sub esp, 4 / fnstcw [esp] / movzx eax, word [esp] / add esp, 4 / and eax, 0x300
@@ -180,14 +178,12 @@ namespace sse_math {
         cave.emit(readControlWordEnd);
         const BYTE precisionBits[5] = {0x25, 0x00, 0x03, 0x00, 0x00};
         cave.emit(precisionBits);
-        const size_t singleJcc = cave.size;
-        cave.jcc(JE, 0);
+        const size_t singleJcc = forwardJcc(cave, JE);
 
         // 53 bits (0x200): cmp eax, 0x200 / jne fallback / sqrtsd xmm1, xmm0 / jmp finish
         const BYTE double53[5] = {0x3D, 0x00, 0x02, 0x00, 0x00};
         cave.emit(double53);
-        const size_t otherPrecisionJcc = cave.size;
-        cave.jcc(JNE, 0);
+        const size_t otherPrecisionJcc = forwardJcc(cave, JNE);
         const BYTE root[4] = {0xF2, 0x0F, 0x51, 0xC8};
         cave.emit(root);
         const size_t finishJmp = cave.size;
@@ -198,8 +194,7 @@ namespace sse_math {
         cave.resolveJcc(singleJcc, cave.here());
         const BYTE narrow[12] = {0xF2, 0x0F, 0x5A, 0xC8, 0xF3, 0x0F, 0x5A, 0xD1, 0x66, 0x0F, 0x2E, 0xD0};
         cave.emit(narrow);
-        const size_t notAFloatJcc = cave.size;
-        cave.jcc(JNE, 0);
+        const size_t notAFloatJcc = forwardJcc(cave, JNE);
         const BYTE rootSingle[8] = {0xF3, 0x0F, 0x51, 0xC9, 0xF3, 0x0F, 0x5A, 0xC9};
         cave.emit(rootSingle);
 
@@ -258,11 +253,7 @@ bool applySseMath() {
         const uintptr_t replacement = replacements[i].emit(cave, fallbackSlot);
 
         // the slot must still hold the library function, otherwise something else already took it over
-        BYTE expected[4];
-        BYTE replaced[4];
-        putInt(expected, static_cast<int>(originals[i]));
-        putInt(replaced, static_cast<int>(replacement));
-        set.replace(replacements[i].importSlot, expected, replaced);
+        set.replaceSlot(replacements[i].importSlot, originals[i], replacement);
     }
 
     if (!commit(set, cave)) {

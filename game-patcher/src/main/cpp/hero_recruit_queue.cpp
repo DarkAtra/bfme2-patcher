@@ -93,9 +93,7 @@ bool applyHeroRecruitQueue() {
     // mov eax, [esp + 4] / test eax, eax / je / mov eax, [eax + 0x48]
     const BYTE nextEntry[11] = {0x8B, 0x44, 0x24, 0x04, 0x85, 0xC0, 0x74, 0x05, 0x8B, 0x40, 0x48};
     set.expect(NEXT_ENTRY, nextEntry);
-    BYTE nextEntryAddress[4];
-    putInt(nextEntryAddress, static_cast<int>(NEXT_ENTRY));
-    set.expect(NEXT_ENTRY_SLOT, nextEntryAddress);
+    set.expectSlot(NEXT_ENTRY_SLOT, NEXT_ENTRY);
 
     const BYTE reviveProgress[4] = {0x55, 0x8B, 0xEC, 0x56};
     set.expect(REVIVE_PROGRESS, reviveProgress);

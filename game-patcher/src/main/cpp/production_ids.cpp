@@ -43,7 +43,7 @@ bool applyProductionIds() {
 
     auto *data = reinterpret_cast<CaveData *>(caveMemory);
     data->lastId = 0;
-    const auto lastId = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&data->lastId));
+    const uint32_t lastId = address(&data->lastId);
 
     Cave cave(caveMemory);
     cave.size = sizeof(CaveData);
@@ -63,12 +63,10 @@ bool applyProductionIds() {
     // mov eax, [ecx + 0x10] / lea edx, [eax + 1] / mov [ecx + 0x10], edx / ret
     const BYTE perBuilding[10] = {0x8B, 0x41, 0x10, 0x8D, 0x50, 0x01, 0x89, 0x51, 0x10, 0xC3};
     BYTE gameWide[10] = {0xB8, 0, 0, 0, 0, 0xFF, 0x00, 0x8B, 0x00, 0xC3}; // mov eax, lastId / inc [eax] / mov eax, [eax] / ret
-    memcpy(gameWide + 1, &lastId, sizeof(lastId));
+    putInt(gameWide + 1, static_cast<int>(lastId));
     set.replace(REQUEST_UNIQUE_UNIT_ID, perBuilding, gameWide);
 
-    BYTE slot[4];
-    putInt(slot, static_cast<int>(REQUEST_UNIQUE_UNIT_ID));
-    set.expect(REQUEST_UNIQUE_UNIT_ID_SLOT, slot);
+    set.expectSlot(REQUEST_UNIQUE_UNIT_ID_SLOT, REQUEST_UNIQUE_UNIT_ID);
 
     set.hook(BUILD_WORLD, buildWorldHead, resetOnBuildWorld);
 

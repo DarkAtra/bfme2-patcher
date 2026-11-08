@@ -264,10 +264,12 @@ namespace {
 
     // palantir buttons describe the selection, which does not own their power: the player's spellbook does
     void *findPowerModule(uint8_t *frame, void *power, void *&owner) {
-        owner = field<void *>(frame, -0x1C);
-        if (owner != nullptr) {
-            void *module = reinterpret_cast<GetSpecialPowerModule>(GET_SPECIAL_POWER_MODULE)(owner, nullptr, power);
+        owner = nullptr;
+        void *selection = field<void *>(frame, -0x1C);
+        if (selection != nullptr) {
+            void *module = reinterpret_cast<GetSpecialPowerModule>(GET_SPECIAL_POWER_MODULE)(selection, nullptr, power);
             if (module != nullptr) {
+                owner = selection;
                 return module;
             }
         }
@@ -362,7 +364,11 @@ namespace {
         if (thing == nullptr || (field<uint8_t>(thing, 0x11F) & 0x40) != 0) {
             return;
         }
-        const int frames = reinterpret_cast<ThingBuildTime>(THING_BUILD_TIME)(thing, nullptr, field<void *>(frame, -0x20), field<void *>(frame, -0x1C), -1);
+        void *player = field<void *>(frame, -0x20);
+        if (player == nullptr) {
+            return;
+        }
+        const int frames = reinterpret_cast<ThingBuildTime>(THING_BUILD_TIME)(thing, nullptr, player, field<void *>(frame, -0x1C), -1);
         if (frames > 0) {
             addLine(frame, "TOOLTIP:BuildTime", "TOOLTIP:BuildTimeLabels", frames);
         }
@@ -399,7 +405,7 @@ bool applyTooltipTimers() {
     cave.emit(loadButton);
     cave.emit8(0x89); // mov [capturedButton], ecx
     cave.emit8(0x0D);
-    cave.emit32(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&capturedButton)));
+    cave.emit32(address(&capturedButton));
     cave.jmp(BUTTON_CAPTURE_RESUME);
 
     const uintptr_t join = cave.here();
@@ -429,7 +435,8 @@ bool applyTooltipTimers() {
     // mov eax, [eax + 0xFC] / mov [ebp - 0x1C], eax: the selected object / jmp / mov [ebp - 0x1C], edi
     const BYTE objectSlot[14] = {0x8B, 0x80, 0xFC, 0x00, 0x00, 0x00, 0x89, 0x45, 0xE4, 0xEB, 0x03, 0x89, 0x7D, 0xE4};
     set.expect(BUTTON_CAPTURE - 0x39, objectSlot);
-    // cmp ecx, edi / ... / je 0x008086AB: a null button skips to the join, before the hook
+    // cmp ecx, edi / ... / je 0x008086AB: a null button, captured as null, jumps to just before the join, so the hook runs and adds
+    // nothing
     const BYTE nullButton[20] = {
         0x3B, 0xCF, 0xC6, 0x45, 0xFC, 0x06, 0xC6, 0x45, 0xF1, 0x01, 0xC6, 0x45, 0xF0, 0x00, 0x0F, 0x84, 0x98, 0x0B, 0x00, 0x00
     };

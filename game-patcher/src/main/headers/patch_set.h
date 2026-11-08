@@ -74,6 +74,24 @@ namespace patching {
             patch->write = true;
         }
 
+        void replaceSlot(const uintptr_t address, const uintptr_t stock, const uintptr_t target) {
+            const auto expectedPointer = static_cast<uint32_t>(stock);
+            const auto replacementPointer = static_cast<uint32_t>(target);
+            BYTE expected[sizeof(expectedPointer)];
+            BYTE replacement[sizeof(replacementPointer)];
+            memcpy(expected, &expectedPointer, sizeof(expectedPointer));
+            memcpy(replacement, &replacementPointer, sizeof(replacementPointer));
+            replace(address, expected, replacement);
+        }
+
+        // Expects the pointer `stock` at `address`, e.g. a vtable or jump table entry.
+        void expectSlot(const uintptr_t address, const uintptr_t stock) {
+            const auto expectedPointer = static_cast<uint32_t>(stock);
+            BYTE expected[sizeof(expectedPointer)];
+            memcpy(expected, &expectedPointer, sizeof(expectedPointer));
+            expect(address, expected);
+        }
+
         // Replaces the window with a jump to `target` and pads the rest of it with nops.
         template<size_t N>
         void hook(const uintptr_t address, const BYTE (&expected)[N], const uintptr_t target) {
@@ -177,11 +195,20 @@ namespace patching {
         // Points the rel32 of a jcc emitted earlier at `target`. Emit the jcc with any target, e.g. 0, and keep `size`
         // from before it as `jccOffset`.
         void resolveJcc(const size_t jccOffset, const uintptr_t target) {
+            // after an overflow the jcc was never emitted, and its offset may lie at the end of the allocation
+            if (jccOffset + 6 > size) {
+                overflow = true;
+                return;
+            }
             const auto displacement = static_cast<uint32_t>(target - (reinterpret_cast<uintptr_t>(base) + jccOffset + 6));
             memcpy(base + jccOffset + 2, &displacement, sizeof(displacement));
         }
 
         void resolveJmp(const size_t jmpOffset, const uintptr_t target) {
+            if (jmpOffset + 5 > size) {
+                overflow = true;
+                return;
+            }
             const auto displacement = static_cast<uint32_t>(target - (reinterpret_cast<uintptr_t>(base) + jmpOffset + 5));
             memcpy(base + jmpOffset + 1, &displacement, sizeof(displacement));
         }

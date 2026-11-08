@@ -25,18 +25,21 @@
 // waits there for a place. The order is recorded and the call ends at the switch's common tail, as a handled command does. A move
 // to a unit already in the network only records where it is going. The AI repeats its orders: the same order again to a unit on
 // its way in is absorbed. Any other order (except idle) to a unit on its way in detaches it: it is no longer sent in, waited for
-// or rerouted; but a battalion that still enters (they get such orders on their way in) is taken out as usual. A builder (porter)
-// with a pending task is never routed, and one that gets a task on its way in is detached: its tasks run in its dozer machine
-// without an order through aiDoCommand, and its AI state stays idle meanwhile.
+// or rerouted; but a battalion that still enters (they get such orders on their way in) is taken out as usual, without getting
+// its order again afterwards. A builder (porter) with a pending task is never routed, and one that gets a task on its way in is
+// detached: its tasks run in its dozer machine without an order through aiDoCommand, and its AI state stays idle meanwhile.
 //
 // Every logic frame (TunnelContain::update's vtable slot, run by every shaft every frame once its player has a tunnel network;
 // the pass runs once per logic frame): a waiting unit enters while the network has room left after the units already walking in; a
 // unit in the network is taken out after SETTLE_SECONDS (the exit a shaft's Evacuate gives it, again every EXIT_RETRY_SECONDS, from
 // the third attempt on at the shaft it is in) at the shaft nearest its goal, and LEAVE_SECONDS after it is out it gets its order
-// again (a move the AI gives it meanwhile replaces the recorded one; a builder that got a task meanwhile gets nothing). A unit whose enter fails or that is not in
-// after ENTER_SECONDS gets its order back as a walk and is not routed again for REROUTE_PAUSE_SECONDS; when its enter failed
-// because the network filled up, it waits for a place instead (until ENTER_SECONDS are up). A unit that is not in after
-// ENTER_SECONDS and is busy with something else (neither idle nor with its shaft as its AI's goal object) only loses its route.
+// again (a move the AI gives it meanwhile replaces the recorded one; after any other order but idle it gets nothing, nor does a
+// builder that got a task meanwhile). A unit whose enter fails or that is not in after ENTER_SECONDS gets its order back and is
+// not routed again for REROUTE_PAUSE_SECONDS; when its enter failed because the network filled up, it waits for a place
+// instead (until ENTER_SECONDS are up). A unit that is not in after ENTER_SECONDS and is busy with something else (neither idle
+// nor with its shaft as its AI's goal object) only loses its route. An order given back is the recorded one with its source
+// (aiDoCommand treats an order from the player and one from the AI differently); the enters, walks and exits of the route itself
+// come from the AI.
 //
 // All of it is logic state of the computer players, which every client simulates: the table holds object ids and is walked in slot
 // order, distances are single precision SSE arithmetic, times are logic frames, and the table is emptied whenever the logic is
@@ -184,6 +187,7 @@ namespace {
     struct Route {
         uint32_t unit; // ObjectID, 0 for a free slot
         uint32_t command;
+        uint32_t source;
         float goal[3];
         int32_t shots;
         uint32_t tunnel; // ObjectID of the shaft it goes in at
@@ -192,6 +196,7 @@ namespace {
         Phase phase;
         uint8_t attempts;
         uint8_t idlePasses;
+        bool detached; // detached on its way in: does not get its order again after its exit
     };
 
     struct Network {
@@ -219,11 +224,6 @@ namespace {
     bool issuing;
     uint32_t lastPassFrame = 0xFFFFFFFF;
     uint32_t lastSeenFrame;
-
-    template<typename T>
-    T slot(const void *object, const uint32_t offset) {
-        return reinterpret_cast<T>(*reinterpret_cast<const uintptr_t *>(*reinterpret_cast<const uint8_t *const *>(object) + offset));
-    }
 
     void forgetRoutes() {
         memset(routes, 0, sizeof(routes));
@@ -367,12 +367,14 @@ namespace {
         return findRoute(0);
     }
 
-    void record(Route &route, const uint8_t *unit, const uint8_t *parms, const uint8_t *player) {
+    void record(Route &route, const uint8_t *unit, const uint8_t *parms, const uint32_t source, const uint8_t *player) {
         route.unit = field<uint32_t>(unit, OBJECT_ID);
         route.command = field<uint32_t>(parms, 0);
+        route.source = source;
         memcpy(route.goal, parms + PARMS_POSITION, sizeof(route.goal));
         route.shots = field<int32_t>(parms, PARMS_SHOTS);
         route.player = reinterpret_cast<uintptr_t>(player);
+        route.detached = false;
     }
 
     bool sameOrder(const Route &route, const uint8_t *parms) {
@@ -421,9 +423,9 @@ namespace {
     void reissue(uint8_t *unit, const Route &route) {
         issuing = true;
         if (route.command == ATTACK_MOVE_TO_POSITION) {
-            reinterpret_cast<AttackMoveOrder>(AI_ATTACK_MOVE_TO_POSITION)(aiOf(unit), nullptr, route.goal, route.shots, FROM_AI);
+            reinterpret_cast<AttackMoveOrder>(AI_ATTACK_MOVE_TO_POSITION)(aiOf(unit), nullptr, route.goal, route.shots, route.source);
         } else {
-            reinterpret_cast<MoveOrder>(AI_MOVE_TO_POSITION)(aiOf(unit), nullptr, route.goal, FROM_AI);
+            reinterpret_cast<MoveOrder>(AI_MOVE_TO_POSITION)(aiOf(unit), nullptr, route.goal, route.source);
         }
         issuing = false;
     }
@@ -451,9 +453,14 @@ namespace {
         const bool contained = field<void *>(unit, OBJECT_CONTAINED_BY) != nullptr;
 
         if ((source != FROM_AI && source != FROM_PLAYER) || (command != MOVE_TO_POSITION && command != ATTACK_MOVE_TO_POSITION)) {
-            if (route != nullptr && command != IDLE && !contained && (route->phase == ENTERING || route->phase == QUEUED)) {
-                route->phase = DETACHED;
-                route->deadline = now + framesFor(ENTER_SECONDS);
+            if (route != nullptr && command != IDLE && !contained) {
+                if (route->phase == ENTERING || route->phase == QUEUED) {
+                    route->phase = DETACHED;
+                    route->detached = true;
+                    route->deadline = now + framesFor(ENTER_SECONDS);
+                } else if (route->phase == LEAVING) {
+                    route->unit = 0;
+                }
             }
             return false;
         }
@@ -475,7 +482,7 @@ namespace {
             } else if (route->phase != INSIDE && route->phase != EXITING) {
                 settle(*route, now);
             }
-            record(*route, unit, parms, player);
+            record(*route, unit, parms, source, player);
             return true;
         }
 
@@ -488,7 +495,7 @@ namespace {
                 return false;
             }
             if (route->phase == LEAVING && now < route->deadline) {
-                record(*route, unit, parms, reinterpret_cast<const uint8_t *>(route->player));
+                record(*route, unit, parms, source, reinterpret_cast<const uint8_t *>(route->player));
                 return true;
             }
             route->unit = 0;
@@ -519,7 +526,7 @@ namespace {
         if (route == nullptr) {
             return false;
         }
-        record(*route, unit, parms, player);
+        record(*route, unit, parms, source, player);
         route->tunnel = field<uint32_t>(entry, OBJECT_ID);
         route->deadline = now + framesFor(ENTER_SECONDS);
         route->attempts = 0;
@@ -537,6 +544,11 @@ namespace {
     void advance(Route &route, const uint32_t now) {
         uint8_t *unit = findObject(route.unit);
         if (unit == nullptr || field<void *>(unit, OBJECT_AI_UPDATE) == nullptr) {
+            route.unit = 0;
+            return;
+        }
+        // the stock game idles a unit that changes owner (Object::onCapture, 0x00696F0A): it keeps neither its route nor its order
+        if (field<void *>(unit, OBJECT_CONTAINED_BY) == nullptr && reinterpret_cast<uintptr_t>(controllingPlayer(unit)) != route.player) {
             route.unit = 0;
             return;
         }
@@ -584,7 +596,7 @@ namespace {
         }
         if (route.phase == LEAVING) {
             if (now >= route.deadline) {
-                if (!builderBusy(unit)) {
+                if (!route.detached && !builderBusy(unit)) {
                     reissue(unit, route);
                 }
                 route.unit = 0;
@@ -599,6 +611,7 @@ namespace {
         }
         if (builderBusy(unit)) {
             route.phase = DETACHED;
+            route.detached = true;
             route.deadline = now + framesFor(ENTER_SECONDS);
             return;
         }
@@ -710,9 +723,7 @@ bool applyAiTunnelRouting() {
     // commands end
     const BYTE doCommandTail[17] = {0x8B, 0x4D, 0xEC, 0x6A, 0x46, 0xE8, 0xA3, 0x2D, 0xDE, 0xFF, 0x84, 0xC0, 0x74, 0x1E, 0x83, 0xFB, 0x02};
     set.expect(DO_COMMAND_TAIL, doCommandTail);
-    BYTE idleCaseSlot[4];
-    putInt(idleCaseSlot, static_cast<int>(DO_COMMAND_IDLE_CASE));
-    set.expect(DO_COMMAND_IDLE_CASE_SLOT, idleCaseSlot);
+    set.expectSlot(DO_COMMAND_IDLE_CASE_SLOT, DO_COMMAND_IDLE_CASE);
     // mov eax, [edi] / push ebx / mov ecx, edi / call [eax + 0x60] / jmp the tail
     const BYTE idleCase[13] = {0x8B, 0x07, 0x53, 0x8B, 0xCF, 0xFF, 0x50, 0x60, 0xE9, 0x01, 0x05, 0x00, 0x00};
     set.expect(DO_COMMAND_IDLE_CASE, idleCase);
@@ -782,10 +793,10 @@ bool applyAiTunnelRouting() {
     set.expect(FIND_OBJECT_BY_ID, findObjectById);
     const BYTE findObjectByIdReturn[3] = {0xC2, 0x04, 0x00};
     set.expect(FIND_OBJECT_BY_ID_RETURN, findObjectByIdReturn);
-    const BYTE controllingPlayer[18] = {
+    const BYTE controllingPlayerCode[18] = {
         0x8B, 0x89, 0x1C, 0x03, 0x00, 0x00, 0x85, 0xC9, 0x74, 0x05, 0xE9, 0xE8, 0x46, 0x11, 0x00, 0x33, 0xC0, 0xC3
     };
-    set.expect(GET_CONTROLLING_PLAYER, controllingPlayer);
+    set.expect(GET_CONTROLLING_PLAYER, controllingPlayerCode);
     // mov edx, [esp + 4] / xor eax, eax / push esi / mov esi, ecx
     const BYTE statusTest[9] = {0x8B, 0x54, 0x24, 0x04, 0x33, 0xC0, 0x56, 0x8B, 0xF1};
     set.expect(STATUS_TEST, statusTest);
@@ -800,7 +811,7 @@ bool applyAiTunnelRouting() {
 
     // the player's tunnel nearest a point: the tracker (Player + 0x308), its list of tunnel ids (+ 8, nodes {next, prev, id}),
     // findObjectById, and the squared distance in the ground plane from Object + 0x38
-    const BYTE nearestTunnel[129] = {
+    const BYTE nearestTunnelCode[129] = {
         0x55, 0x8B, 0xEC, 0x51, 0x51, 0x85, 0xC0, 0x75, 0x02, 0xC9, 0xC3, 0x8B, 0x80, 0x08, 0x03, 0x00, 0x00, 0x83, 0x65, 0xFC,
         0x00, 0x0F, 0x57, 0xC0, 0x56, 0x83, 0xC0, 0x08, 0x57, 0x8B, 0x38, 0x8B, 0x37, 0xF3, 0x0F, 0x11, 0x45, 0xF8, 0xEB, 0x4E,
         0xFF, 0x76, 0x08, 0x8B, 0x0D, 0x2C, 0x41, 0xDE, 0x00, 0xE8, 0xFC, 0xCD, 0xAF, 0xFF, 0x85, 0xC0, 0x74, 0x3A, 0x83, 0x7D,
@@ -809,7 +820,7 @@ bool applyAiTunnelRouting() {
         0x10, 0x45, 0xF8, 0x0F, 0x2F, 0xC1, 0x76, 0x08, 0xF3, 0x0F, 0x11, 0x4D, 0xF8, 0x89, 0x45, 0xFC, 0x8B, 0x36, 0x3B, 0xF7,
         0x75, 0xAE, 0x8B, 0x45, 0xFC, 0x5F, 0x5E, 0xC9, 0xC3
     };
-    set.expectBytes(PLAYER_NEAREST_TUNNEL, nearestTunnel);
+    set.expectBytes(PLAYER_NEAREST_TUNNEL, nearestTunnelCode);
     // mov ecx, [ebx + 0x14]: the guard's owner / cmp dword [ecx + 0x27C], 0: what contains it
     const BYTE guardContainedTest[10] = {0x8B, 0x4B, 0x14, 0x83, 0xB9, 0x7C, 0x02, 0x00, 0x00, 0x00};
     set.expect(GUARD_CONTAINED_TEST, guardContainedTest);
@@ -827,9 +838,7 @@ bool applyAiTunnelRouting() {
     const BYTE objectIdRead[3] = {0x8B, 0x47, 0x74};
     set.expect(OBJECT_ID_READ, objectIdRead);
     // TunnelContain::isValidContainerFor(object, checkCapacity, ...), ret 0xC: the contain's own tests, then the tracker's
-    BYTE isValidContainerForSlot[4];
-    putInt(isValidContainerForSlot, static_cast<int>(TUNNEL_IS_VALID_CONTAINER_FOR));
-    set.expect(TUNNEL_CONTAIN_VTABLE + IS_VALID_CONTAINER_FOR_SLOT, isValidContainerForSlot);
+    set.expectSlot(TUNNEL_CONTAIN_VTABLE + IS_VALID_CONTAINER_FOR_SLOT, TUNNEL_IS_VALID_CONTAINER_FOR);
     const BYTE tunnelIsValidContainerFor[55] = {
         0x56, 0xFF, 0x74, 0x24, 0x10, 0x8B, 0xF1, 0x6A, 0x00, 0xFF, 0x74, 0x24, 0x10, 0xE8, 0x93, 0xC0, 0xFF, 0xFF, 0x84, 0xC0,
         0x74, 0x1D, 0x8B, 0x4E, 0xE8, 0xE8, 0x1F, 0xA6, 0xE0, 0xFF, 0xFF, 0x74, 0x24, 0x0C, 0x8B, 0x80, 0x08, 0x03, 0x00, 0x00,
@@ -847,21 +856,15 @@ bool applyAiTunnelRouting() {
     const BYTE hordeContainHordeInterface[10] = {0x8D, 0x41, 0xE0, 0x81, 0xC1, 0xFC, 0x00, 0x00, 0x00, 0xF7};
     set.expect(HORDE_CONTAIN_HORDE_INTERFACE, hordeContainHordeInterface);
     // the horde interface's exit: the horde's own AIUpdate (+ 0x260) exits the container
-    BYTE hordeExitSlot[4];
-    putInt(hordeExitSlot, static_cast<int>(HORDE_EXIT));
-    set.expect(HORDE_EXIT_SLOT, hordeExitSlot);
+    set.expectSlot(HORDE_EXIT_SLOT, HORDE_EXIT);
     const BYTE hordeExit[27] = {
         0x8B, 0x81, 0xEC, 0xFE, 0xFF, 0xFF, 0x8B, 0x80, 0x60, 0x02, 0x00, 0x00, 0x85, 0xC0, 0x74, 0x08, 0x8D, 0x48, 0x20, 0xE9,
         0xE6, 0xFB, 0xEF, 0xFF, 0xC2, 0x08, 0x00
     };
     set.expectBytes(HORDE_EXIT, hordeExit);
 
+    set.replaceSlot(TUNNEL_CONTAIN_UPDATE_SLOT, TUNNEL_CONTAIN_UPDATE, reinterpret_cast<uintptr_t>(&onTunnelUpdate));
     // TunnelContain::update: push ecx / push esi / push edi / mov esi, ecx / call; ... its plain ret
-    BYTE tunnelUpdateSlot[4];
-    putInt(tunnelUpdateSlot, static_cast<int>(TUNNEL_CONTAIN_UPDATE));
-    BYTE tunnelUpdateReplacement[4];
-    putInt(tunnelUpdateReplacement, static_cast<int>(reinterpret_cast<uintptr_t>(&onTunnelUpdate)));
-    set.replace(TUNNEL_CONTAIN_UPDATE_SLOT, tunnelUpdateSlot, tunnelUpdateReplacement);
     const BYTE tunnelUpdate[10] = {0x51, 0x56, 0x57, 0x8B, 0xF1, 0xE8, 0x25, 0xB6, 0xFF, 0xFF};
     set.expect(TUNNEL_CONTAIN_UPDATE, tunnelUpdate);
     const BYTE tunnelUpdateReturn[5] = {0x40, 0x5F, 0x5E, 0x59, 0xC3}; // inc eax / pop edi / pop esi / pop ecx / ret
@@ -876,12 +879,8 @@ bool applyAiTunnelRouting() {
     // GameLogic::reset: mov eax, the exception frame's handler / call / push ecx / push ecx / push ebx / push esi / mov esi, ecx
     const BYTE logicReset[16] = {0xB8, 0x3F, 0x41, 0xB8, 0x00, 0xE8, 0xB4, 0xFC, 0x40, 0x00, 0x51, 0x51, 0x53, 0x56, 0x8B, 0xF1};
     set.expect(GAME_LOGIC_RESET, logicReset);
-    BYTE logicResetSlot[4];
-    putInt(logicResetSlot, static_cast<int>(GAME_LOGIC_RESET));
-    BYTE logicResetReplacement[4];
-    putInt(logicResetReplacement, static_cast<int>(reset));
     for (const uintptr_t resetSlot : GAME_LOGIC_RESET_SLOTS) {
-        set.replace(resetSlot, logicResetSlot, logicResetReplacement);
+        set.replaceSlot(resetSlot, GAME_LOGIC_RESET, reset);
     }
 
     forgetRoutes();

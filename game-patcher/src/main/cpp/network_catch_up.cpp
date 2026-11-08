@@ -92,8 +92,7 @@ bool applyNetworkCatchUp() {
     cave.call(reinterpret_cast<uintptr_t>(&catchUpTo));
     const BYTE testDecision[5] = {0x83, 0xC4, 0x04, 0x85, 0xC0}; // add esp, 4 / test eax, eax
     cave.emit(testDecision);
-    const size_t toCatchUp = cave.size;
-    cave.jcc(JNE, 0);
+    const size_t toCatchUp = forwardJcc(cave, JNE);
     cave.emit8(0x61); // popad
     // the stock decision: idiv [logicRate] / mov ecx, eax / cmp ecx, 6 / jge past the loop
     const BYTE stockDecision[11] = {0xF7, 0x3D, 0x08, 0xF6, 0xD9, 0x00, 0x8B, 0xC8, 0x83, 0xF9, 0x06};
@@ -156,8 +155,8 @@ bool applyNetworkCatchUp() {
     const BYTE scaled[12] = {0xF3, 0x0F, 0x2A, 0xC0, 0xF3, 0x0F, 0x59, 0x05, 0xD4, 0x83, 0xBD, 0x00};
     set.expect(0x0063A117, scaled);
     const BYTE stockBase[8] = {0xF3, 0x0F, 0x58, 0x05, 0xA8, 0xE0, 0xBD, 0x00};
-    BYTE base[8] = {0xF3, 0x0F, 0x58, 0x05};
-    putInt(base + 4, static_cast<int>(reinterpret_cast<uintptr_t>(&slowdownBase)));
+    BYTE base[8] = {0xF3, 0x0F, 0x58, 0x05, 0x00, 0x00, 0x00, 0x00}; // addss xmm0, [slowdownBase]: its address goes in below
+    putInt(base + 4, static_cast<int>(address(&slowdownBase)));
     set.replace(SLOWDOWN_BASE, stockBase, base);
     const BYTE minimum[5] = {0x0F, 0x2F, 0xC8, 0x77, 0x03};
     set.expect(0x0063A12B, minimum);
