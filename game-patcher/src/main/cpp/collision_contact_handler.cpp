@@ -14,7 +14,7 @@
 //
 // The collision broad phase's contact pass (0x00B6D060) calls the contact handler of an object's collider (0x0068EEC3) twice for
 // every colliding pair in every update. The handler walks the object's module array (about 37 modules) and asks every module for
-// its collide interface: a virtual call through the vtable at module + 0xC, slot 4. For all but about three modules per object
+// its collide interface: a virtual call through the vtable at module + 0xC, + 4. For all but about three modules per object
 // that call lands in the game's default getter (0x00851E97, `xor eax, eax / ret`), so most of the pass is spent calling a function
 // that always returns null, a cache miss on the module and an indirect call per module.
 //

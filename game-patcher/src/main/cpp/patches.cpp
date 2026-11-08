@@ -38,7 +38,6 @@
 #include "mount_toggle_crash_fix.h"
 #include "network_catch_up.h"
 #include "network_command_send.h"
-#include "render_interpolation.h"
 #include "render_rate.h"
 #include "sse_math.h"
 #include "tooltip_kill_count.h"
@@ -81,7 +80,6 @@ size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
     runPatch(features::HEALTH_BAR_CRASH_FIX, L"Health bar crash fix", applyHealthBarCrashFix, failed, count);
     runPatch(features::AI_CONSTRUCTION_SITE_PRODUCTION, L"AI production from construction sites", applyAiConstructionSiteProduction, failed, count);
     runPatch(features::AI_ABILITY_CONDITIONS, L"AI ability conditions", applyAiAbilityConditions, failed, count);
-    runPatch(features::RENDER_INTERPOLATION, L"Render interpolation", applyRenderInterpolation, failed, count);
     runPatch(features::PRODUCTION_IDS, L"Game-wide production ids", applyProductionIds, failed, count);
     runPatch(features::AI_BUILD_QUEUE, L"AI build queue", applyAiBuildQueue, failed, count);
     runPatch(features::MOUNT_TOGGLE_CRASH_FIX, L"Mount toggle crash fix", applyMountToggleCrashFix, failed, count);

@@ -64,10 +64,6 @@
 #define GAME_PATCHER_AI_ABILITY_CONDITIONS 1
 #endif
 
-#ifndef GAME_PATCHER_RENDER_INTERPOLATION
-#define GAME_PATCHER_RENDER_INTERPOLATION 0
-#endif
-
 #ifndef GAME_PATCHER_PRODUCTION_IDS
 #define GAME_PATCHER_PRODUCTION_IDS 0
 #endif
@@ -223,12 +219,6 @@ namespace features {
     // AI ability conditions: the AI no longer casts abilities whose button the state of the unit disables, which the player
     // cannot press either, e.g. a silenced hero's abilities (ai_ability_conditions.cpp).
     constexpr bool AI_ABILITY_CONDITIONS = GAME_PATCHER_AI_ABILITY_CONDITIONS != 0;
-
-    // Render interpolation: moving units, turning and animations no longer take a double step once per logic frame; the
-    // interpolation between two logic frames is spread evenly over the frames the client draws (render_interpolation.cpp).
-    // Off: the double step only exists in the 2.02 delay fix build (lotrbfme2ep1.fix), which hides sub-frame 1; the build
-    // without it, which 60 fps is written for, already steps evenly.
-    constexpr bool RENDER_INTERPOLATION = GAME_PATCHER_RENDER_INTERPOLATION != 0;
 
     // Game-wide production ids: production ids are counted for the whole game instead of per building, so recruiting a hero
     // at a second building while another hero is coming no longer takes the money and starts nothing (production_ids.cpp).

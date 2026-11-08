@@ -12,9 +12,10 @@
 //
 // AISpecialPowerUpdate with SpecialPowerAIType = AI_SPELLBOOK_REBUILD builds a behaviour whose target picker (0x009E7744, slot
 // 7 of the vtable at 0x00C8DEEC) walks the AI player's structure list and takes the first one below half health. A building
-// under construction starts with 1 hit point, so the newest construction site always wins. The hook tests each candidate's
-// UNDER_CONSTRUCTION status first and goes on to the next candidate when it is set. The stock loop has no test for a structure
-// id that no longer resolves to an object and would crash on it; the hook skips such an id too.
+// under construction starts with 1 hit point (10 % with CONSTRUCTION_INITIAL_HEALTH), so the newest construction site always
+// wins. The hook tests each candidate's UNDER_CONSTRUCTION status first and goes on to the next candidate when it is set. The
+// stock loop has no test for a structure id that no longer resolves to an object and would crash on it; the hook skips such an
+// id too.
 // Derived from pySAGE's ai-rebuild-gate (https://github.com/ClementJ18/pySAGE).
 
 using namespace patching;

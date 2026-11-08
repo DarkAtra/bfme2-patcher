@@ -120,8 +120,9 @@ namespace {
         set.replace(0x00632631, stockStrideEcx, strideEcx);
         set.replace(0x00632ACF, stockStrideEcx, strideEcx);
 
-        // the catch-up loop, which would run several logic phases in one client frame, stays skipped because
-        // clientRate / logicRate is at least 6
+        // the catch-up loop, which runs several logic phases in one client frame, stays skipped by this decision because
+        // clientRate / logicRate is at least 6; the network catch-up (network_catch_up.cpp) hooks it to run the loop on a peer
+        // that does not host
         const BYTE catchUp[13] = {
             0xF7, 0x3D, 0x08, 0xF6, 0xD9, 0x00, // idiv dword [logicRate]
             0x8B, 0xC8,                         // mov ecx, eax

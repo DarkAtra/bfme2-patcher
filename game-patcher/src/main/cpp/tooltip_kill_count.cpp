@@ -143,7 +143,7 @@ bool applyTooltipKillCount() {
     static PatchSet set;
     set.reset();
 
-    // inc [esi + 0x490] / mov eax, [esi + 0x27C] / inc [esi + 0x48C]: the killer's kills, then its battalion's
+    // inc [esi + 0x490] / mov eax, [esi + 0x27C] / inc [esi + 0x48C]: the killer's kills, and its container for the battalion test
     const BYTE killScorer[18] = {0xFF, 0x86, 0x90, 0x04, 0x00, 0x00, 0x8B, 0x86, 0x7C, 0x02, 0x00, 0x00, 0xFF, 0x86, 0x8C, 0x04, 0x00, 0x00};
     set.expect(KILL_SCORER_COUNT, killScorer);
     // test eax, eax / je / mov ecx, [eax + 4] / test byte [ecx + 0x115], 0x20 (KindOf HORDE)
