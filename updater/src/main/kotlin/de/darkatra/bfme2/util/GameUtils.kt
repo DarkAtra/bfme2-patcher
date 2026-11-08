@@ -2,6 +2,7 @@ package de.darkatra.bfme2.util
 
 import de.darkatra.bfme2.LOGGER
 import de.darkatra.bfme2.UpdaterContext
+import de.darkatra.bfme2.patch.PatchService
 import de.darkatra.injector.Injector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -12,6 +13,8 @@ object GameUtils {
     suspend fun launchGame(rotwkHomeDir: Path): Unit = withContext(Dispatchers.IO) {
 
         LOGGER.info("Launching game without game-patcher...")
+
+        PatchService.configureCompatModeIfNecessary(hookEnabled = false)
 
         val gameProcess = ProcessUtils.run(
             rotwkHomeDir.resolve(UpdaterContext.ROTWK_EXE_NAME).normalize(),
@@ -27,6 +30,8 @@ object GameUtils {
     ): Unit = withContext(Dispatchers.IO) {
 
         LOGGER.info("Launching game with game-patcher...")
+
+        PatchService.configureCompatModeIfNecessary(hookEnabled = true)
 
         val gameArgs = buildList {
             if (debugModeEnabled) {

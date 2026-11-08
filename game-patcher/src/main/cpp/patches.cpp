@@ -38,6 +38,7 @@
 #include "mount_toggle_crash_fix.h"
 #include "network_catch_up.h"
 #include "network_command_send.h"
+#include "os_name_fallback.h"
 #include "render_rate.h"
 #include "sse_math.h"
 #include "tooltip_kill_count.h"
@@ -103,6 +104,7 @@ size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
     runPatch(features::MATERIAL_PARAMETERS, L"Material parameters", applyMaterialParameters, failed, count);
     runPatch(features::HEAT_HAZE_SQUARES, L"Heat haze squares", applyHeatHazeSquares, failed, count);
     runPatch(features::AI_TUNNEL_ROUTING, L"AI tunnel routing", applyAiTunnelRouting, failed, count);
+    runPatch(features::OS_NAME_FALLBACK, L"OS name fallback", applyOsNameFallback, failed, count);
     runPatch(features::FPS_COUNTER && hasArgument(L"-showfps"), L"FPS counter", applyFpsCounter, failed, count);
 
     if (hasArgument(L"-debugmode")) {

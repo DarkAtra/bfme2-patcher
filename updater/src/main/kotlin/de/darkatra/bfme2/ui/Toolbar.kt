@@ -11,6 +11,7 @@ import de.darkatra.bfme2.UpdaterContext
 import de.darkatra.bfme2.game.Game
 import de.darkatra.bfme2.game.OptionFileService
 import de.darkatra.bfme2.patch.PatchConstants
+import de.darkatra.bfme2.patch.PatchService
 import de.darkatra.bfme2.registry.RegistryService
 import de.darkatra.bfme2.ui.UpdaterModel.State.ErrorDetails
 import java.awt.Desktop
@@ -131,6 +132,7 @@ fun Toolbar(
                                 hookEnabled -> RegistryService.setExpansionDebugger(UpdaterContext.applicationHome)
                                 else -> RegistryService.resetExpansionDebugger()
                             }
+                            PatchService.configureCompatModeIfNecessary(hookEnabled)
                         } catch (e: Exception) {
                             updaterModel.setErrorDetails(
                                 ErrorDetails(

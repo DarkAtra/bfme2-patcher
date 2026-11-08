@@ -30,7 +30,7 @@ object PatchService {
         progressListener?.onPatchStarted()
 
         updateRegistryVersionIfNecessary()
-        configureCompatModeIfNecessary()
+        configureCompatModeIfNecessary(RegistryService.hasExpansionDebugger())
 
         ensureActive()
 
@@ -200,18 +200,22 @@ object PatchService {
     }
 
     /**
-     * This is required so that the game launches with Windows 11 24H2.
      * Fullscreen optimizations are disabled because with them, Direct3D 9's Present periodically stalls for ~50 ms while
      * other processes (e.g. RGB or hardware monitoring software) query the display.
+     * Without game-patcher the game also needs the Windows XP compatibility mode to launch on Windows 10 and 11 (its os name
+     * fallback patch fixes that), and the game then requires admin permissions.
      */
-    private fun configureCompatModeIfNecessary() {
+    fun configureCompatModeIfNecessary(hookEnabled: Boolean) {
 
         if (!UpdaterContext.isRunningAsJar()) {
             LOGGER.fine("Not configuring compat mode since the updater is running in dev mode.")
             return
         }
 
-        val expansionCompatMode = "~ DISABLEDXMAXIMIZEDWINDOWEDMODE WINXPSP3"
+        val expansionCompatMode = when (hookEnabled) {
+            true -> "~ DISABLEDXMAXIMIZEDWINDOWEDMODE"
+            false -> "~ DISABLEDXMAXIMIZEDWINDOWEDMODE WINXPSP3"
+        }
         if (RegistryService.getExpansionCompatMode() == expansionCompatMode) {
             LOGGER.info("Registry compat mode is already configured. No changes required.")
             return

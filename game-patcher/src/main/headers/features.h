@@ -156,6 +156,10 @@
 #define GAME_PATCHER_AI_TUNNEL_ROUTING 1
 #endif
 
+#ifndef GAME_PATCHER_OS_NAME_FALLBACK
+#define GAME_PATCHER_OS_NAME_FALLBACK 1
+#endif
+
 #ifndef GAME_PATCHER_FPS_COUNTER
 #define GAME_PATCHER_FPS_COUNTER 1
 #endif
@@ -318,6 +322,10 @@ namespace features {
     // that is clearly shorter than walking, in at the shaft nearest to it and out at the shaft nearest its goal; when the network
     // is full it waits for room (ai_tunnel_routing.cpp).
     constexpr bool AI_TUNNEL_ROUTING = GAME_PATCHER_AI_TUNNEL_ROUTING != 0;
+
+    // OS name fallback: the game no longer crashes at start on Windows 10 and 11 without the Windows XP compatibility mode; the
+    // startup hardware report names an unknown Windows version "WINXX" instead of printing an unset pointer (os_name_fallback.cpp).
+    constexpr bool OS_NAME_FALLBACK = GAME_PATCHER_OS_NAME_FALLBACK != 0;
 
     // FPS counter: with -showfps on the game's command line, the frames per second are shown in the top left corner
     // (fps_counter.cpp).
