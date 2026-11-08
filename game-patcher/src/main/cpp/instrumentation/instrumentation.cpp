@@ -3,12 +3,15 @@
 #include <cstdint>
 #include <cstring>
 
+#include "command_line.h"
+#include "instrumentation/auto_skirmish.h"
 #include "instrumentation/call_timing.h"
 #include "instrumentation/full_memory_dump.h"
 #include "instrumentation/instrumentation.h"
 #include "instrumentation/network_stats.h"
 #include "instrumentation/pathfinder_timing.h"
 #include "instrumentation/stats.h"
+#include "instrumentation/test_banner.h"
 #include "patches.h"
 
 // The measuring tools, applied after the patches when the game is started with -debugmode (the updater adds it in debug mode).
@@ -71,4 +74,6 @@ void instrumentation::apply(const wchar_t *(&failed)[MAX_FAILED_PATCHES], size_t
     runPatch(timers, L"Call timers", applyCallTiming, failed, count);
     runPatch(true, L"Network stats", applyNetworkStats, failed, count);
     runPatch(fullMemoryDumpRequested(), L"Full memory dump", applyFullMemoryDump, failed, count);
+    runPatch(hasArgument(L"-autoskirmish"), L"Auto skirmish", applyAutoSkirmish, failed, count);
+    runPatch(true, L"Test banner", applyTestBanner, failed, count);
 }

@@ -1,0 +1,173 @@
+#pragma once
+
+#include <windows.h>
+#include <cstdint>
+
+#include "patch_set.h"
+
+// A line of text drawn on the client's screen the way the debug view draws its own (0x0044A2C7): TheDisplayStringManager's
+// newDisplayString (vtable + 0x38), a font from TheFontLibrary (0x006186E0), setText (+ 0x04), setColors (+ 0x28) and draw with a
+// drop shadow (+ 0x38), on the W3DDisplayString vtable (0x00BE58D8). Draw it while the display draws a frame.
+
+namespace display_text {
+
+    constexpr uintptr_t THE_DISPLAY_STRING_MANAGER = 0x00DE4518;
+    constexpr uintptr_t THE_FONT_LIBRARY = 0x00DE3D7C;
+    // the W3DDisplayStringManager vtable and its newDisplayString
+    constexpr uintptr_t DISPLAY_STRING_MANAGER_VTABLE = 0x00BDDD48;
+    constexpr uintptr_t NEW_DISPLAY_STRING = 0x0048FFAA;
+    constexpr uint32_t NEW_DISPLAY_STRING_SLOT = 0x38;
+    // thiscall(font library, const AsciiString &name, float size, bool bold), ret 0xC
+    constexpr uintptr_t GET_FONT = 0x006186E0;
+    // thiscall(string, const char *)
+    constexpr uintptr_t ASCII_STRING_CONSTRUCT = 0x004374E0;
+    // thiscall(string)
+    constexpr uintptr_t ASCII_STRING_RELEASE = 0x00435D50;
+    // cdecl(destination, const wchar_t *format, ...): replaces the destination
+    constexpr uintptr_t UNICODE_STRING_FORMAT = 0x00ADF750;
+    constexpr uintptr_t DISPLAY_STRING_VTABLE = 0x00BE58D8;
+    constexpr uint32_t SET_TEXT = 0x04;
+    constexpr uint32_t SET_FONT = 0x18;
+    constexpr uint32_t SET_COLORS = 0x28;
+    constexpr uint32_t DRAW = 0x38;
+    // thiscall(string, UnicodeString text), ret 4: releases the text it is handed
+    constexpr uintptr_t DISPLAY_STRING_SET_TEXT = 0x0075A4F4;
+    constexpr uintptr_t DISPLAY_STRING_SET_FONT = 0x00505FA8;
+    constexpr uintptr_t DISPLAY_STRING_SET_COLORS = 0x0050569A;
+    constexpr uintptr_t DISPLAY_STRING_DRAW = 0x00505CFA;
+
+    constexpr char FONT_NAME[] = "Arial";
+    constexpr float FONT_SIZE = 12.0f;
+    constexpr bool FONT_BOLD = true;
+    constexpr int DROP_OFFSET = 1;
+    constexpr uint32_t DROP_COLOR = 0xFF000000;
+
+    typedef void *(__fastcall *NewDisplayString)(void *manager, void *);
+    typedef void *(__fastcall *GetFont)(void *library, void *, const void *name, float size, bool bold);
+    typedef void (__fastcall *AsciiStringConstruct)(void **string, void *, const char *text);
+    typedef void (__fastcall *StringRelease)(void **string, void *);
+    typedef void (__cdecl *FormatNumber)(void **destination, const wchar_t *format, unsigned value);
+    typedef void (__cdecl *FormatText)(void **destination, const wchar_t *format, const wchar_t *value);
+    // the UnicodeString is passed by value, and is a single pointer
+    typedef void (__fastcall *SetText)(void *displayString, void *, void *text);
+    typedef void (__fastcall *SetFont)(void *displayString, void *, void *font);
+    typedef void (__fastcall *SetColors)(void *displayString, void *, uint32_t color, uint32_t dropColor);
+    typedef void (__fastcall *Draw)(void *displayString, void *, int x, int y, int xDrop, int yDrop);
+
+    template<typename T>
+    T slot(const void *object, const uint32_t offset) {
+        return reinterpret_cast<T>(*reinterpret_cast<const uintptr_t *>(*reinterpret_cast<const uint8_t *const *>(object) + offset));
+    }
+
+    // a display string in the font and colour, or null while the display has no string manager or font library yet
+    inline void *create(const uint32_t color) {
+        void *manager = *reinterpret_cast<void **>(THE_DISPLAY_STRING_MANAGER);
+        void *library = *reinterpret_cast<void **>(THE_FONT_LIBRARY);
+        if (manager == nullptr || library == nullptr) {
+            return nullptr;
+        }
+        void *text = slot<NewDisplayString>(manager, NEW_DISPLAY_STRING_SLOT)(manager, nullptr);
+        if (text == nullptr) {
+            return nullptr;
+        }
+        void *name = nullptr;
+        reinterpret_cast<AsciiStringConstruct>(ASCII_STRING_CONSTRUCT)(&name, nullptr, FONT_NAME);
+        void *font = reinterpret_cast<GetFont>(GET_FONT)(library, nullptr, &name, FONT_SIZE, FONT_BOLD);
+        reinterpret_cast<StringRelease>(ASCII_STRING_RELEASE)(&name, nullptr);
+        if (font != nullptr) {
+            slot<SetFont>(text, SET_FONT)(text, nullptr, font);
+        }
+        slot<SetColors>(text, SET_COLORS)(text, nullptr, color, DROP_COLOR);
+        return text;
+    }
+
+    inline void setNumber(void *displayString, const wchar_t *format, const unsigned value) {
+        void *text = nullptr;
+        reinterpret_cast<FormatNumber>(UNICODE_STRING_FORMAT)(&text, format, value);
+        slot<SetText>(displayString, SET_TEXT)(displayString, nullptr, text);
+    }
+
+    inline void setText(void *displayString, const wchar_t *value) {
+        void *text = nullptr;
+        reinterpret_cast<FormatText>(UNICODE_STRING_FORMAT)(&text, L"%s", value);
+        slot<SetText>(displayString, SET_TEXT)(displayString, nullptr, text);
+    }
+
+    inline void draw(void *displayString, const int x, const int y) {
+        slot<Draw>(displayString, DRAW)(displayString, nullptr, x, y, DROP_OFFSET, DROP_OFFSET);
+    }
+
+    // the bytes the functions above rely on
+    inline void expect(patching::PatchSet &set) {
+        using patching::putInt;
+
+        // the debug view's text, made the same way: newDisplayString through + 0x38, then setFont through + 0x18
+        const BYTE debugViewText[23] = {
+            0x8B, 0x0D, 0x18, 0x45, 0xDE, 0x00, 0x8B, 0x01, 0xFF, 0x50, 0x38, 0x89, 0x83, 0xCC, 0x01, 0x00, 0x00, 0x8B, 0x10, 0x57,
+            0x8B, 0xC8, 0xFF
+        };
+        set.expect(0x0044A373, debugViewText);
+        // its font: mov ecx, [TheFontLibrary] / fstp [esp] / lea eax, [ebp - 0x24] / push eax / mov [ebp - 4], esi / call getFont
+        const BYTE debugViewFont[21] = {
+            0x8B, 0x0D, 0x7C, 0x3D, 0xDE, 0x00, 0xD9, 0x1C, 0x24, 0x8D, 0x45, 0xDC, 0x50, 0x89, 0x75, 0xFC, 0xE8, 0x83, 0xE3, 0x1C,
+            0x00
+        };
+        set.expect(0x0044A348, debugViewFont);
+        // and its draw: setColors(white, black) through + 0x28, draw(3, 3, 1, 1) through + 0x38
+        const BYTE debugViewDrawText[24] = {
+            0x8B, 0x8B, 0xCC, 0x01, 0x00, 0x00, 0x8B, 0x01, 0x68, 0x00, 0x00, 0x00, 0xFF, 0x6A, 0xFF, 0xFF, 0x50, 0x28, 0x8B, 0x8B,
+            0xCC, 0x01, 0x00, 0x00
+        };
+        set.expect(0x00449C1F, debugViewDrawText);
+        const BYTE debugViewDrawCall[13] = {0x8B, 0x01, 0x6A, 0x01, 0x6A, 0x01, 0x6A, 0x03, 0x6A, 0x03, 0xFF, 0x50, 0x38};
+        set.expect(0x00449C37, debugViewDrawCall);
+
+        // the manager's newDisplayString, which builds a W3DDisplayString: push 0x1F8 / call / ... / call its constructor
+        BYTE newDisplayStringSlot[4];
+        putInt(newDisplayStringSlot, static_cast<int>(NEW_DISPLAY_STRING));
+        set.expect(DISPLAY_STRING_MANAGER_VTABLE + NEW_DISPLAY_STRING_SLOT, newDisplayStringSlot);
+        const BYTE newDisplayString[8] = {0xB8, 0xAB, 0x40, 0xB7, 0x00, 0xE8, 0x3C, 0xCF};
+        set.expect(NEW_DISPLAY_STRING, newDisplayString);
+        // mov dword [esi], the W3DDisplayString vtable, in that constructor
+        const BYTE displayStringVtable[6] = {0xC7, 0x06, 0xD8, 0x58, 0xBE, 0x00};
+        set.expect(0x00505981, displayStringVtable);
+
+        // the four slots and the functions behind them
+        BYTE setTextSlot[4];
+        putInt(setTextSlot, static_cast<int>(DISPLAY_STRING_SET_TEXT));
+        set.expect(DISPLAY_STRING_VTABLE + SET_TEXT, setTextSlot);
+        BYTE setFontSlot[4];
+        putInt(setFontSlot, static_cast<int>(DISPLAY_STRING_SET_FONT));
+        set.expect(DISPLAY_STRING_VTABLE + SET_FONT, setFontSlot);
+        BYTE setColorsSlot[4];
+        putInt(setColorsSlot, static_cast<int>(DISPLAY_STRING_SET_COLORS));
+        set.expect(DISPLAY_STRING_VTABLE + SET_COLORS, setColorsSlot);
+        BYTE drawSlot[4];
+        putInt(drawSlot, static_cast<int>(DISPLAY_STRING_DRAW));
+        set.expect(DISPLAY_STRING_VTABLE + DRAW, drawSlot);
+        // ... / lea ecx, [ebp + 8]: the text / call releaseBuffer / ... / ret 4
+        const BYTE setTextRelease[16] = {0x83, 0x4D, 0xFC, 0xFF, 0x8D, 0x4D, 0x08, 0xE8, 0x7C, 0xC2, 0xCD, 0xFF, 0x8B, 0x4D, 0xF4, 0x5F};
+        set.expect(DISPLAY_STRING_SET_TEXT + 0x34, setTextRelease);
+        const BYTE setFont[8] = {0x56, 0x57, 0x8B, 0x7C, 0x24, 0x0C, 0x85, 0xFF};
+        set.expect(DISPLAY_STRING_SET_FONT, setFont);
+        // mov edx, [esp + 4] / push esi / push 4 / lea eax, [ecx + 0x1B8]: four text colours, then four drop colours
+        const BYTE setColors[13] = {0x8B, 0x54, 0x24, 0x04, 0x56, 0x6A, 0x04, 0x8D, 0x81, 0xB8, 0x01, 0x00, 0x00};
+        set.expect(DISPLAY_STRING_SET_COLORS, setColors);
+        const BYTE draw[8] = {0x55, 0x8B, 0xEC, 0x51, 0x51, 0x56, 0x8B, 0xF1};
+        set.expect(DISPLAY_STRING_DRAW, draw);
+
+        // push ebp / mov ebp, esp / fld [ebp + 0xC]: the size
+        const BYTE getFont[6] = {0x55, 0x8B, 0xEC, 0xD9, 0x45, 0x0C};
+        set.expect(GET_FONT, getFont);
+        // ret 0xC
+        const BYTE getFontReturn[3] = {0xC2, 0x0C, 0x00};
+        set.expect(GET_FONT + 0x3F, getFontReturn);
+        const BYTE asciiStringConstruct[8] = {0x8B, 0x54, 0x24, 0x04, 0x85, 0xD2, 0x56, 0x8B};
+        set.expect(ASCII_STRING_CONSTRUCT, asciiStringConstruct);
+        const BYTE asciiStringRelease[7] = {0x6A, 0xFF, 0x68, 0xF8, 0x0E, 0xB7, 0x00};
+        set.expect(ASCII_STRING_RELEASE, asciiStringRelease);
+        // mov ecx, [esp + 8]: the format / lea eax, [esp + 0xC]: the values / push eax / push ecx
+        const BYTE format[10] = {0x8B, 0x4C, 0x24, 0x08, 0x8D, 0x44, 0x24, 0x0C, 0x50, 0x51};
+        set.expect(UNICODE_STRING_FORMAT, format);
+    }
+}

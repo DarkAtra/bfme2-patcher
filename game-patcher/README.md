@@ -89,8 +89,8 @@ Every patch can be switched off on its own in `src/main/headers/features.h` (e.g
 ### Debug mode
 
 With `-debugmode` on the game's command line (the updater adds it in debug mode) the dll also applies the measuring tools in
-`src/main/cpp/instrumentation` after the patches. Without it none of them is applied, so they cost nothing. They only read the game's
-state:
+`src/main/cpp/instrumentation` after the patches. Without it none of them is applied, so they cost nothing. Except for the auto
+skirmish, they only read the game's state:
 
 | Tool             | What it does                                                                                                                                                |
 |------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -98,6 +98,8 @@ state:
 | Call timers      | Time the calls a frame is made of (engine, logic, client, render scopes, file reads, Direct3D resource creation, AI state machines).                        |
 | Network stats    | In networked matches, write the local command delays and how each logic frame started to `.patcher\network-<date>-<time>.csv` in the game folder.           |
 | Full memory dump | Only with `GAME_PATCHER_FULL_DUMP=1` in the game's environment: writes a dump with all memory to the temp folder at the first bad write in the game's code. |
+| Auto skirmish    | Only with `-autoskirmish` on the game's command line: starts the skirmish set up last (`Skirmish.ini`) without anyone pressing a button.                    |
+| Test banner      | Shows the text a measuring run hands it (the harness: its label and phase) in the top left corner; nothing without a run.                                   |
 
 The timers record into a file mapping named `Local\GamePatcherStats`, which the measuring tools read while the game runs.
 
