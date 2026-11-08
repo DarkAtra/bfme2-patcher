@@ -156,6 +156,10 @@
 #define GAME_PATCHER_HEAT_HAZE_SQUARES 1
 #endif
 
+#ifndef GAME_PATCHER_AI_TUNNEL_ROUTING
+#define GAME_PATCHER_AI_TUNNEL_ROUTING 1
+#endif
+
 #ifndef GAME_PATCHER_FPS_COUNTER
 #define GAME_PATCHER_FPS_COUNTER 1
 #endif
@@ -319,6 +323,11 @@ namespace features {
     // Heat haze squares: the heat haze of fire effects (SMUDGE.tga particles) no longer shows as squares; it samples a copy of the
     // frame instead of the texture it draws into, and half a texel closer to where it is drawn (heat_haze_squares.cpp).
     constexpr bool HEAT_HAZE_SQUARES = GAME_PATCHER_HEAT_HAZE_SQUARES != 0;
+
+    // AI tunnel routing: a skirmish AI unit ordered across the map goes through its player's tunnel network (mine shafts) when
+    // that is clearly shorter than walking, in at the shaft nearest to it and out at the shaft nearest its goal; when the network
+    // is full it waits for room (ai_tunnel_routing.cpp).
+    constexpr bool AI_TUNNEL_ROUTING = GAME_PATCHER_AI_TUNNEL_ROUTING != 0;
 
     // FPS counter: with -showfps on the game's command line, the frames per second are shown in the top left corner
     // (fps_counter.cpp).

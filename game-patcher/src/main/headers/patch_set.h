@@ -11,7 +11,7 @@
 namespace patching {
 
     constexpr size_t MAX_PATCH_LENGTH = 24;
-    constexpr size_t MAX_PATCHES = 64;
+    constexpr size_t MAX_PATCHES = 96;
     constexpr size_t CAVE_SIZE = 0x1000;
 
     struct Patch {
