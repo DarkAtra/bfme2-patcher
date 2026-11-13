@@ -14,6 +14,10 @@ library {
                 "${projectDir}/libs/user32.lib",
                 "${projectDir}/libs/WS2_32.Lib"
             )
+            if (name == "linkRelease") {
+                // /DEBUG links incrementally by default: the shipped dll would carry padding that grows with every relink
+                linkerArgs.add("/INCREMENTAL:NO")
+            }
         }
     }
 }
