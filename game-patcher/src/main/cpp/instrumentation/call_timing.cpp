@@ -966,6 +966,20 @@ namespace {
         // mov ecx, [TheParticleSystemManager] / push [edi + 0x5C] / mov eax, [ecx] / call [eax + 0x3C]
         const BYTE flush[14] = {0x8B, 0x0D, 0x44, 0x37, 0xDE, 0x00, 0xFF, 0x77, 0x5C, 0x8B, 0x01, 0xFF, 0x50, 0x3C};
         ok &= timeCall(set, cave, 0x0044CCFC, flush, 11, CALL_CLIENT, "particles: render flush [manager]+3c");
+        // the snow manager's render (rain and snow, W3DSnowManager::render 0x00494117) at the end of the pass: push [ebp + 8] / call
+        const BYTE weather[8] = {0xFF, 0x75, 0x08, 0xE8, 0xFA, 0x73, 0x04, 0x00};
+        ok &= timeCall(set, cave, 0x0044CD15, weather, 3, CALL_CLIENT, "particles: weather render 494117");
+        // which way it draws: renderAsQuads (0x004936CB) sets its index buffer once per call and the vertex buffer once per batch;
+        // the point sprite path calls renderSubBox (0x00492F0F)
+        // movss [ebp - 0x34], xmm7 / call 0x0051CED0
+        const BYTE quads[10] = {0xF3, 0x0F, 0x11, 0x7D, 0xCC, 0xE8, 0x42, 0x95, 0x08, 0x00};
+        ok &= timeCall(set, cave, 0x00493984, quads, 5, CALL_CLIENT, "weather: quads, index buffer 51ced0");
+        // lea eax, [ebp - 0x148] / push eax / call 0x0051CF60
+        const BYTE batch[12] = {0x8D, 0x85, 0xB8, 0xFE, 0xFF, 0xFF, 0x50, 0xE8, 0x51, 0x91, 0x08, 0x00};
+        ok &= timeCall(set, cave, 0x00493E03, batch, 7, CALL_CLIENT, "weather: quads, batch vertex buffer 51cf60");
+        // movss [esi + 0xA4], xmm0 / call 0x00492F0F
+        const BYTE sprites[13] = {0xF3, 0x0F, 0x11, 0x86, 0xA4, 0x00, 0x00, 0x00, 0xE8, 0x48, 0xEB, 0xFF, 0xFF};
+        ok &= timeCall(set, cave, 0x004943BA, sprites, 8, CALL_CLIENT, "weather: point sprites 492f0f");
 
         // inside RenderObjectDrawModule's draw 0x00964C00, per visible particle: its model's transform, the colour or opacity written
         // into the model (0x0050E040 emissive, 0x0050E244 opacity, 0x0050E413 diffuse) and two more calls on the model
@@ -985,6 +999,20 @@ namespace {
         // mov eax, [ecx] / push 0 / call [eax + 0x194]
         const BYTE model194[10] = {0x8B, 0x01, 0x6A, 0x00, 0xFF, 0x90, 0x94, 0x01, 0x00, 0x00};
         ok &= timeCall(set, cave, 0x009652EB, model194, 4, CALL_CLIENT, "ro draw: [model]+194");
+        return ok;
+    }
+
+    // the radar's draw (W3DRadar::draw 0x0044FDF3, virtual): every sixth client frame it clears the overlay surface and draws a dot for
+    // every object of the two object lists (0x0044F9DA), each pixel with its own lock of the surface (SurfaceClass::DrawPixel
+    // 0x005165E0)
+    bool timeRadar(PatchSet &set, Cave &cave) {
+        bool ok = true;
+        const BYTE clear[5] = {0xE8, 0xED, 0x5F, 0x0C, 0x00};
+        ok &= timeCall(set, cave, 0x0045013E, clear, 0, CALL_CLIENT, "radar: overlay clear 516130");
+        const BYTE objects[5] = {0xE8, 0x77, 0xF8, 0xFF, 0xFF};
+        ok &= timeCall(set, cave, 0x0045015E, objects, 0, CALL_CLIENT, "radar: object dots 44f9da");
+        const BYTE localObjects[5] = {0xE8, 0x63, 0xF8, 0xFF, 0xFF};
+        ok &= timeCall(set, cave, 0x00450172, localObjects, 0, CALL_CLIENT, "radar: local object dots 44f9da");
         return ok;
     }
 
@@ -1363,6 +1391,7 @@ bool instrumentation::applyCallTiming() {
     const bool client = commitGroup(timeClient, nullptr);
     const bool draw = commitGroup(timeDraw, nullptr);
     const bool particles = commitGroup(timeParticles, nullptr);
+    const bool radar = commitGroup(timeRadar, nullptr);
     const bool rebuild = commitGroup(timeRebuild, nullptr);
     const bool files = commitGroup(timeFiles, nullptr);
     const bool render = commitGroup(timeRender, nullptr);
@@ -1371,5 +1400,5 @@ bool instrumentation::applyCallTiming() {
     const bool objects = commitGroup(timeObjectRender, nullptr);
     const bool ai = commitGroup(timeAiUpdate, nullptr);
     const bool states = commitGroup(timeStateMachine, nullptr);
-    return engine && logic && client && draw && particles && rebuild && files && render && horde && lists && objects && ai && states;
+    return engine && logic && client && draw && particles && radar && rebuild && files && render && horde && lists && objects && ai && states;
 }
