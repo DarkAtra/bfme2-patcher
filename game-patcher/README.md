@@ -108,5 +108,6 @@ The timers record into a file mapping named `Local\GamePatcherStats`, which the 
 
 ## References
 
+- https://darkatra.dev/2026/11/06/faster-pathfinding-and-a-different-delay-fix-for-bfme2.html
 - https://darkatra.dev/2023/10/28/fixing-online-gameplay-for-bfme2.html
 - https://github.com/Aim4kill/Bug_OldProtoSSL
