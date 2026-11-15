@@ -22,6 +22,7 @@
 #include "features.h"
 #include "fps_counter.h"
 #include "frame_limiter_sleep.h"
+#include "frame_rate_uncap.h"
 #include "patch_set.h"
 #include "patches.h"
 #include "production_ids.h"
@@ -41,6 +42,7 @@
 #include "os_name_fallback.h"
 #include "render_rate.h"
 #include "render_thread.h"
+#include "shroud_fade.h"
 #include "sse_math.h"
 #include "sse_control_reset.h"
 #include "tooltip_kill_count.h"
@@ -78,6 +80,8 @@ size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
     runPatch(features::CRASH_DUMP, L"Crash dumps", applyCrashDump, failed, count);
     runPatch(features::RENDER_RATE, L"60 fps", applyRenderRatePatch, failed, count);
     runPatch(features::FRAME_LIMITER_SLEEP, L"Frame limiter sleep", applyFrameLimiterSleep, failed, count);
+    runPatch(features::FRAME_RATE_UNCAP && features::RENDER_RATE, L"Uncapped frame rate", applyFrameRateUncap, failed, count);
+    runPatch(features::SHROUD_FADE, L"Shroud fade", applyShroudFade, failed, count);
     runPatch(features::RENDER_SCOPE_NAMES, L"Render scope names", applyRenderScopeNames, failed, count);
     runPatch(features::RENDER_LOCK, L"Render lock", applyRenderLock, failed, count);
     runPatch(features::SSE_MATH, L"SSE math functions", applySseMath, failed, count);

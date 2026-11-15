@@ -5,6 +5,8 @@
 
 // The Direct3D 9 and D3DX effect methods the game calls and the hooks on them, shared by the render thread and the D3D call stats
 // (instrumentation/d3d_call_stats.cpp), one of them at a time.
+// The methods' kinds and argument layouts (INTERFACES) are transcribed from the BFME2 Accelerator's gen_rt_hooks.py (Ohad Baehr,
+// https://github.com/OhadBaehr/bfme2-accelerator, MIT, THIRD-PARTY-NOTICES.txt).
 //
 // A method's number is its interface's base plus its vtable slot; the D3DX functions bfme2-accelerator wraps follow from METHODS on.
 // Every slot of the device's and the effect's vtables gets a thunk, and of every resource vtable once an object of its class is

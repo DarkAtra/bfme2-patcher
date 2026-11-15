@@ -11,8 +11,10 @@
 //
 // Problem: the game thread spends about a third of its work in a big battle inside Direct3D 9, D3DX and the driver, one call after
 // another, while the other cores idle.
-// Fix: the game thread records its Direct3D calls into a queue and a second thread runs them in the same order, as in OH1A's BFME2
-// Accelerator, so the picture is the same and the game thread goes on with the next frame (render_recorder.cpp, render_queue.cpp).
+// Fix: the game thread records its Direct3D calls into a queue and a second thread runs them in the same order, so the picture is
+// the same and the game thread goes on with the next frame (render_recorder.cpp, render_queue.cpp, d3d_methods.cpp). A port of the
+// render thread of Ohad Baehr's BFME2 Accelerator (https://github.com/OhadBaehr/bfme2-accelerator, MIT, THIRD-PARTY-NOTICES.txt),
+// studied in pySAGE's fork (https://github.com/ClementJ18/bfme2-accelerator, branch edain-compat).
 //
 // This file: the device is created thread-safe (D3DCREATE_MULTITHREADED), because calls that stay on the game thread (reference
 // counts, descriptions) run while the render thread is inside Direct3D. The game reads its device's behaviour flags from 0x00DD345C

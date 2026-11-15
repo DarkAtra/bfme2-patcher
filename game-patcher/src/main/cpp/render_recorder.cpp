@@ -1256,13 +1256,13 @@ namespace render_recorder {
         uint32_t __stdcall writeBuffer(const uint32_t buffer, const uint32_t offset, const uint32_t size, const uint32_t flags,
                                        const uint32_t data) {
             void *at = nullptr;
-            const HRESULT locked = d3d::slotOf<HRESULT (__stdcall *)(uint32_t, uint32_t, uint32_t, void **, uint32_t)>(buffer, BUFFER_LOCK)(
+            const HRESULT locked = unhooked<HRESULT (__stdcall *)(uint32_t, uint32_t, uint32_t, void **, uint32_t)>(buffer, BUFFER_LOCK)(
                 buffer, offset, size, &at, flags);
             if (SUCCEEDED(locked)) {
                 if (at != nullptr) {
                     memcpy(at, reinterpret_cast<const void *>(data), size);
                 }
-                d3d::slotOf<HRESULT (__stdcall *)(uint32_t)>(buffer, BUFFER_UNLOCK)(buffer);
+                unhooked<HRESULT (__stdcall *)(uint32_t)>(buffer, BUFFER_UNLOCK)(buffer);
             }
             return static_cast<uint32_t>(locked);
         }

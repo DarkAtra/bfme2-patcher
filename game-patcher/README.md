@@ -50,6 +50,8 @@ Patches that change the simulation must be the same for every player in a match.
 | `CRASH_DUMP`                                                  | The dump the game writes when it crashes (`DUMP_*.dmp` in the game folder) also holds the memory around the crash, the patches' code and which patches were applied.                                                                                                                                                             |
 | `RENDER_RATE`                                                 | Draws 60 frames per second at the stock game speed; camera, particles and animations keep their 30 fps speed. Needs the 2.02 build without the delay fix (`lotrbfme2ep1.exe`).                                                                                                                                                   |
 | `FRAME_LIMITER_SLEEP`                                         | The frame limiter sleeps instead of spinning, so the game no longer keeps a CPU core busy.                                                                                                                                                                                                                                       |
+| `FRAME_RATE_UNCAP`                                            | Off by default, being built. Draws as many frames as the computer and the display allow while the game keeps its speed; needs `RENDER_RATE`. So far only the timing: the frames between two game steps still repeat the picture.                                                                                                 |
+| `SHROUD_FADE`                                                 | The fog of war fades in and out at its intended speed at any frame rate (it lost part of its speed at 60 frames per second and stops above 64).                                                                                                                                                                                  |
 | `RENDER_SCOPE_NAMES`                                          | Skips building profiler names that nothing reads on every render call.                                                                                                                                                                                                                                                           |
 | `RENDER_LOCK`                                                 | Uses a user mode lock instead of a kernel mutex around every render call.                                                                                                                                                                                                                                                        |
 | `SSE_MATH`                                                    | Faster `floor`, `ceil`, `sqrt` and `fabs` with identical results.                                                                                                                                                                                                                                                                |
@@ -105,6 +107,17 @@ skirmish, they only read the game's state:
 | Test banner      | Shows the text a measuring run hands it (the harness: its label and phase) in the top left corner; nothing without a run.                                   |
 
 The timers record into a file mapping named `Local\GamePatcherStats`, which the measuring tools read while the game runs.
+
+## Credits
+
+- [pySAGE](https://github.com/ClementJ18/pySAGE) by Clement Julia (MIT): many patches are ports of its engine patches, and its
+  documents informed others (the 60 fps patch, the uncapped frame rate). Each derived patch names its source in its header.
+- [BFME2 Accelerator](https://github.com/OhadBaehr/bfme2-accelerator) by Ohad Baehr (MIT), studied in Clement Julia's
+  [fork](https://github.com/ClementJ18/bfme2-accelerator): the render thread is a port of its design, including its table of
+  Direct3D methods, and the uncapped frame rate takes its approach.
+- [EasyHook](https://easyhook.github.io) by Christoph Husse and Justin Stenning (MIT): the `gethostbyname` hook.
+
+The licences are in [THIRD-PARTY-NOTICES.txt](../THIRD-PARTY-NOTICES.txt).
 
 ## References
 

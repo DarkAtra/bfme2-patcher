@@ -16,6 +16,14 @@
 #define GAME_PATCHER_FRAME_LIMITER_SLEEP 1
 #endif
 
+#ifndef GAME_PATCHER_FRAME_RATE_UNCAP
+#define GAME_PATCHER_FRAME_RATE_UNCAP 0
+#endif
+
+#ifndef GAME_PATCHER_SHROUD_FADE
+#define GAME_PATCHER_SHROUD_FADE 1
+#endif
+
 #ifndef GAME_PATCHER_RENDER_SCOPE_NAMES
 #define GAME_PATCHER_RENDER_SCOPE_NAMES 1
 #endif
@@ -189,6 +197,15 @@ namespace features {
     // Frame limiter sleep: the limiter sleeps through the rest of a frame instead of spinning on Sleep(0), so the main thread
     // no longer pins a core (frame_limiter_sleep.cpp).
     constexpr bool FRAME_LIMITER_SLEEP = GAME_PATCHER_FRAME_LIMITER_SLEEP != 0;
+
+    // Uncapped frame rate (off, being built): draws as many frames as the machine and the display allow, the logic keeping its
+    // pace; needs RENDER_RATE. So far only the scheduling, the frames between sub-frames repeat the picture
+    // (frame_rate_uncap.cpp).
+    constexpr bool FRAME_RATE_UNCAP = GAME_PATCHER_FRAME_RATE_UNCAP != 0;
+
+    // Shroud fade: the fog of war fades keep the fraction of a step a frame rounds away, so they move at their rate at any frame
+    // rate (shroud_fade.cpp).
+    constexpr bool SHROUD_FADE = GAME_PATCHER_SHROUD_FADE != 0;
 
     // Render scope names: skips building the profiler event names of the render scopes, which nothing reads
     // (render_scope_names.cpp).

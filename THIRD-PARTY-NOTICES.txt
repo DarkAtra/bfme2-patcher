@@ -1,0 +1,99 @@
+THIRD-PARTY NOTICES
+
+This project uses the following third-party software and artwork.
+
+
+BFME: Reforged - updater icon
+https://bfmereforged.org/wp-content/uploads/2019/06/BfmeReforged15.png
+by the BFME: Reforged team
+
+The updater's ring icon was provided by the BFME: Reforged team. RenRole (Co-Founder) granted permission to DarkAtra via
+Discord for non-commercial use with credit.
+
+
+pySAGE
+https://github.com/ClementJ18/pySAGE
+by Clement Julia
+
+Tools and engine patches for the SAGE games. Many game-patcher patches are ports of its patches, and its documents informed
+several others, among them the 60 fps patch and the analysis behind the uncapped frame rate.
+
+MIT License
+
+Copyright (c) 2026 Clement Julia
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+BFME2 Accelerator
+https://github.com/OhadBaehr/bfme2-accelerator
+by Ohad Baehr (studied in Clement Julia's fork, https://github.com/ClementJ18/bfme2-accelerator, branch edain-compat)
+
+game-patcher's render thread is a port of its design: recording the game's Direct3D calls for a second thread, the kind and
+argument layout of every method (transcribed from its gen_rt_hooks.py), staged buffer and surface locks. The uncapped frame rate
+takes its approach of frames that only draw.
+
+MIT License
+
+Copyright (c) 2026 Ohad Baehr
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+EasyHook
+https://easyhook.github.io
+by Christoph Husse and Justin Stenning
+
+game-patcher hooks gethostbyname through EasyHook32.dll.
+
+Copyright (c) 2009 Christoph Husse & Copyright (c) 2015 Justin Stenning
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.

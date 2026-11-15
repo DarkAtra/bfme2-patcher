@@ -185,7 +185,8 @@ namespace {
         append("# X,us,frame,type,player index: a command executed\r\n");
     }
 
-    // The network object of the running match or 0. Starts a file for a new match and finishes the last one when it ends.
+    // The network object of the running match or 0, also while its file could not be created (nothing is recorded then). Starts a
+    // file for a new match and finishes the last one when it ends.
     uintptr_t current() {
         const auto network = read<uintptr_t>(THE_NETWORK);
         const int frame = logicFrame();
@@ -198,12 +199,13 @@ namespace {
             }
         }
         recorder.lastFrame = frame;
-        if (network != 0 && recorder.file != INVALID_HANDLE_VALUE) {
-            const int64_t now = microseconds(ticks());
-            if (now - recorder.lastFlushUs >= FLUSH_INTERVAL_US) {
-                flush();
-                recorder.lastFlushUs = now;
-            }
+        if (network == 0 || recorder.file == INVALID_HANDLE_VALUE) {
+            return 0;
+        }
+        const int64_t now = microseconds(ticks());
+        if (now - recorder.lastFlushUs >= FLUSH_INTERVAL_US) {
+            flush();
+            recorder.lastFlushUs = now;
         }
         return network;
     }
