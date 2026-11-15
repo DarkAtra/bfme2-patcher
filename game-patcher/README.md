@@ -42,8 +42,8 @@ Also modifies the game to skip certificate validation to allow connections to cu
 
 ### Gameplay and performance patches
 
-Every patch can be switched off on its own in `src/main/headers/features.h` (e.g. `#define GAME_PATCHER_RENDER_LOCK 0`). All are on by default except
-`GAME_PATCHER_PRODUCTION_IDS`. Patches that change the simulation must be the same for every player in a match.
+Every patch can be switched off on its own in `src/main/headers/features.h` (e.g. `#define GAME_PATCHER_RENDER_LOCK 0`).
+Patches that change the simulation must be the same for every player in a match.
 
 | Patch                                                         | What it does                                                                                                                                                                                                                                                                                                                     |
 |---------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
