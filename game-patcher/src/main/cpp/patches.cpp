@@ -40,6 +40,7 @@
 #include "network_command_send.h"
 #include "os_name_fallback.h"
 #include "render_rate.h"
+#include "render_thread.h"
 #include "sse_math.h"
 #include "sse_control_reset.h"
 #include "tooltip_kill_count.h"
@@ -112,6 +113,7 @@ size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
     runPatch(features::HEAT_HAZE_SQUARES, L"Heat haze squares", applyHeatHazeSquares, failed, count);
     runPatch(features::AI_TUNNEL_ROUTING, L"AI tunnel routing", applyAiTunnelRouting, failed, count);
     runPatch(features::OS_NAME_FALLBACK, L"OS name fallback", applyOsNameFallback, failed, count);
+    runPatch(features::RENDER_THREAD, L"Render thread", applyRenderThread, failed, count);
     runPatch(features::FPS_COUNTER && hasArgument(L"-showfps"), L"FPS counter", applyFpsCounter, failed, count);
 
     if (hasArgument(L"-debugmode")) {

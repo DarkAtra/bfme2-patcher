@@ -6,6 +6,7 @@
 #include "command_line.h"
 #include "instrumentation/auto_skirmish.h"
 #include "instrumentation/call_timing.h"
+#include "instrumentation/d3d_call_stats.h"
 #include "instrumentation/full_memory_dump.h"
 #include "instrumentation/instrumentation.h"
 #include "instrumentation/network_stats.h"
@@ -13,6 +14,7 @@
 #include "instrumentation/stats.h"
 #include "instrumentation/test_banner.h"
 #include "patches.h"
+#include "render_thread.h"
 
 // The measuring tools, applied after the patches when the game is started with -debugmode (the updater adds it in debug mode).
 // They record what the game does (the timers in a file mapping that the harness reads, the network stats in files) and change
@@ -74,6 +76,8 @@ void instrumentation::apply(const wchar_t *(&failed)[MAX_FAILED_PATCHES], size_t
     const bool timers = stats() != nullptr;
     runPatch(timers, L"Scope timers", applyPathfinderTiming, failed, count);
     runPatch(timers, L"Call timers", applyCallTiming, failed, count);
+    // the render thread is the D3D hooks' client when it is applied, and there is one at a time
+    runPatch(timers && hasArgument(L"-d3dstats") && renderThreadGameThread() == 0, L"D3D call stats", applyD3dCallStats, failed, count);
     runPatch(true, L"Network stats", applyNetworkStats, failed, count);
     runPatch(fullMemoryDumpRequested(), L"Full memory dump", applyFullMemoryDump, failed, count);
     runPatch(hasArgument(L"-autoskirmish"), L"Auto skirmish", applyAutoSkirmish, failed, count);

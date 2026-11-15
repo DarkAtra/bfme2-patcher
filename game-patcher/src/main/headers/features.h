@@ -164,6 +164,14 @@
 #define GAME_PATCHER_OS_NAME_FALLBACK 1
 #endif
 
+#ifndef GAME_PATCHER_RENDER_THREAD
+#define GAME_PATCHER_RENDER_THREAD 1
+#endif
+
+#ifndef GAME_PATCHER_RENDER_THREAD_COUNTS
+#define GAME_PATCHER_RENDER_THREAD_COUNTS 0
+#endif
+
 #ifndef GAME_PATCHER_FPS_COUNTER
 #define GAME_PATCHER_FPS_COUNTER 1
 #endif
@@ -335,6 +343,16 @@ namespace features {
     // OS name fallback: the game no longer crashes at start on Windows 10 and 11 without the Windows XP compatibility mode; the
     // startup hardware report names an unknown Windows version "WINXX" instead of printing an unset pointer (os_name_fallback.cpp).
     constexpr bool OS_NAME_FALLBACK = GAME_PATCHER_OS_NAME_FALLBACK != 0;
+
+    // Render thread: the game thread records its Direct3D 9 / D3DX calls and a second thread runs them in the same order, so
+    // the game thread goes on with the next frame; a call whose result the game reads waits until the calls before it have run
+    // (render_thread.cpp, render_recorder.cpp, render_queue.cpp).
+    constexpr bool RENDER_THREAD = GAME_PATCHER_RENDER_THREAD != 0;
+
+    // Render thread counts (off, for measuring builds): the render thread counts its calls, waits (by method and caller) and mirrors
+    // and times its worker and the game thread's waits for it, for the debug mode's report (RENDER THREAD); without it the counting
+    // code is not built at all (even unused, its checks cost the game thread ~5 ns a call).
+    constexpr bool RENDER_THREAD_COUNTS = GAME_PATCHER_RENDER_THREAD_COUNTS != 0;
 
     // FPS counter: with -showfps on the game's command line, the frames per second are shown in the top left corner
     // (fps_counter.cpp).

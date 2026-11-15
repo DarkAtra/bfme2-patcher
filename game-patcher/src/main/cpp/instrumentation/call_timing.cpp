@@ -4,8 +4,12 @@
 #include <cstring>
 
 #include "instrumentation/call_timing.h"
+#include "command_line.h"
+#include "instrumentation/d3d_call_stats.h"
 #include "instrumentation/stats.h"
 #include "patch_set.h"
+#include "render_recorder.h"
+#include "render_thread.h"
 
 // Call timers (debug mode): times what a frame of the game is made of: the calls the engine frame, the logic update (0x0062E4E8)
 // and the client update (0x0064849E) make, one entry per call site and per vtable (so the update modules the logic update calls through one site
@@ -171,6 +175,7 @@ namespace {
     void hookEffect(uint32_t vtable);
     extern uintptr_t deviceSite;
     extern uintptr_t effectSite;
+    constexpr uintptr_t ENGINE_UPDATE_SITE = 0x00639EDC;
 
     // the place that opened the innermost render scope that is open, 0 if none
     uint32_t innermostScope() {
@@ -250,9 +255,18 @@ namespace {
             }
         }
         open(sites[site].address, entryKey, target, sites[site].group, label, site + 1);
+        if (sites[site].address == ENGINE_UPDATE_SITE) {
+            d3dCallStatsFrame(true);
+        }
     }
 
     void __cdecl callEnd(const uint32_t site) {
+        if (sites[site].address == ENGINE_UPDATE_SITE) {
+            d3dCallStatsFrame(false);
+            if (renderThreadGameThread() != 0) {
+                memcpy(&stats()->renderThread, &render_recorder::counts(), sizeof(render_recorder::Counts));
+            }
+        }
         const uint64_t cycles = close(site + 1);
         if (sites[site].address == presentSite && cycles != 0) {
             logPresentStall(cycles);
@@ -334,6 +348,9 @@ namespace {
     CreateBufferFunction originalCreateIndexBuffer;
     UpdateTextureFunction originalUpdateTexture;
     uint32_t hookedDeviceVtable = 0;
+    // -nod3dtimers: the device's and the effects' own wrappers are left out, as with the render thread (whose runs measure without
+    // them), so that runs with and without it compare
+    bool d3dTimers = true;
 
     HRESULT __stdcall timedCreateTexture(void *device, const UINT width, const UINT height, const UINT levels, const DWORD usage, const DWORD format,
                                          const DWORD pool, void **texture, void *shared) {
@@ -418,6 +435,8 @@ namespace {
         return reinterpret_cast<HRESULT (__stdcall *)(void *, uint32_t, const void *, uint32_t)>(originalWrites[WRITE])(device, a, b, c);
     }
 
+    const uint32_t *gameDevice = reinterpret_cast<const uint32_t *>(0x00DD3474);
+
     // The device only exists once the game has set up rendering, so its vtable is patched when the end scene call site first sees
     // it (the vtable is the key that site records).
     void hookDevice(const uint32_t vtable) {
@@ -425,6 +444,12 @@ namespace {
             return;
         }
         hookedDeviceVtable = vtable;
+        const uint32_t device = *gameDevice;
+        // the render thread records the D3D calls, so a wrapper here would time the recording
+        if (!d3dTimers || d3dCallStatsSimulates() || renderThreadGameThread() != 0) {
+            d3dCallStatsDevice(device);
+            return;
+        }
         auto *slots = reinterpret_cast<uint32_t *>(vtable);
         replaceSlot(&slots[CREATE_TEXTURE], reinterpret_cast<void *>(&timedCreateTexture), &originalCreateTexture);
         replaceSlot(&slots[CREATE_VERTEX_BUFFER], reinterpret_cast<void *>(&timedCreateVertexBuffer), &originalCreateVertexBuffer);
@@ -438,6 +463,7 @@ namespace {
         for (size_t i = 0; i < DEVICE_WRITES; i++) {
             replaceSlot(&slots[DEVICE_WRITE_SLOTS[i]], writers[i], &originalWrites[i]);
         }
+        d3dCallStatsDevice(device);
     }
 
     constexpr uintptr_t END_SCENE_SITE = 0x00522625;
@@ -591,6 +617,11 @@ namespace {
         if (statistics == nullptr || hookedEffectVtable != 0 || vtable == 0) {
             return;
         }
+        if (!d3dTimers || d3dCallStatsSimulates() || renderThreadGameThread() != 0) {
+            hookedEffectVtable = vtable;
+            d3dCallStatsEffect(vtable);
+            return;
+        }
         void *const calls[EFFECT_CALLS] = {
             reinterpret_cast<void *>(&inBegin), reinterpret_cast<void *>(&inBeginPass), reinterpret_cast<void *>(&inEffectCall<2>),
             reinterpret_cast<void *>(&inEffectCall<3>), reinterpret_cast<void *>(&inEffectCall<4>),
@@ -616,6 +647,7 @@ namespace {
         for (size_t i = 0; i < EFFECT_SETTERS; i++) {
             replaceSlot(&slots[EFFECT_SLOTS[i]], wrappers[i], &originalSetters[i]);
         }
+        d3dCallStatsEffect(vtable);
     }
 
     constexpr uintptr_t COMMIT_SITE = 0x00551695;
@@ -1016,6 +1048,19 @@ namespace {
         return ok;
     }
 
+    // the FX shader renderer's flush (0x00574420): its rendering tasks (0x00574113), then the meshes skinned on the CPU
+    // (FlushSoftwareSkinnedRenderingTasks 0x00574148: deformed vertices into a dynamic buffer, then drawn)
+    bool timeSkinning(PatchSet &set, Cave &cave) {
+        bool ok = true;
+        // mov ecx, esi / call 0x00574113
+        const BYTE tasks[7] = {0x8B, 0xCE, 0xE8, 0xE4, 0xFC, 0xFF, 0xFF};
+        ok &= timeCall(set, cave, 0x00574428, tasks, 2, CALL_CLIENT, "fx renderer: rendering tasks 574113");
+        // mov ecx, esi / call 0x00574148
+        const BYTE software[7] = {0x8B, 0xCE, 0xE8, 0x12, 0xFD, 0xFF, 0xFF};
+        ok &= timeCall(set, cave, 0x0057442F, software, 2, CALL_CLIENT, "fx renderer: software skinning 574148");
+        return ok;
+    }
+
     // what a material parameter rebuild is made of: the emissive setter 0x0050E040 around it (copy of the list, the new entry, its merge
     // into the copy, the copy's destruction) and the rebuild 0x00551F8F itself (D3DX parameter block, list reset and merge, the
     // per-parameter lookups and sets)
@@ -1384,6 +1429,7 @@ bool instrumentation::applyCallTiming() {
     mainThread = GetCurrentThreadId();
     loadedAt = __rdtsc();
     siteCount = 0;
+    d3dTimers = !hasArgument(L"-nod3dtimers");
 
     // each group is applied as a whole or not at all, the others still
     const bool engine = commitGroup(timeEngine, timeGameScopes);
@@ -1392,6 +1438,7 @@ bool instrumentation::applyCallTiming() {
     const bool draw = commitGroup(timeDraw, nullptr);
     const bool particles = commitGroup(timeParticles, nullptr);
     const bool radar = commitGroup(timeRadar, nullptr);
+    const bool skinning = commitGroup(timeSkinning, nullptr);
     const bool rebuild = commitGroup(timeRebuild, nullptr);
     const bool files = commitGroup(timeFiles, nullptr);
     const bool render = commitGroup(timeRender, nullptr);
@@ -1400,5 +1447,6 @@ bool instrumentation::applyCallTiming() {
     const bool objects = commitGroup(timeObjectRender, nullptr);
     const bool ai = commitGroup(timeAiUpdate, nullptr);
     const bool states = commitGroup(timeStateMachine, nullptr);
-    return engine && logic && client && draw && particles && radar && rebuild && files && render && horde && lists && objects && ai && states;
+    return engine && logic && client && draw && particles && radar && skinning && rebuild && files && render && horde && lists && objects && ai
+        && states;
 }

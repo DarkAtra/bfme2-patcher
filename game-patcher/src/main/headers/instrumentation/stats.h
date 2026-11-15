@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "render_recorder.h"
+
 namespace instrumentation {
 
     // Inclusive time in functions the game calls (pathfinder_timing.cpp). Scopes 9 to 15 are the phases 0 to 6 of the
@@ -145,6 +147,77 @@ namespace instrumentation {
         uint32_t otherCallers;
     };
 
+    // The Direct3D calls the game makes on the game thread (d3d_call_stats.cpp, only with -d3dstats), to tell how often a render thread
+    // like bfme2-accelerator's would have to wait for its queue. Calls D3D9 and D3DX make themselves are not counted. `calls` is per
+    // interface method, numbered as the accelerator numbers them (device 0, effect 120, texture 200, cube texture 230, volume texture
+    // 260, surface 290, volume 310, vertex buffer 330, index buffer 350, state block 370, query 380, swap chain 390, vertex shader 400,
+    // pixel shader 410, declaration 420, each plus the vtable slot); `d3dx` per D3DX function the accelerator wraps; `locks` by kind
+    // (D3dLockKind; DRAWN: a default or managed pool resource). The callers are kept for the calls that wait or lock in the
+    // accelerator (its kinds S and L, the locks, the D3DX functions and a few hand-written ones), the first D3D_STATS_CALLERS of them;
+    // method is D3D_STATS_METHODS + n for D3DX function n.
+    constexpr size_t D3D_STATS_METHODS = 432;
+    constexpr size_t D3D_STATS_D3DX = 14;
+    constexpr size_t D3D_STATS_LOCKS = 16;
+    constexpr size_t D3D_STATS_CALLERS = 128;
+
+    enum D3dLockKind : uint32_t {
+        LOCK_VB_DISCARD, LOCK_VB_NOOVERWRITE, LOCK_VB_READONLY, LOCK_VB_PLAIN,
+        LOCK_IB_DISCARD, LOCK_IB_NOOVERWRITE, LOCK_IB_READONLY, LOCK_IB_PLAIN,
+        LOCK_TEXTURE_DRAWN, LOCK_TEXTURE_SYSTEM, LOCK_SURFACE_DRAWN, LOCK_SURFACE_SYSTEM, LOCK_CUBE_OR_VOLUME,
+    };
+
+    struct D3dCaller {
+        uint32_t address;
+        uint32_t method;
+        uint32_t calls;
+    };
+
+    struct D3dCallStats {
+        uint32_t vtables;
+        // state block recordings begun (BeginStateBlock calls that succeeded)
+        uint32_t recordings;
+        // vtables not hooked: a slot outside D3D9 / D3DX / this dll, or no room left
+        uint32_t refused;
+        uint32_t otherThreadCalls;
+        uint32_t calls[D3D_STATS_METHODS];
+        uint32_t d3dx[D3D_STATS_D3DX];
+        uint32_t locks[D3D_STATS_LOCKS];
+        D3dCaller callers[D3D_STATS_CALLERS];
+        uint32_t otherCallers;
+    };
+
+    // The render thread simulation (d3d_call_stats.cpp, with -d3dsim besides -d3dstats): per engine update (one frame, 0x00639EDC) it
+    // times every D3D call the game thread makes, copies each call that a render thread like bfme2-accelerator's would queue into a
+    // ring as such a thread records it, and runs a simulated worker that executes the queued calls one after another with the
+    // measured durations. The simulated game thread does its own work as measured, records, and waits where that render thread
+    // would wait (its kind S calls, READONLY buffer locks, locks of default or managed textures and surfaces outside the engine's
+    // per-pixel writes, the D3DX functions it runs on the game thread) and at Present while the previous frame's Present has not
+    // run (one frame in flight). The time between engine updates (the frame limiter) is left out, as on a CPU that never waits.
+    // All times are time stamp counter cycles; `bracket` is the instrumentation's own share of a timed call, already subtracted.
+    constexpr size_t SIM_BUCKETS = 32;
+
+    struct RenderSim {
+        uint32_t frames;
+        uint32_t calls;
+        uint32_t waits;
+        uint32_t presentWaits;
+        uint32_t bracket;
+        uint32_t recordBracket;
+        uint64_t busy;
+        uint64_t simulated;
+        uint64_t queued;
+        uint64_t direct;
+        uint64_t record;
+        uint64_t waited;
+        uint64_t presentWaited;
+        uint64_t bytes;
+        // frames by their busy time, real and simulated: bucket n holds n to n + 1 ms, the last one everything longer
+        uint32_t realHistogram[SIM_BUCKETS];
+        uint32_t simulatedHistogram[SIM_BUCKETS];
+        // cycles waited at each method (d3d_methods' numbering, D3DX functions behind)
+        uint64_t waitedBy[D3D_STATS_METHODS + D3D_STATS_D3DX];
+    };
+
     // One call of the game logic's message dispatcher (0x00779A3D), which turns a player's order into the unit commands that
     // call AdjustDestination.
     struct MessageRecord {
@@ -178,6 +251,13 @@ namespace instrumentation {
         EffectStats effectStats;
 
         DeviceWrites deviceWrites;
+
+        D3dCallStats d3dCallStats;
+
+        RenderSim renderSim;
+
+        // the render thread's counters (render_recorder.h), copied at the end of every engine update while it is applied
+        render_recorder::Counts renderThread;
     };
 
     static_assert(sizeof(Stats) <= STATS_BYTES, "the statistics block does not fit its file mapping");
