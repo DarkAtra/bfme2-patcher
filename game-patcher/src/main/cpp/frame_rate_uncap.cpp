@@ -40,6 +40,14 @@
 //               rock, vehicles pitch) is computed once per client frame and refused on a second call in it, so a frame that only
 //               draws showed the body level; the last tilt computed in this client frame is applied again
 //               (pySAGE's render-only-frames.md, section 2, keeps it in an enlarged DrawableLocoInfo; here a side table)
+//   0x005F51D2  the particle system manager's loop, as it takes up a system to update (30 times a second, render_rate's gate):
+//               each particle's position (+0x1C, the list behind the storage at system + 0xA4: its vtable + 0x20, then + 0x64)
+//               is kept first (the update call itself, 0x005F51E6, is the call timers')
+//   0x00961F74  the default particle draw (DefaultDraw, vtable 0x00C326B8, slot 4) copying a particle's position into the point
+//               array: the position kept before the step, `share` of the way to the current one, so CPU particles move on every
+//               drawn frame instead of 30 times a second (one step behind, exact at the steps). A particle without a position kept in
+//               this step (just born, its slot taken) or one that moved further than its speed allows (its address reused by a new
+//               one) is drawn where it is, as without this.
 //
 // The stock limiter does not pace a pass while its flag (0x00DE4320) is off: fast forward, the network catch-up window, the INI's
 // UseFPSLimit off. Every pass then advances, as in the stock game. A sub-frame the logic refuses (the network not ready, a pause)
@@ -71,6 +79,18 @@ namespace {
     constexpr uintptr_t TRANSFORM_STAMP = 0x006765D5;
     constexpr uintptr_t PHYSICS_XFORM_CALL = 0x0067BF39;
     constexpr uintptr_t PHYSICS_XFORM = 0x0067BDC0;
+    constexpr uintptr_t PARTICLE_SYSTEM_TAKEN = 0x005F51D2;
+    constexpr uintptr_t PARTICLE_SYSTEM_CHECKED = 0x005F51D7;
+    constexpr uintptr_t PARTICLE_DRAW = 0x00961F74;
+    constexpr uintptr_t PARTICLE_DRAWN = 0x00961F88;
+    // ParticleSystem: its particle storage; the manager: the particle step it ran last; a particle: velocity, position, next
+    constexpr uintptr_t PARTICLE_STORAGE_OFFSET = 0xA4;
+    constexpr uintptr_t PARTICLE_STEP_OFFSET = 0x74;
+    constexpr uintptr_t PARTICLE_VELOCITY_OFFSET = 0x10;
+    constexpr uintptr_t PARTICLE_POSITION_OFFSET = 0x1C;
+    constexpr uintptr_t PARTICLE_NEXT_OFFSET = 0x64;
+    // a particle step, render_rate's: two sub-frames
+    constexpr int PARTICLE_STEP_SUB_FRAMES = 2;
     // GameEngine: the sub-frame, the sub-frames of a logic frame, the alpha; and its stock alpha, clamp(sub-frame / wrap)
     constexpr uintptr_t SUB_FRAME_OFFSET = 0x34;
     constexpr uintptr_t WRAP_OFFSET = 0x38;
@@ -272,6 +292,61 @@ namespace {
 
     Tilts tilts;
 
+    // The particles' positions before the last step, by particle.
+    struct ParticlePositions {
+        static constexpr uint32_t SLOTS = 16384;
+
+        struct Kept {
+            const void *particle;
+            uint32_t step;
+            float position[3];
+        };
+
+        Kept slots[SLOTS] = {};
+
+        static uint32_t slotOf(const void *particle) {
+            return (static_cast<uint32_t>(reinterpret_cast<uintptr_t>(particle)) >> 4) & (SLOTS - 1);
+        }
+
+        void keep(const void *particle, const uint32_t step, const float *position) {
+            Kept &kept = slots[slotOf(particle)];
+            kept.particle = particle;
+            kept.step = step;
+            kept.position[0] = position[0];
+            kept.position[1] = position[1];
+            kept.position[2] = position[2];
+        }
+
+        // where a particle is drawn `share` of the way from its kept position to `position`; false: where it is
+        bool place(const void *particle, const uint32_t step, const float *position, const float *velocity, const double share,
+                   float *placed) const {
+            const Kept &kept = slots[slotOf(particle)];
+            if (kept.particle != particle || kept.step != step || share >= 1.0) {
+                return false;
+            }
+            double moved = 0;
+            double speed = 0;
+            for (int i = 0; i < 3; i++) {
+                moved += (position[i] - kept.position[i]) * (position[i] - kept.position[i]);
+                speed += velocity[i] * velocity[i];
+            }
+            // a step moves a particle by its velocity and a little drift: further, it is a new particle at a reused address
+            if (moved > 4.0 * speed + 1.0) {
+                return false;
+            }
+            for (int i = 0; i < 3; i++) {
+                placed[i] = static_cast<float>(kept.position[i] + (position[i] - kept.position[i]) * share);
+            }
+            return true;
+        }
+    };
+
+    ParticlePositions *particlePositions = nullptr;
+    uint32_t particleStep = 0xFFFFFFFF;
+    int64_t particleStepAt = 0;
+    // the XMM registers around the draw cave's call (the loop's state lives in registers the cave does not see)
+    alignas(16) uint8_t savedXmm[8 * 16];
+
     // The camera's step for the frame being drawn, as a share of a stock frame: the time since the frame before, so that where
     // the camera is follows the clock even when frames alternate between long ones (a sub-frame) and short ones (equal steps
     // then stutter: a long frame's picture shows as far a move as a short one's). After a stall (a load, new ground in a pan) the
@@ -436,6 +511,104 @@ namespace {
         return tilts.again(drawable, frame, info);
     }
 
+    // before the manager updates a particle system: its particles' positions, for the step about to run
+    void __stdcall keepParticles(uint8_t *system, const uint8_t *manager) {
+        if (system == nullptr) {
+            return;
+        }
+        const uint32_t step = *reinterpret_cast<const uint32_t *>(manager + PARTICLE_STEP_OFFSET);
+        if (step != particleStep) {
+            particleStep = step;
+            particleStepAt = now();
+        }
+        auto *storage = *reinterpret_cast<uint8_t **>(system + PARTICLE_STORAGE_OFFSET);
+        if (storage == nullptr || particlePositions == nullptr) {
+            return;
+        }
+        using First = uint8_t *(__thiscall *)(void *);
+        const auto first = (*reinterpret_cast<First *const *>(storage))[0x20 / 4];
+        for (uint8_t *particle = first(storage); particle != nullptr; particle = *reinterpret_cast<uint8_t **>(particle + PARTICLE_NEXT_OFFSET)) {
+            particlePositions->keep(particle, step, reinterpret_cast<const float *>(particle + PARTICLE_POSITION_OFFSET));
+        }
+    }
+
+    // the default particle draw: the particle's position into the point array (x, y, z at destination - 8, - 4, + 0)
+    void __stdcall placeParticle(const uint8_t *particle, float *destination) {
+        const auto *position = reinterpret_cast<const float *>(particle + PARTICLE_POSITION_OFFSET);
+        float placed[3];
+        const double share = progress(passAt, particleStepAt, PARTICLE_STEP_SUB_FRAMES * subFrameTicks());
+        if (particlePositions == nullptr ||
+            !particlePositions->place(particle, particleStep, position, reinterpret_cast<const float *>(particle + PARTICLE_VELOCITY_OFFSET),
+                                      share, placed)) {
+            placed[0] = position[0];
+            placed[1] = position[1];
+            placed[2] = position[2];
+        }
+        destination[-2] = placed[0];
+        destination[-1] = placed[1];
+        destination[0] = placed[2];
+    }
+
+    void addParticleKeep(PatchSet &set, Cave &cave) {
+        const uintptr_t entry = cave.here();
+        const BYTE system[3] = {0x8B, 0x4D, 0xCC}; // mov ecx, [ebp - 0x34]: the system
+        cave.emit(system);
+        cave.emit8(0x60); // pushad
+        cave.emit8(0x57); // push edi: the manager
+        cave.emit8(0x51); // push ecx: the system
+        cave.call(reinterpret_cast<uintptr_t>(&keepParticles));
+        cave.emit8(0x61); // popad
+        const BYTE check[2] = {0x3B, 0xCB}; // cmp ecx, ebx: the null check the je behind reads
+        cave.emit(check);
+        cave.jmp(PARTICLE_SYSTEM_CHECKED);
+        const BYTE stock[5] = {0x8B, 0x4D, 0xCC, 0x3B, 0xCB};
+        set.hook(PARTICLE_SYSTEM_TAKEN, stock, entry);
+        // je past the update; push [edi + 0x64] / mov eax, [ecx] / call [eax + 0x10]: the system's update, with the manager in edi
+        const BYTE nullCheck[2] = {0x74, 0x36};
+        set.expect(PARTICLE_SYSTEM_CHECKED, nullCheck);
+        const BYTE update[8] = {0xFF, 0x77, 0x64, 0x8B, 0x01, 0xFF, 0x50, 0x10};
+        set.expect(0x005F51E6, update);
+        // mov [edi + 0x74], eax: the manager's particle step, stored by render_rate's gate
+        const BYTE stepStore[3] = {0x89, 0x47, 0x74};
+        set.expect(0x005F518C, stepStore);
+    }
+
+    void addParticlePlace(PatchSet &set, Cave &cave) {
+        const uintptr_t entry = cave.here();
+        for (BYTE xmm = 0; xmm < 8; xmm++) {
+            const BYTE save[3] = {0x0F, 0x11, static_cast<BYTE>(0x05 | (xmm << 3))}; // movups [savedXmm + 16 * xmm], xmm
+            cave.emit(save);
+            cave.emit32(address(savedXmm + 16 * xmm));
+        }
+        cave.emit8(0x60); // pushad
+        cave.emit8(0x57); // push edi: the destination
+        cave.emit8(0x56); // push esi: the particle
+        cave.call(reinterpret_cast<uintptr_t>(&placeParticle));
+        cave.emit8(0x61); // popad
+        for (BYTE xmm = 0; xmm < 8; xmm++) {
+            const BYTE load[3] = {0x0F, 0x10, static_cast<BYTE>(0x05 | (xmm << 3))}; // movups xmm, [savedXmm + 16 * xmm]
+            cave.emit(load);
+            cave.emit32(address(savedXmm + 16 * xmm));
+        }
+        const BYTE counter[3] = {0x8B, 0x4D, 0xF0}; // mov ecx, [ebp - 0x10]: as the displaced code leaves it
+        cave.emit(counter);
+        cave.jmp(PARTICLE_DRAWN);
+
+        // mov eax, [esi + 0x1C] / mov ecx, [ebp - 0x10] / mov [edi - 8], eax / mov eax, [esi + 0x20] / mov [edi - 4], eax /
+        // mov eax, [esi + 0x24] / mov [edi], eax
+        const BYTE stock[20] = {0x8B, 0x46, 0x1C, 0x8B, 0x4D, 0xF0, 0x89, 0x47, 0xF8, 0x8B, 0x46, 0x20, 0x89, 0x47, 0xFC, 0x8B, 0x46, 0x24,
+                                0x89, 0x07};
+        set.hook(PARTICLE_DRAW, stock, entry);
+        // mov eax, [ebp - 0x38] / movss [eax + ecx * 4], xmm0: the size, behind
+        const BYTE size[8] = {0x8B, 0x45, 0xC8, 0xF3, 0x0F, 0x11, 0x04, 0x88};
+        set.expect(PARTICLE_DRAWN, size);
+        // mov eax, [ecx] / call [eax + 0x20] (the storage's first particle) ... mov esi, [esi + 0x64]: the list the draw walks
+        const BYTE firstParticle[5] = {0x8B, 0x01, 0xFF, 0x50, 0x20};
+        set.expect(0x00961EC4, firstParticle);
+        const BYTE nextParticle[3] = {0x8B, 0x76, 0x64};
+        set.expect(0x00961FF5, nextParticle);
+    }
+
     // render_rate's period (eax) in, the limiter's out
     uint32_t __stdcall limiterPeriod(uint32_t) {
         // the W3D clock adds the step once per client frame: 16 and 17 ms make the 16.5 ms sub-frame
@@ -581,11 +754,21 @@ bool applyFrameRateUncap() {
     const BYTE tiltStamp[11] = {0xFF, 0x50, 0x7C, 0x8B, 0xD8, 0x39, 0x9E, 0xAC, 0x00, 0x00, 0x00};
     set.expect(0x0067BDFF, tiltStamp);
 
+    particlePositions = static_cast<ParticlePositions *>(VirtualAlloc(nullptr, sizeof(ParticlePositions), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
+    if (particlePositions == nullptr) {
+        VirtualFree(caveMemory, 0, MEM_RELEASE);
+        return false;
+    }
+    addParticleKeep(set, cave);
+    addParticlePlace(set, cave);
+
     addSlowdownGate(set, cave);
     addLimiterPeriod(set, cave);
 
     if (!commit(set, cave)) {
         VirtualFree(caveMemory, 0, MEM_RELEASE);
+        VirtualFree(particlePositions, 0, MEM_RELEASE);
+        particlePositions = nullptr;
         return false;
     }
     return true;
