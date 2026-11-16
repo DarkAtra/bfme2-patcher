@@ -18,8 +18,8 @@ namespace render_queue {
     using Runner = bool (*)(const Record *record);
 
     // ringBytes: a power of two of at least 64 KB. The worker thread is started, not waited for (the dll is applied under the
-    // loader lock).
-    bool start(Runner runner, uint32_t ringBytes);
+    // loader lock). `between` (optional) runs on the worker after each batch, outside the exec lock.
+    bool start(Runner runner, uint32_t ringBytes, void (*between)() = nullptr);
 
     // drains, ends the worker and frees the ring
     void stop();

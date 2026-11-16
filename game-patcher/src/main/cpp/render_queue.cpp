@@ -38,6 +38,7 @@ namespace render_queue {
         BYTE *ring = nullptr;
         uint32_t size = 0;
         Runner run = nullptr;
+        void (*betweenBatches)() = nullptr;
         volatile LONG &head = lines[0].value;
         volatile LONG &tail = lines[1].value;
         volatile LONG &sleeping = lines[2].value;
@@ -125,6 +126,9 @@ namespace render_queue {
                 if (waiting != 0 && reached(at, load(waitTarget))) {
                     SetEvent(progress);
                 }
+                if (betweenBatches != nullptr) {
+                    betweenBatches();
+                }
             }
         }
 
@@ -174,7 +178,7 @@ namespace render_queue {
         }
     }
 
-    bool start(const Runner runner, const uint32_t ringBytes) {
+    bool start(const Runner runner, const uint32_t ringBytes, void (*const between)()) {
         if (ring != nullptr || runner == nullptr || ringBytes < 64 * 1024 || (ringBytes & (ringBytes - 1)) != 0) {
             return false;
         }
@@ -186,6 +190,7 @@ namespace render_queue {
         }
         size = ringBytes;
         run = runner;
+        betweenBatches = between;
         head = tail = sleeping = waiting = quit = 0;
         writeAt = knownTail = 0;
         InitializeCriticalSection(&exec);

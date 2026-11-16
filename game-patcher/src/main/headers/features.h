@@ -180,6 +180,10 @@
 #define GAME_PATCHER_RENDER_THREAD_COUNTS 0
 #endif
 
+#ifndef GAME_PATCHER_FRAME_PACING_TRACE
+#define GAME_PATCHER_FRAME_PACING_TRACE 0
+#endif
+
 #ifndef GAME_PATCHER_FPS_COUNTER
 #define GAME_PATCHER_FPS_COUNTER 1
 #endif
@@ -370,6 +374,11 @@ namespace features {
     // and times its worker and the game thread's waits for it, for the debug mode's report (RENDER THREAD); without it the counting
     // code is not built at all (even unused, its checks cost the game thread ~5 ns a call).
     constexpr bool RENDER_THREAD_COUNTS = GAME_PATCHER_RENDER_THREAD_COUNTS != 0;
+
+    // Frame pacing trace (off, for measuring builds): records 20 s of pass starts, the worker's Presents and the display's vertical
+    // blanks a little after the match starts, into %TEMP%\bfme2-frame-trace.csv (instrumentation/frame_trace.cpp). Not built
+    // otherwise.
+    constexpr bool FRAME_PACING_TRACE = GAME_PATCHER_FRAME_PACING_TRACE != 0;
 
     // FPS counter: with -showfps on the game's command line, the frames per second are shown in the top left corner
     // (fps_counter.cpp).

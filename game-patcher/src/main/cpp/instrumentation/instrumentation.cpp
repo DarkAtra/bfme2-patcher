@@ -7,8 +7,10 @@
 #include "instrumentation/auto_skirmish.h"
 #include "instrumentation/call_timing.h"
 #include "instrumentation/d3d_call_stats.h"
+#include "instrumentation/fixed_seed.h"
 #include "instrumentation/full_memory_dump.h"
 #include "instrumentation/instrumentation.h"
+#include "instrumentation/logic_crc_log.h"
 #include "instrumentation/network_stats.h"
 #include "instrumentation/pathfinder_timing.h"
 #include "instrumentation/stats.h"
@@ -19,8 +21,9 @@
 // The measuring tools, applied after the patches when the game is started with -debugmode (the updater adds it in debug mode).
 // They record what the game does (the timers in a file mapping that the harness reads, the network stats in files) and change
 // nothing about how it runs, except the two test aids: the auto skirmish (only with -autoskirmish) presses menu buttons, and the
-// test banner draws the harness's line on the screen. Their hooks sit on functions and call sites the patches leave alone. Without
-// -debugmode none of this is applied.
+// test banner draws the harness's line on the screen. The fixed seed (only with -fixedseed) makes every skirmish play the same
+// match; the logic CRC log (only with -logcrc) computes the logic's CRC every few seconds, which costs a moment each time. Their
+// hooks sit on functions and call sites the patches leave alone. Without -debugmode none of this is applied.
 
 namespace {
 
@@ -81,5 +84,7 @@ void instrumentation::apply(const wchar_t *(&failed)[MAX_FAILED_PATCHES], size_t
     runPatch(true, L"Network stats", applyNetworkStats, failed, count);
     runPatch(fullMemoryDumpRequested(), L"Full memory dump", applyFullMemoryDump, failed, count);
     runPatch(hasArgument(L"-autoskirmish"), L"Auto skirmish", applyAutoSkirmish, failed, count);
+    runPatch(hasArgument(L"-fixedseed"), L"Fixed seed", applyFixedSeed, failed, count);
+    runPatch(hasArgument(L"-logcrc"), L"Logic CRC log", applyLogicCrcLog, failed, count);
     runPatch(true, L"Test banner", applyTestBanner, failed, count);
 }

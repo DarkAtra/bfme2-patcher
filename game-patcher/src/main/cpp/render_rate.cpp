@@ -52,10 +52,14 @@ namespace {
         uint32_t frameCounter;
         uint32_t spellStoreTick;
         uint32_t getTickCount;
+        // the camera's step per client update as a share of a stock frame's; frame_rate_uncap.cpp rewrites it per frame
         float scrollScale;
-        int32_t dragHalfSteps[2];
+        double dragWeighted[2];
         int32_t dragTotals[2];
+        float stockSteps[2];
     };
+
+    float *scrollScale = nullptr;
 
     void addRate(PatchSet &set) {
         BYTE expected[4];
@@ -318,9 +322,15 @@ namespace {
     }
 
     // movss xmm0, [ebp + offset] / mulss xmm0, [scale] / movss [ebp + offset], xmm0
-    void emitScaleLocal(Cave &cave, const CaveData *data, const BYTE offset) {
+    // With `keep`, the unscaled value is also stored there (movss [keep], xmm0).
+    void emitScaleLocal(Cave &cave, const CaveData *data, const BYTE offset, const float *keep = nullptr) {
         const BYTE load[5] = {0xF3, 0x0F, 0x10, 0x45, offset};
         cave.emit(load);
+        if (keep != nullptr) {
+            const BYTE store[4] = {0xF3, 0x0F, 0x11, 0x05};
+            cave.emit(store);
+            cave.emit32(address(keep));
+        }
         const BYTE multiply[4] = {0xF3, 0x0F, 0x59, 0x05};
         cave.emit(multiply);
         cave.emit32(address(&data->scrollScale));
@@ -374,12 +384,25 @@ namespace {
         set.hook(0x0083B984, rotateLeft, emitScaledRotation(cave, data, 0xE9, 0x0083B98A));
         const BYTE rotateRight[6] = {0xD8, 0x80, 0x2C, 0x0C, 0x00, 0x00}; // fadd dword [eax + 0xC2C]
         set.hook(0x0083B9B6, rotateRight, emitScaledRotation(cave, data, 0xC1, 0x0083B9BC));
+        // the in-game UI's held rotate keys (0x006A1F4D, InGameUI + 0x8BB / + 0x8BC) take the same step, eax the GlobalData too
+        set.hook(0x006A2205, rotateLeft, emitScaledRotation(cave, data, 0xE9, 0x006A220B));
+        set.hook(0x006A222D, rotateRight, emitScaledRotation(cave, data, 0xC1, 0x006A2233));
+        // mov eax, [TheGlobalData] in front of both
+        const BYTE loadGlobalData[5] = {0xA1, 0x64, 0x43, 0xDE, 0x00};
+        set.expect(0x006A2200, loadGlobalData);
+        set.expect(0x006A2228, loadGlobalData);
 
         // 0x008392A7, the camera controller's own input: every path to its move (scroll vector [ebp - 0xC], drag zoom
-        // [ebp - 4]) starts here, and its rotation step is in xmm0 at the second site
-        const BYTE moveLocals[3] = {0xF4, 0xF8, 0xFC};
+        // [ebp - 4]) starts here, and its rotation step is in xmm0 at the second site. The stock scroll vector is kept for the
+        // drag totals (addDragTotals).
         const BYTE loadController[6] = {0x8B, 0x0D, 0x58, 0x49, 0xDE, 0x00}; // mov ecx, [0x00DE4958]
-        set.hook(0x008395EC, loadController, emitScaledLocals(cave, data, moveLocals, loadController, 0x008395F2));
+        const uintptr_t move = cave.here();
+        emitScaleLocal(cave, data, 0xF4, &data->stockSteps[0]);
+        emitScaleLocal(cave, data, 0xF8, &data->stockSteps[1]);
+        emitScaleLocal(cave, data, 0xFC);
+        cave.emit(loadController);
+        cave.jmp(0x008395F2);
+        set.hook(0x008395EC, loadController, move);
         const uintptr_t rotation = cave.here();
         const BYTE scaleStep[4] = {0xF3, 0x0F, 0x59, 0x05}; // mulss xmm0, [scale]
         cave.emit(scaleStep);
@@ -398,16 +421,14 @@ namespace {
 
     // The War of the Ring map's camera input (0x008392A7) adds the truncated size of each frame's scroll step to two ints
     // (translator + 0x30 / + 0x34, zeroed when the right button goes down, 0x00838FCC); when the button comes up, totals below a
-    // threshold make the press a click rather than a drag (0x0083911F). The step is halved at 60 fps, and truncating the halves
-    // loses them: a slow drag that adds 1 a frame at 30 fps adds 0. So the totals count half steps instead, the stock step
-    // truncated as at 30 fps, and keep half of that: every two frames add what one stock frame added. A total the game wrote
-    // itself (its resets) restarts the count from it; the two resets that write 0 also mark the count as stale, as a total of
-    // 0 alone would not tell.
+    // threshold make the press a click rather than a drag (0x0083911F). The step is scaled (halved at 60 fps), and truncating the
+    // scaled steps loses them: a slow drag that adds 1 a frame at 30 fps adds 0. So the totals add the stock step, truncated as
+    // at 30 fps, weighted by the scale: every two frames at 60 fps add what one stock frame added (exactly: sums of halves), a
+    // frame of any length its share (frame_rate_uncap.cpp). A total the game wrote itself (its resets) restarts the count from
+    // it; the two resets that write 0 also mark the count as stale, as a total of 0 alone would not tell.
     void addDragTotals(PatchSet &set, Cave &cave, const CaveData *data) {
-        static_assert(CLIENT_RATE == 2 * STOCK_CLIENT_RATE, "the totals keep half of the half steps");
         const uintptr_t totals = cave.here();
         const BYTE fields[2] = {0x30, 0x34};
-        const BYTE steps[2] = {0xF4, 0xF8};
         for (size_t axis = 0; axis < 2; axis++) {
             const BYTE written[2] = {0x8B, 0x46}; // mov eax, [esi + field]
             cave.emit(written);
@@ -415,33 +436,40 @@ namespace {
             cave.emit8(0x3B); // cmp eax, [dragTotals]
             cave.emit8(0x05);
             cave.emit32(address(&data->dragTotals[axis]));
-            const BYTE unchanged[2] = {0x74, 0x07}; // je: the total is still the one written here
-            cave.emit(unchanged);
-            const BYTE restart[2] = {0x01, 0xC0}; // add eax, eax
+            const size_t unchanged = forwardJcc(cave, JE); // the total is still the one written here
+            const BYTE restart[3] = {0xDB, 0x46, fields[axis]}; // fild dword [esi + field]
             cave.emit(restart);
-            cave.emit8(0xA3); // mov [dragHalfSteps], eax
-            cave.emit32(address(&data->dragHalfSteps[axis]));
-            const BYTE step[12] = {
-                0x8B, 0x45, steps[axis], // mov eax, [ebp + step]: this frame's scaled step
+            const BYTE storeWeighted[2] = {0xDD, 0x1D}; // fstp qword [dragWeighted]
+            cave.emit(storeWeighted);
+            cave.emit32(address(&data->dragWeighted[axis]));
+            cave.resolveJcc(unchanged, cave.here());
+            cave.emit8(0xA1); // mov eax, [stockSteps]
+            cave.emit32(address(&data->stockSteps[axis]));
+            const BYTE step[13] = {
                 0x25, 0xFF, 0xFF, 0xFF, 0x7F, // and eax, 0x7FFFFFFF: fabs
-                0x66, 0x0F, 0x6E, 0xC0 // movd xmm0, eax
+                0x66, 0x0F, 0x6E, 0xC0,       // movd xmm0, eax
+                0xF3, 0x0F, 0x2C, 0xC0        // cvttss2si eax, xmm0: as ftol truncates it
             };
             cave.emit(step);
-            const BYTE unscale[4] = {0xF3, 0x0F, 0x5E, 0x05}; // divss xmm0, [scale]: the stock step, exactly
-            cave.emit(unscale);
-            cave.emit32(address(&data->scrollScale));
-            const BYTE truncate[4] = {0xF3, 0x0F, 0x2C, 0xC0}; // cvttss2si eax, xmm0: as ftol truncates it
-            cave.emit(truncate);
-            cave.emit8(0x03); // add eax, [dragHalfSteps]
-            cave.emit8(0x05);
-            cave.emit32(address(&data->dragHalfSteps[axis]));
-            cave.emit8(0xA3); // mov [dragHalfSteps], eax
-            cave.emit32(address(&data->dragHalfSteps[axis]));
-            const BYTE half[5] = {
-                0xD1, 0xF8, // sar eax, 1
-                0x89, 0x46, fields[axis] // mov [esi + field], eax
+            const BYTE loadStep[5] = {
+                0x50,             // push eax
+                0xDB, 0x04, 0x24, // fild dword [esp]
+                0x58              // pop eax
             };
-            cave.emit(half);
+            cave.emit(loadStep);
+            const BYTE weigh[2] = {0xD8, 0x0D}; // fmul dword [scale]
+            cave.emit(weigh);
+            cave.emit32(address(&data->scrollScale));
+            const BYTE add[2] = {0xDC, 0x05}; // fadd qword [dragWeighted]
+            cave.emit(add);
+            cave.emit32(address(&data->dragWeighted[axis]));
+            cave.emit(storeWeighted);
+            cave.emit32(address(&data->dragWeighted[axis]));
+            const BYTE truncate[4] = {0xF2, 0x0F, 0x2C, 0x05}; // cvttsd2si eax, qword [dragWeighted]
+            cave.emit(truncate);
+            cave.emit32(address(&data->dragWeighted[axis]));
+            const BYTE total[3] = {0x89, 0x46, fields[axis]}; // mov [esi + field], eax
+            cave.emit(total);
             cave.emit8(0xA3); // mov [dragTotals], eax
             cave.emit32(address(&data->dragTotals[axis]));
         }
@@ -538,5 +566,10 @@ bool applyRenderRatePatch() {
         return false;
     }
 
+    scrollScale = &data->scrollScale;
     return true;
+}
+
+float *renderRateScrollScale() {
+    return scrollScale;
 }

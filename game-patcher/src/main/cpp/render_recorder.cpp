@@ -8,6 +8,8 @@
 
 #include "d3d_methods.h"
 #include "features.h"
+#include "instrumentation/frame_trace.h"
+#include "picture_pacer.h"
 #include "render_queue.h"
 #include "render_recorder.h"
 
@@ -35,7 +37,8 @@
 // * EndParameterBlock is recorded and hands out a stand-in for the block (see the parameter blocks below).
 // * A Release whose count the caller does not read (COUNT_UNREAD) needs no wait while such records are pending.
 // * Present is recorded, with at most one frame in flight; it hands back the result of the last Present the worker ran, so a lost
-//   device shows one frame later. Reset waits and runs now.
+//   device shows one frame later. A picture the picture pacer has given a refresh (picture_pacer.cpp) is preceded by a record that
+//   ends the worker's batch, after which the worker holds the Present until that refresh. Reset waits and runs now.
 // * Everything else (S, the other hand-written ones, the D3DX functions) waits until the worker has run everything recorded and
 //   then runs on the game thread.
 // Calls of the worker (D3DX's device calls inside a recorded effect call, the Releases) run as they come, and so do the calls D3D9
@@ -258,6 +261,8 @@ namespace render_recorder {
         // exception flags are left out.
 
         constexpr uint32_t STATE = 2;
+        // a picture's refresh, ahead of its Present
+        constexpr uint32_t PACE = 3;
         constexpr uint32_t MXCSR_CONTROL = 0xFFC0;
 
         struct FloatState {
@@ -316,7 +321,21 @@ namespace render_recorder {
                 if (counting) {
                     worker.runningMethod = call->method;
                 }
+#if GAME_PATCHER_FRAME_PACING_TRACE
+                const bool presents = call->method == d3d::PRESENT || call->method == d3d::SWAP_CHAIN_PRESENT;
+                LARGE_INTEGER presentStart = {};
+                if (presents) {
+                    QueryPerformanceCounter(&presentStart);
+                }
+#endif
                 const uint32_t result = invokers[call->count](call->function, call->values);
+#if GAME_PATCHER_FRAME_PACING_TRACE
+                if (presents) {
+                    LARGE_INTEGER presentEnd;
+                    QueryPerformanceCounter(&presentEnd);
+                    instrumentation::frame_trace::presented(presentStart.QuadPart, presentEnd.QuadPart);
+                }
+#endif
                 for (uint32_t retires = call->retires & ~COUNT_CHANGE; retires != 0; retires &= retires - 1) {
                     retire(call->values[_tzcnt_u32(retires)]);
                 }
@@ -333,6 +352,14 @@ namespace render_recorder {
                 }
             } else if (record->tag == STATE) {
                 loadFloatState(*reinterpret_cast<const FloatState *>(record + 1));
+            } else if (record->tag == PACE) {
+                const auto *picture = reinterpret_cast<const picture_pacer::Picture *>(record + 1);
+                picture_pacer::ready(*picture);
+#if GAME_PATCHER_FRAME_PACING_TRACE
+                instrumentation::frame_trace::paced(picture->passStart, picture->slot);
+#endif
+                // the hold comes between the batches, outside the exec lock
+                return true;
             }
             return false;
         }
@@ -1965,6 +1992,12 @@ namespace render_recorder {
                 return runNow(arguments, frame, original);
             }
             sendFloatState();
+            const picture_pacer::Picture picture = picture_pacer::take();
+            if (picture.slot != 0) {
+                render_queue::Record *pace = render_queue::reserve(PACE, sizeof(picture));
+                memcpy(pace + 1, &picture, sizeof(picture));
+                render_queue::commit();
+            }
             render_queue::Record *record = render_queue::reserve(CALL, callBytes(1 + arguments) + 2 * 16 + 15);
             Call *call = callIn(record, original, method, 1 + arguments);
             memcpy(call->values, frame + 1, 4 * (1 + arguments));
@@ -2231,7 +2264,7 @@ namespace render_recorder {
             return false;
         }
         fillTables(std::make_index_sequence<MAX_ARGUMENTS + 1>{});
-        if (!d3d::start(&onCall, &tallies.hooks) || !render_queue::start(&run, RING_BYTES)) {
+        if (!d3d::start(&onCall, &tallies.hooks) || !render_queue::start(&run, RING_BYTES, &picture_pacer::hold)) {
             return false;
         }
         for (uint32_t method = 0; method < d3d::METHODS; method++) {
