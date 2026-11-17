@@ -37,6 +37,7 @@
 #include "mount_health_ratio.h"
 #include "siege_wall_teleport_fix.h"
 #include "mount_toggle_crash_fix.h"
+#include "ai_tactic_teardown.h"
 #include "network_catch_up.h"
 #include "network_command_send.h"
 #include "os_name_fallback.h"
@@ -96,6 +97,7 @@ size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
     runPatch(features::PRODUCTION_IDS, L"Game-wide production ids", applyProductionIds, failed, count);
     runPatch(features::AI_BUILD_QUEUE, L"AI build queue", applyAiBuildQueue, failed, count);
     runPatch(features::MOUNT_TOGGLE_CRASH_FIX, L"Mount toggle crash fix", applyMountToggleCrashFix, failed, count);
+    runPatch(features::AI_TACTIC_TEARDOWN, L"AI tactic teardown crash fix", applyAiTacticTeardown, failed, count);
     runPatch(features::EVACUATE_ALL_PASSENGERS, L"Evacuate all passengers", applyEvacuateAllPassengers, failed, count);
     runPatch(features::SIEGE_WALL_TELEPORT_FIX, L"Siege wall teleport fix", applySiegeWallTeleportFix, failed, count);
     runPatch(features::AI_REBUILD_TARGETS, L"AI rebuild targets", applyAiRebuildTargets, failed, count);

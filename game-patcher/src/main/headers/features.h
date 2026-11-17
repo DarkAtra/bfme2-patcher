@@ -88,6 +88,10 @@
 #define GAME_PATCHER_MOUNT_TOGGLE_CRASH_FIX 1
 #endif
 
+#ifndef GAME_PATCHER_AI_TACTIC_TEARDOWN
+#define GAME_PATCHER_AI_TACTIC_TEARDOWN 1
+#endif
+
 #ifndef GAME_PATCHER_EVACUATE_ALL_PASSENGERS
 #define GAME_PATCHER_EVACUATE_ALL_PASSENGERS 1
 #endif
@@ -275,6 +279,10 @@ namespace features {
     // Mount toggle crash fix: mounting, dismounting or changing form no longer crashes when the unit's last order was to move to
     // an object that is gone, e.g. the One Ring after it was picked up (mount_toggle_crash_fix.cpp).
     constexpr bool MOUNT_TOGGLE_CRASH_FIX = GAME_PATCHER_MOUNT_TOGGLE_CRASH_FIX != 0;
+
+    // AI tactic teardown crash fix: leaving a match with AI players no longer crashes when the AI's tactics, destroyed one after
+    // the other, read the ones already freed (ai_tactic_teardown.cpp).
+    constexpr bool AI_TACTIC_TEARDOWN = GAME_PATCHER_AI_TACTIC_TEARDOWN != 0;
 
     // Evacuate all passengers: the EVACUATE button of a tunnel, garrison or transport also sends out passengers with a contain of
     // their own, e.g. a Dwarven battle wagon, which it left inside (evacuate_all_passengers.cpp).
