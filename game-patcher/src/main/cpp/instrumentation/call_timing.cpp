@@ -1358,6 +1358,62 @@ namespace {
         return ok;
     }
 
+    // The attack-move state (ID 33, AI_ATTACK_MOVE_TO, update 0x00755798), the start of a big fight's worst hitch: its target search
+    // (getNextMoodTarget 0x0066844A, unthrottled when the nested attack has just ended) and the closest enemy search inside it, and
+    // the move's re-planning and progress check
+    bool timeAttackMove(PatchSet &set, Cave &cave) {
+        static const DirectCall calls[] = {
+            {0x00755852, {0xE8, 0xB4, 0x28, 0xF1, 0xFF}, "attack move: target 66810b"},
+            {0x0075587F, {0xE8, 0xC6, 0x2B, 0xF1, 0xFF}, "attack move: target search 66844a"},
+            {0x0075588C, {0xE8, 0x3A, 0xCF, 0xF0, 0xFF}, "attack move: 6627cb"},
+            {0x00755991, {0xE8, 0xBB, 0x87, 0xFF, 0xFF}, "attack move: re-plan 74e151"},
+            {0x007559B9, {0xE8, 0xB4, 0xFB, 0xFF, 0xFF}, "attack move: progress 755572"},
+            {0x006689DA, {0xE8, 0x64, 0x8A, 0x09, 0x00}, "mood target: enemy search 701443"},
+            {0x00701461, {0xE8, 0x71, 0xF2, 0xFF, 0xFF}, "enemy search: closest enemy 7006d7"},
+            // inside the target choice 0x007006D7: its candidates, their score and distance, and for each new best the
+            // reachability gate and the strength test around it (a second partition search, a relationship per neighbour)
+            {0x00700A9B, {0xE8, 0xF0, 0x85, 0x33, 0x00}, "target choice: closest without evaluator a39090"},
+            {0x00700AEB, {0xE8, 0x50, 0x88, 0x33, 0x00}, "target choice: candidates in range a39340"},
+            {0x00700B00, {0xE8, 0x1B, 0x89, 0x33, 0x00}, "target choice: all candidates a39420"},
+            {0x00700B79, {0xE8, 0x6B, 0x8C, 0x05, 0x00}, "target choice: score 7597e9"},
+            {0x00700CCA, {0xE8, 0xF0, 0x27, 0xF6, 0xFF}, "target choice: distance 6634bf"},
+            {0x00700D8E, {0xE8, 0xC1, 0xA9, 0xFF, 0xFF}, "target choice: gate 6fb754"},
+            {0x00700DB3, {0xE8, 0x3F, 0xAC, 0xFC, 0xFF}, "target choice: strength radius 6cb9f7"},
+            {0x00700DDA, {0xE8, 0x21, 0x85, 0x33, 0x00}, "target choice: neighbours a39300"},
+            {0x00700E07, {0xE8, 0x9F, 0xC9, 0xF8, 0xFF}, "target choice: neighbour relationship 68d7ab"},
+            {0x00700E30, {0xE8, 0xE4, 0x40, 0xD4, 0xFF}, "target choice: next neighbour 444f19"},
+            // inside every partition range query (0x00A3C4E0, behind 0x00A39340 / 0x00A39420 / 0x00A39300): the quadtree walk per
+            // layer, the filter chain per object within range, the sort of the result
+            {0x00A3C659, {0xE8, 0x02, 0xE2, 0xFF, 0xFF}, "partition query: walk a3a860"},
+            {0x00A3A955, {0xE8, 0xF6, 0xEA, 0xFF, 0xFF}, "partition query: filters a39450"},
+            {0x00A3C68D, {0xE8, 0xBE, 0xE0, 0xFF, 0xFF}, "partition query: sort a3a750"},
+            // inside the "possible to attack" filter (0x00660CA4 -> 0x0068D6A6 -> WeaponSet 0x006C9147): its relationship, the weapon
+            // loop with the per-slot range tests, the weapon checks after it, and a battalion's members checked one by one; and the
+            // line-of-sight filter's (0x006616AC) obstacle test
+            {0x006C9352, {0xE8, 0x54, 0x44, 0xFC, 0xFF}, "possible to attack: relationship 68d7ab"},
+            {0x006C948F, {0xE8, 0xBE, 0xF1, 0xFF, 0xFF}, "possible to attack: weapons 6c8652"},
+            {0x006C87BE, {0xE8, 0x2E, 0x38, 0x00, 0x00}, "weapons: range 6cbff1"},
+            {0x006C87EB, {0xE8, 0x63, 0x3E, 0x00, 0x00}, "weapons: range 6cc653"},
+            {0x006C87F6, {0xE8, 0x27, 0x3E, 0x00, 0x00}, "weapons: range 6cc622"},
+            {0x006C8844, {0xE8, 0x44, 0xB5, 0xDE, 0xFF}, "weapons: min range distance 4b3d8d"},
+            {0x006C890E, {0xE8, 0x96, 0xF7, 0xFF, 0xFF}, "weapons: check 6c80a9"},
+            {0x006C894B, {0xE8, 0xA3, 0x52, 0x00, 0x00}, "weapons: slot check 6cdbf3"},
+            {0x006C89E5, {0xE8, 0x10, 0x2C, 0xFC, 0xFF}, "weapons: member check 68b5fa"},
+            {0x00661791, {0xE8, 0x07, 0x38, 0x09, 0x00}, "line of sight: obstacle 6f4f9d"},
+        };
+        bool ok = timeDirectCalls(set, cave, calls, CALL_LOGIC, false);
+        // each filter of a partition query's chain (0x00A39450, an AND in list order): by the filter's class; as the chain stops
+        // at the first refusal, the calls of the filter after one tell how often that one passed
+        const BYTE allow[8] = {0x8B, 0x06, 0x57, 0x8B, 0xCE, 0xFF, 0x50, 0x04}; // mov eax, [esi] / push edi / mov ecx, esi / call [eax + 4]
+        ok &= timeCall(set, cave, 0x00A39460, allow, 5, CALL_LOGIC, "partition filter allow");
+        const BYTE members[8] = {0x8B, 0xCE, 0xFF, 0x90, 0x18, 0x01, 0x00, 0x00}; // mov ecx, esi / call [eax + 0x118]
+        ok &= timeCall(set, cave, 0x006C89B6, members, 2, CALL_LOGIC, "weapons: member list [contain]+118");
+        // mov eax, [ecx] / lea edx, [ebp - 0x18] / push edx / call [eax + 0x3C]: TheTerrainLogic's isClearLineOfSight
+        const BYTE lineOfSight[9] = {0x8B, 0x01, 0x8D, 0x55, 0xE8, 0x52, 0xFF, 0x50, 0x3C};
+        ok &= timeCall(set, cave, 0x00661772, lineOfSight, 6, CALL_LOGIC, "line of sight: terrain [terrain]+3c");
+        return ok;
+    }
+
     // the msvcr71 file functions, through their import slots; an import is replaced only while its slot still holds the library's
     // own function
     bool timeFiles(PatchSet &set, Cave &) {
@@ -1447,6 +1503,7 @@ bool instrumentation::applyCallTiming() {
     const bool objects = commitGroup(timeObjectRender, nullptr);
     const bool ai = commitGroup(timeAiUpdate, nullptr);
     const bool states = commitGroup(timeStateMachine, nullptr);
+    const bool attackMove = commitGroup(timeAttackMove, nullptr);
     return engine && logic && client && draw && particles && radar && skinning && rebuild && files && render && horde && lists && objects && ai
-        && states;
+        && states && attackMove;
 }
