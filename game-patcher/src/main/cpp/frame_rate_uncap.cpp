@@ -8,7 +8,7 @@
 #include "picture_pacer.h"
 #include "render_rate.h"
 
-// Uncapped frame rate (being built, off by default; tools/analysis/notes/21-uncap-frame-rate.md)
+// Uncapped frame rate (tools/analysis/notes/21-uncap-frame-rate.md)
 //
 // Problem: the game draws one frame per sub-frame of its logic, 60 a second with render_rate, however fast the machine is.
 // Fix: draws as many frames as the machine and the display allow, and advances a sub-frame only when one is due (every 16.5 ms,

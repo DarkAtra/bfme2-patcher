@@ -17,7 +17,7 @@
 #endif
 
 #ifndef GAME_PATCHER_FRAME_RATE_UNCAP
-#define GAME_PATCHER_FRAME_RATE_UNCAP 0
+#define GAME_PATCHER_FRAME_RATE_UNCAP 1
 #endif
 
 #ifndef GAME_PATCHER_SHROUD_FADE
@@ -210,8 +210,8 @@ namespace features {
     // no longer pins a core (frame_limiter_sleep.cpp).
     constexpr bool FRAME_LIMITER_SLEEP = GAME_PATCHER_FRAME_LIMITER_SLEEP != 0;
 
-    // Uncapped frame rate (off, being built): draws as many frames as the machine and the display allow, the logic keeping its
-    // pace; needs RENDER_RATE. So far only the scheduling, the frames between sub-frames repeat the picture
+    // Uncapped frame rate: draws as many frames as the machine and the display allow, the logic keeping its pace and its exact
+    // steps; needs RENDER_RATE. The frames between sub-frames show the game moved on by the time that passed
     // (frame_rate_uncap.cpp).
     constexpr bool FRAME_RATE_UNCAP = GAME_PATCHER_FRAME_RATE_UNCAP != 0;
 
