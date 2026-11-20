@@ -29,6 +29,7 @@
 #include "render_scope_names.h"
 #include "health_bar_crash_fix.h"
 #include "heat_haze_squares.h"
+#include "animation_channels.h"
 #include "hero_battalion_absorption.h"
 #include "hero_recruit_queue.h"
 #include "instrumentation/instrumentation.h"
@@ -117,6 +118,7 @@ size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
     runPatch(features::NETWORK_COMMAND_SEND, L"Network command send", applyNetworkCommandSend, failed, count);
     runPatch(features::MATERIAL_PARAMETERS, L"Material parameters", applyMaterialParameters, failed, count);
     runPatch(features::HEAT_HAZE_SQUARES, L"Heat haze squares", applyHeatHazeSquares, failed, count);
+    runPatch(features::ANIMATION_CHANNELS, L"Animation channels", applyAnimationChannels, failed, count);
     runPatch(features::AI_TUNNEL_ROUTING, L"AI tunnel routing", applyAiTunnelRouting, failed, count);
     runPatch(features::OS_NAME_FALLBACK, L"OS name fallback", applyOsNameFallback, failed, count);
     runPatch(features::RENDER_THREAD, L"Render thread", applyRenderThread, failed, count);

@@ -168,6 +168,10 @@
 #define GAME_PATCHER_HEAT_HAZE_SQUARES 1
 #endif
 
+#ifndef GAME_PATCHER_ANIMATION_CHANNELS
+#define GAME_PATCHER_ANIMATION_CHANNELS 1
+#endif
+
 #ifndef GAME_PATCHER_AI_TUNNEL_ROUTING
 #define GAME_PATCHER_AI_TUNNEL_ROUTING 1
 #endif
@@ -363,6 +367,10 @@ namespace features {
     // Heat haze squares: the heat haze of fire effects (SMUDGE.tga particles) no longer shows as squares; it samples a copy of the
     // frame instead of the texture it draws into, and half a texel closer to where it is drawn (heat_haze_squares.cpp).
     constexpr bool HEAT_HAZE_SQUARES = GAME_PATCHER_HEAT_HAZE_SQUARES != 0;
+
+    // Animation channels: the rotation and position channels of animated models are evaluated in one step each instead of a
+    // chain of calls, with the same poses (animation_channels.cpp).
+    constexpr bool ANIMATION_CHANNELS = GAME_PATCHER_ANIMATION_CHANNELS != 0;
 
     // AI tunnel routing: a skirmish AI unit ordered across the map goes through its player's tunnel network (mine shafts) when
     // that is clearly shorter than walking, in at the shaft nearest to it and out at the shaft nearest its goal; when the network
