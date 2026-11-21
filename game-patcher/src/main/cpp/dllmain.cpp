@@ -96,6 +96,10 @@ hostent *WSAAPI Hooked_gethostbyname(const char *name) {
 
 HOOK_TRACE_INFO hHook = {nullptr}; // keep track of our hook
 
+// The updater reads this exit code to tell the player that a patch failed (GameUtils.kt). Players whose clients apply different
+// patches would run different game logic, so the game must not run with a patch missing.
+static constexpr UINT PATCH_FAILURE_EXIT_CODE = 0x47500001;
+
 // The log only uses kernel32 and the C runtime: DllMain runs under the loader lock, where user32 (a message box) is not safe.
 static HANDLE logFile = INVALID_HANDLE_VALUE;
 
@@ -152,10 +156,11 @@ BOOL APIENTRY DllMain(HINSTANCE hinstDLL, const DWORD fdwReason, LPVOID /*lpvRes
 
         const wchar_t *failedPatches[MAX_FAILED_PATCHES];
         const size_t failedPatchCount = applyPatches(failedPatches);
+        bool failed = failedPatchCount > 0;
         for (size_t i = 0; i < failedPatchCount; i++) {
             wchar_t message[256];
-            swprintf_s(message, L"Failed to apply the patch \"%ls\", the game runs without it.", failedPatches[i]);
-            writeLog("WARNING", message);
+            swprintf_s(message, L"Failed to apply the patch \"%ls\".", failedPatches[i]);
+            writeLog("SEVERE", message);
         }
         if (failedPatchCount == 0) {
             writeLog("INFO", L"Applied every enabled patch.");
@@ -169,16 +174,18 @@ BOOL APIENTRY DllMain(HINSTANCE hinstDLL, const DWORD fdwReason, LPVOID /*lpvRes
         );
         if (FAILED(result)) {
             wchar_t message[384];
-            swprintf_s(message, L"Failed to hook gethostbyname (0x%08lX: %ls). Online gameplay might not be possible.", result, RtlGetLastErrorString());
+            swprintf_s(message, L"Failed to hook gethostbyname (0x%08lX: %ls).", result, RtlGetLastErrorString());
             writeLog("SEVERE", message);
+            failed = true;
         } else {
             // A new hook intercepts no thread until it gets an ACL; an exclusive ACL without thread ids intercepts every thread.
             ULONG ACLEntries[1] = {};
             const NTSTATUS aclResult = LhSetExclusiveACL(ACLEntries, 0, &hHook);
             if (FAILED(aclResult)) {
                 wchar_t message[384];
-                swprintf_s(message, L"Failed to activate the gethostbyname hook (0x%08lX: %ls). Online gameplay might not be possible.", aclResult, RtlGetLastErrorString());
+                swprintf_s(message, L"Failed to activate the gethostbyname hook (0x%08lX: %ls).", aclResult, RtlGetLastErrorString());
                 writeLog("SEVERE", message);
+                failed = true;
             } else {
                 writeLog("INFO", L"Hooked gethostbyname.");
             }
@@ -192,23 +199,32 @@ BOOL APIENTRY DllMain(HINSTANCE hinstDLL, const DWORD fdwReason, LPVOID /*lpvRes
         size_t matches;
         BYTE *addressToModify = findInImage(GetModuleHandleA(nullptr), search, sizeof(search), matches);
         if (matches == 0) {
-            writeLog("SEVERE", L"Failed to patch the certificate check: its code was not found. Online gameplay might not be possible.");
+            writeLog("SEVERE", L"Failed to patch the certificate check: its code was not found.");
+            failed = true;
         } else if (matches > 1) {
             wchar_t message[256];
-            swprintf_s(message, L"Failed to patch the certificate check: its code was found %zu times. Online gameplay might not be possible.", matches);
+            swprintf_s(message, L"Failed to patch the certificate check: its code was found %zu times.", matches);
             writeLog("SEVERE", message);
+            failed = true;
         } else {
             SIZE_T bytesWritten;
             if (WriteProcessMemory(currentProcess, addressToModify + 3, patch, sizeof(patch), &bytesWritten)) {
                 FlushInstructionCache(currentProcess, addressToModify + 3, sizeof(patch));
                 writeLog("INFO", L"Patched the certificate check.");
             } else {
-                writeLog("SEVERE", L"Failed to patch the certificate check: the write failed. Online gameplay might not be possible.");
+                writeLog("SEVERE", L"Failed to patch the certificate check: the write failed.");
+                failed = true;
             }
         }
 
+        if (failed) {
+            writeLog("SEVERE", L"Closing the game: it must not run with a patch missing.");
+        }
         closeLog();
-
+        if (failed) {
+            // ExitProcess is not safe under the loader lock; the game's own code has not run yet, so there is nothing to shut down
+            TerminateProcess(GetCurrentProcess(), PATCH_FAILURE_EXIT_CODE);
+        }
     }
 
     return true;

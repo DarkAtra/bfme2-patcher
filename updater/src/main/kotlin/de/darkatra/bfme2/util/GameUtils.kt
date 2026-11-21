@@ -7,8 +7,12 @@ import de.darkatra.injector.Injector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.file.Path
+import kotlin.io.path.absolutePathString
 
 object GameUtils {
+
+    // game-patcher's PATCH_FAILURE_EXIT_CODE (dllmain.cpp)
+    private const val PATCH_FAILURE_EXIT_CODE = 0x47500001
 
     suspend fun launchGame(rotwkHomeDir: Path): Unit = withContext(Dispatchers.IO) {
 
@@ -42,7 +46,7 @@ object GameUtils {
             }
         }
 
-        val gameProcess = ProcessUtils.runSuspendedBypassingDebugger(
+        val exitCode = ProcessUtils.runSuspendedBypassingDebugger(
             rotwkHomeDir.resolve(UpdaterContext.ROTWK_EXE_NAME).normalize(),
             gameArgs
         ) { gameProcessId ->
@@ -51,6 +55,9 @@ object GameUtils {
             Injector.injectDllIntoSuspendedProcess(gameProcessId, rotwkHomeDir.resolve("game-patcher.dll").normalize(), JavaLogger)
         }
 
-        gameProcess.onExit().get()
+        if (exitCode == PATCH_FAILURE_EXIT_CODE) {
+            val logPath = rotwkHomeDir.resolve(".patcher").resolve("game-patcher-log.txt").normalize()
+            throw IllegalStateException("game-patcher could not apply all of its patches and closed the game. Details in: ${logPath.absolutePathString()}")
+        }
     }
 }

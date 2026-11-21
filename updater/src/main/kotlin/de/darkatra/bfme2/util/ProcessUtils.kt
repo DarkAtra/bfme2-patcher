@@ -2,6 +2,7 @@ package de.darkatra.bfme2.util
 
 import com.sun.jna.platform.win32.WinBase
 import com.sun.jna.platform.win32.WinDef
+import com.sun.jna.ptr.IntByReference
 import de.darkatra.bfme2.LOGGER
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
@@ -12,7 +13,7 @@ object ProcessUtils {
         executable: Path,
         args: List<String> = emptyList(),
         beforeResume: (gameProcessId: Long) -> Unit
-    ): ProcessHandle {
+    ): Int {
 
         // we need to use jna here to set the DEBUG_ONLY_THIS_PROCESS and CREATE_SUSPENDED flags when we create the process
         val startupInfo = WinBase.STARTUPINFO()
@@ -55,21 +56,25 @@ object ProcessUtils {
         }
 
         try {
-            Kernel32.INSTANCE.DebugActiveProcessStop(processInformation.dwProcessId)
+            try {
+                Kernel32.INSTANCE.DebugActiveProcessStop(processInformation.dwProcessId)
 
-            // resolve the process before resuming it, since it might exit right away
-            val processHandle = ProcessHandle.of(processInformation.dwProcessId.toLong()).orElseThrow()
+                beforeResume(processInformation.dwProcessId.toLong())
 
-            beforeResume(processHandle.pid())
-
-            if (Kernel32.INSTANCE.ResumeThread(processInformation.hThread) == -1) {
-                throw IllegalStateException("Could not resume '$applicationName', error code: ${Kernel32.INSTANCE.GetLastError()}")
+                if (Kernel32.INSTANCE.ResumeThread(processInformation.hThread) == -1) {
+                    throw IllegalStateException("Could not resume '$applicationName', error code: ${Kernel32.INSTANCE.GetLastError()}")
+                }
+            } catch (e: Throwable) {
+                Kernel32.INSTANCE.TerminateProcess(processInformation.hProcess, 1)
+                throw IllegalStateException("Dll injection caused an unexpected error for '$applicationName'", e)
             }
 
-            return processHandle
-        } catch (e: Throwable) {
-            Kernel32.INSTANCE.TerminateProcess(processInformation.hProcess, 1)
-            throw IllegalStateException("Dll injection caused an unexpected error for '$applicationName'", e)
+            Kernel32.INSTANCE.WaitForSingleObject(processInformation.hProcess, WinBase.INFINITE)
+            val exitCode = IntByReference()
+            if (!Kernel32.INSTANCE.GetExitCodeProcess(processInformation.hProcess, exitCode)) {
+                throw IllegalStateException("Could not read the exit code of '$applicationName', error code: ${Kernel32.INSTANCE.GetLastError()}")
+            }
+            return exitCode.value
         } finally {
             Kernel32.INSTANCE.CloseHandle(processInformation.hThread)
             Kernel32.INSTANCE.CloseHandle(processInformation.hProcess)
