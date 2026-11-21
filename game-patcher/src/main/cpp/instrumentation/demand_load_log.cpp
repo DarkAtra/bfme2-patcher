@@ -4,6 +4,7 @@
 
 #include "instrumentation/demand_load_log.h"
 #include "patch_set.h"
+#include "patcher_folder.h"
 
 // Demand load log (debug mode, with -loadlog on the game's command line)
 //
@@ -38,11 +39,11 @@ namespace {
         return static_cast<double>(end.QuadPart - start.QuadPart) * 1000.0 / static_cast<double>(frequency.QuadPart);
     }
 
-    void __stdcall demandLoad(const uintptr_t caller, void *manager, uint8_t *asset) {
+    uint32_t __stdcall demandLoad(const uintptr_t caller, void *manager, uint8_t *asset) {
         const uint32_t before = stateOf(asset);
         LARGE_INTEGER start;
         QueryPerformanceCounter(&start);
-        reinterpret_cast<void (__thiscall *)(void *, void *)>(MANAGER_LOAD)(manager, asset);
+        const uint32_t result = reinterpret_cast<uint32_t (__thiscall *)(void *, void *)>(MANAGER_LOAD)(manager, asset);
         LARGE_INTEGER end;
         QueryPerformanceCounter(&end);
         const uint32_t after = stateOf(asset);
@@ -54,8 +55,7 @@ namespace {
         EnterCriticalSection(&lock);
         if (file == nullptr && !failed) {
             wchar_t path[MAX_PATH];
-            const DWORD length = GetTempPathW(MAX_PATH, path);
-            if (length == 0 || length + 32 > MAX_PATH || wcscat_s(path, L"bfme2-demand-loads.csv") != 0 || _wfopen_s(&file, path, L"w") != 0
+            if (!tempFilePath(path, L"bfme2-demand-loads.csv") || _wfopen_s(&file, path, L"w") != 0
                 || file == nullptr) {
                 failed = true;
             } else {
@@ -74,6 +74,7 @@ namespace {
             fflush(file);
         }
         LeaveCriticalSection(&lock);
+        return result;
     }
 }
 

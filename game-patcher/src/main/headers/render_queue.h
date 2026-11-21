@@ -1,6 +1,5 @@
 #pragma once
 
-#include <windows.h>
 #include <cstdint>
 
 // The queue between the game thread and the render thread's worker (render_thread.cpp): one producer, one consumer, a ring of

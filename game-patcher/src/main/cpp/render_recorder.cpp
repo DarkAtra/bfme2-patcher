@@ -133,7 +133,6 @@ namespace render_recorder {
             call->retires |= COUNT_CHANGE;
             countChangesIssued++;
         }
-        // what the skipped method returns to the game
         uint32_t skipResult = 0;
 
         template<size_t>
@@ -1126,8 +1125,6 @@ namespace render_recorder {
         constexpr uint32_t BUFFER_LOCK = 11;
         constexpr uint32_t BUFFER_UNLOCK = 12;
         constexpr uint32_t BUFFER_GET_DESC = 13;
-        constexpr uint32_t VERTEX_BUFFER = d3d::VERTEX_BUFFER_LOCK - BUFFER_LOCK;
-        constexpr uint32_t INDEX_BUFFER = d3d::INDEX_BUFFER_LOCK - BUFFER_LOCK;
         constexpr uint32_t LOCK_READONLY = 0x10;
         constexpr uint32_t LOCK_DISCARD = 0x2000;
         constexpr uint32_t USAGE_DYNAMIC = 0x200;
@@ -1205,7 +1202,7 @@ namespace render_recorder {
         Open open[MAX_OPEN];
         size_t openCount = 0;
 
-        Mirror *mirrorOf(const uint32_t buffer, const uint32_t base) {
+        Mirror *mirrorOf(const uint32_t buffer) {
             Mirror *mirror = nullptr;
             uint32_t bytes = sizeof(mirror);
             const HRESULT found = unhooked<HRESULT (__stdcall *)(uint32_t, const GUID *, void *, uint32_t *)>(buffer, BUFFER_GET_PRIVATE_DATA)(
@@ -1213,7 +1210,7 @@ namespace render_recorder {
             return SUCCEEDED(found) && bytes == sizeof(mirror) ? mirror : nullptr;
         }
 
-        void dropMirror(const uint32_t buffer, const uint32_t base) {
+        void dropMirror(const uint32_t buffer) {
             const auto free = unhooked<HRESULT (__stdcall *)(uint32_t, const GUID *)>(buffer, BUFFER_FREE_PRIVATE_DATA);
             free(buffer, &MIRROR_ADDRESS);
             free(buffer, &MIRROR_LIFE);
@@ -1221,7 +1218,7 @@ namespace render_recorder {
         }
 
         // the fresh mark, taken off
-        bool takeFresh(const uint32_t buffer, const uint32_t base) {
+        bool takeFresh(const uint32_t buffer) {
             uint8_t fresh = 0;
             uint32_t bytes = sizeof(fresh);
             if (FAILED(unhooked<HRESULT (__stdcall *)(uint32_t, const GUID *, void *, uint32_t *)>(buffer, BUFFER_GET_PRIVATE_DATA)(
@@ -1232,7 +1229,7 @@ namespace render_recorder {
             return true;
         }
 
-        Mirror *makeMirror(const uint32_t buffer, const uint32_t base, const bool fresh) {
+        Mirror *makeMirror(const uint32_t buffer, const bool fresh) {
             // D3DVERTEXBUFFER_DESC / D3DINDEXBUFFER_DESC: Usage at 8, Size at 16
             uint32_t desc[6] = {};
             if (FAILED(unhooked<HRESULT (__stdcall *)(uint32_t, uint32_t *)>(buffer, BUFFER_GET_DESC)(buffer, desc))
@@ -1264,7 +1261,7 @@ namespace render_recorder {
                 return nullptr;
             }
             if (FAILED(set(buffer, &MIRROR_ADDRESS, &mirror, sizeof(mirror), 0))) {
-                dropMirror(buffer, base);
+                dropMirror(buffer);
                 return nullptr;
             }
             return mirror;
@@ -1295,19 +1292,18 @@ namespace render_recorder {
         }
 
         // Lock(buffer, offset, size, &data, flags)
-        uint32_t lockBuffer(const uint32_t method, const uint32_t *frame) {
+        uint32_t lockBuffer(const uint32_t *frame) {
             const uint32_t buffer = frame[1];
             const uint32_t offset = frame[2];
             const uint32_t flags = frame[5];
-            const uint32_t base = method - BUFFER_LOCK;
             if (frame[4] == 0) {
                 return wait();
             }
             Open *already = openOf(buffer);
-            Mirror *mirror = already != nullptr ? already->mirror : mirrorOf(buffer, base);
+            Mirror *mirror = already != nullptr ? already->mirror : mirrorOf(buffer);
             if (mirror == nullptr) {
-                const bool fresh = takeFresh(buffer, base);
-                mirror = fresh || (flags & LOCK_DISCARD) != 0 ? makeMirror(buffer, base, fresh) : nullptr;
+                const bool fresh = takeFresh(buffer);
+                mirror = fresh || (flags & LOCK_DISCARD) != 0 ? makeMirror(buffer, fresh) : nullptr;
                 if (mirror == nullptr) {
                     return wait();
                 }
@@ -1319,7 +1315,7 @@ namespace render_recorder {
             }
             if (already == nullptr) {
                 if (openCount == MAX_OPEN) {
-                    dropMirror(buffer, base);
+                    dropMirror(buffer);
                     return wait();
                 }
                 open[openCount++] = {buffer, mirror};
@@ -1372,7 +1368,7 @@ namespace render_recorder {
                     }
                 }
                 if (!mirror->kept) {
-                    dropMirror(buffer, method - BUFFER_UNLOCK);
+                    dropMirror(buffer);
                 }
             }
             skipResult = 0;
@@ -1401,9 +1397,6 @@ namespace render_recorder {
         // table; each hangs on its surface as a COM object that D3D9 releases when it destroys the surface, which takes it out of the
         // table before the address can be handed out again. A write the mirror would not see drops it first (beforeUnseenWrite).
 
-        constexpr uint32_t SURFACE = d3d::SURFACE_LOCK - 13;
-        constexpr uint32_t TEXTURE = d3d::TEXTURE_LOCK - 19;
-        constexpr uint32_t CUBE_TEXTURE = d3d::CUBE_LOCK - 19;
         constexpr uint32_t RESOURCE_RELEASE = 2;
         constexpr uint32_t SURFACE_GET_DESC = 12;
         constexpr uint32_t SURFACE_LOCK_RECT = 13;
@@ -1932,11 +1925,11 @@ namespace render_recorder {
                     break;
                 case d3d::VERTEX_BUFFER_LOCK:
                 case d3d::INDEX_BUFFER_LOCK:
-                    dropMirror(frame[1], method - BUFFER_LOCK);
+                    dropMirror(frame[1]);
                     break;
                 case d3d::PROCESS_VERTICES:
                     if (frame[5] != 0) {
-                        dropMirror(frame[5], VERTEX_BUFFER);
+                        dropMirror(frame[5]);
                     }
                     break;
                 case d3d::SURFACE_LOCK:
@@ -2176,7 +2169,7 @@ namespace render_recorder {
                 return reset(frame, original);
             }
             if (method == d3d::VERTEX_BUFFER_LOCK || method == d3d::INDEX_BUFFER_LOCK) {
-                return lockBuffer(method, frame);
+                return lockBuffer(frame);
             }
             if (method == d3d::VERTEX_BUFFER_UNLOCK || method == d3d::INDEX_BUFFER_UNLOCK) {
                 return unlockBuffer(method, frame);

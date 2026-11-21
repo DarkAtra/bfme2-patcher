@@ -262,9 +262,7 @@ namespace instrumentation {
 
     static_assert(sizeof(Stats) <= STATS_BYTES, "the statistics block does not fit its file mapping");
 
-    // Creates the mapping. Returns null if the mapping could not be created.
     Stats *createStats();
 
-    // The block created by createStats, or null.
     Stats *stats();
 }

@@ -241,8 +241,8 @@ namespace {
     }
 
     void addLine(uint8_t *frame, const char *label, const char *labelsKey, const int frames) {
-        const int rate = *reinterpret_cast<const int *>(LOGIC_FRAMES_PER_SECOND);
-        void *gameText = *reinterpret_cast<void **>(THE_GAME_TEXT);
+        const int rate = read<int>(LOGIC_FRAMES_PER_SECOND);
+        void *gameText = read<void *>(THE_GAME_TEXT);
         if (rate <= 0 || frames < rate || gameText == nullptr) {
             return;
         }
@@ -324,7 +324,7 @@ namespace {
                 pauseOffset = 0x8;
                 readyOffset = 0x4;
             }
-            const void *logic = *reinterpret_cast<void **>(THE_GAME_LOGIC);
+            const void *logic = read<void *>(THE_GAME_LOGIC);
             if (readyOffset != 0 && field<uint32_t>(module, pauseOffset) == 0 && logic != nullptr) {
                 const int remaining = field<int>(module, readyOffset) - field<int>(logic, 0x40);
                 if (remaining > 0) {

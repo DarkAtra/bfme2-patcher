@@ -289,7 +289,7 @@ namespace {
     struct Timed {
         const uint32_t tag;
 
-        Timed(const uint32_t site, const char *name, const uint32_t index) : tag(RESOURCE_TAG + index) {
+        Timed(const uint32_t site, const char *name, const uint32_t slot) : tag(RESOURCE_TAG + slot) {
             open(site, 0, 0, CALL_RESOURCE, name, tag);
         }
 
@@ -847,6 +847,21 @@ namespace {
         return ok;
     }
 
+    struct DirectCall {
+        uintptr_t address;
+        BYTE call[5];
+        const char *label;
+    };
+
+    template<size_t N>
+    bool timeDirectCalls(PatchSet &set, Cave &cave, const DirectCall (&calls)[N], const CallGroup group, const bool byScope) {
+        bool ok = true;
+        for (const DirectCall &call : calls) {
+            ok &= timeCall(set, cave, call.address, call.call, 0, group, call.label, byScope);
+        }
+        return ok;
+    }
+
     // the client update 0x0064849E (once per frame) and the display's draw 0x0044B788
     bool timeClient(PatchSet &set, Cave &cave) {
         bool ok = true;
@@ -885,12 +900,7 @@ namespace {
         const BYTE last[10] = {0x8B, 0x03, 0x8B, 0xCB, 0xFF, 0x90, 0x90, 0x00, 0x00, 0x00};
         ok &= timeCall(set, cave, 0x006488B1, last, 4, CALL_CLIENT, "client [this]+90");
 
-        struct DirectSite {
-            uintptr_t address;
-            BYTE call[5];
-            const char *label;
-        };
-        const DirectSite directSites[] = {
+        const DirectCall directSites[] = {
             {0x006484C8, {0xE8, 0x6F, 0x66, 0xEC, 0xFF}, "client 50eb3c"},
             {0x00648616, {0xE8, 0x3B, 0xA6, 0x13, 0x00}, "client 782c56"},
             {0x00648650, {0xE8, 0x1A, 0xA7, 0xEE, 0xFF}, "client 532d6f"},
@@ -903,21 +913,14 @@ namespace {
             {0x0044BBF5, {0xE8, 0xFE, 0xE0, 0xFF, 0xFF}, "draw frame"},
             {0x0044BC5A, {0xE8, 0x85, 0xD5, 0x02, 0x00}, "draw 4791e4 after the frame"},
         };
-        for (const DirectSite &site : directSites) {
-            ok &= timeCall(set, cave, site.address, site.call, 0, CALL_CLIENT, site.label);
-        }
+        ok &= timeDirectCalls(set, cave, directSites, CALL_CLIENT, false);
         return ok;
     }
 
     // the direct calls of the frame draw 0x00449CF8 outside its render scopes (device lock, scene begin and end, presenting, ...)
     bool timeDraw(PatchSet &set, Cave &cave) {
         bool ok = true;
-        struct DirectSite {
-            uintptr_t address;
-            BYTE call[5];
-            const char *label;
-        };
-        const DirectSite directSites[] = {
+        const DirectCall directSites[] = {
             {0x00449D0D, {0xE8, 0xAE, 0x51, 0x0D, 0x00}, "frame 51eec0 (device lock)"},
             {0x00449D17, {0xE8, 0x24, 0xCF, 0x0C, 0x00}, "frame 516c40"},
             {0x00449D3B, {0xE8, 0x84, 0x02, 0x03, 0x00}, "frame 479fc4"},
@@ -935,21 +938,17 @@ namespace {
             {0x0044A228, {0xE8, 0x73, 0xCB, 0x0C, 0x00}, "frame 516da0 (last)"},
             {0x0044A271, {0xE8, 0x5A, 0x66, 0x0D, 0x00}, "frame 5208d0 (device unlock)"},
         };
-        for (const DirectSite &site : directSites) {
-            ok &= timeCall(set, cave, site.address, site.call, 0, CALL_CLIENT, site.label);
-        }
+        ok &= timeDirectCalls(set, cave, directSites, CALL_CLIENT, false);
 
         // inside the end of the frame 0x00516DA0 (flush, end scene, ...) and the end scene 0x005225E0 (EndScene, Present)
-        const DirectSite endSites[] = {
+        const DirectCall endSites[] = {
             {0x00516DAA, {0xE8, 0xB1, 0x7E, 0x01, 0x00}, "end frame 52ec60 (flush)"},
             {0x00516DCF, {0xE8, 0x7C, 0x30, 0x01, 0x00}, "end frame 529e50"},
             {0x00516DD4, {0xE8, 0xB7, 0x22, 0x01, 0x00}, "end frame 529090"},
             {0x00516DE0, {0xE8, 0xAB, 0x88, 0x00, 0x00}, "end frame 51f690"},
             {0x00522636, {0xE8, 0x65, 0x40, 0x05, 0x00}, "end scene 5766a0"},
         };
-        for (const DirectSite &site : endSites) {
-            ok &= timeCall(set, cave, site.address, site.call, 0, CALL_CLIENT, site.label);
-        }
+        ok &= timeDirectCalls(set, cave, endSites, CALL_CLIENT, false);
         // mov ecx, [eax] / push eax / call [ecx + 0xA8]: IDirect3DDevice9::EndScene
         const BYTE endScene[9] = {0x8B, 0x08, 0x50, 0xFF, 0x91, 0xA8, 0x00, 0x00, 0x00};
         ok &= timeCall(set, cave, 0x00522625, endScene, 3, CALL_CLIENT, "d3d EndScene");
@@ -1202,21 +1201,6 @@ namespace {
         ok &= timeCall(set, cave, 0x0089E409, seventh, 4, CALL_LOGIC, "horde ai [state]+dc");
         const BYTE base[5] = {0xE8, 0x75, 0x01, 0xDD, 0xFF};
         ok &= timeCall(set, cave, 0x0089E415, base, 0, CALL_LOGIC, "horde ai base update 66e58f");
-        return ok;
-    }
-
-    struct DirectCall {
-        uintptr_t address;
-        BYTE call[5];
-        const char *label;
-    };
-
-    template<size_t N>
-    bool timeDirectCalls(PatchSet &set, Cave &cave, const DirectCall (&calls)[N], const CallGroup group, const bool byScope) {
-        bool ok = true;
-        for (const DirectCall &call : calls) {
-            ok &= timeCall(set, cave, call.address, call.call, 0, group, call.label, byScope);
-        }
         return ok;
     }
 

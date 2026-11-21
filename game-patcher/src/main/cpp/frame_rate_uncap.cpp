@@ -616,8 +616,8 @@ namespace {
         return MAX_FRAMES_PER_SECOND != 0 ? 1000 / MAX_FRAMES_PER_SECOND : 0;
     }
 
-    bool __fastcall fadeLatch(void *engine) {
-        if (!reinterpret_cast<Predicate>(LOGIC_FRAME_LATCH)(engine)) {
+    bool __fastcall fadeLatch(void *gameEngine) {
+        if (!reinterpret_cast<Predicate>(LOGIC_FRAME_LATCH)(gameEngine)) {
             return false;
         }
         const uint32_t frame = clientFrame();

@@ -77,8 +77,8 @@ namespace {
 
     // The broad phase object has the proxies as a list at +0 (next at +0xC), the number of axes at +0xC068 and two chained hash
     // tables of pair nodes (next at +0x30, the first one counts the axes on which the pair overlaps at +0x10): 11131 buckets at
-    // +0x18 (or the bigger one behind the object when the game-patcher dll's broad phase table patch is applied, see
-    // collision_pair_table.cpp there) and 1171 buckets at +0xAE10. Walks both and fills the sample.
+    // +0x18 (or the bigger one behind the object when the broad phase table patch is applied, collision_pair_table.cpp)
+    // and 1171 buckets at +0xAE10. Walks both and fills the sample.
     constexpr uint32_t TABLE_B = 0xAE10;
     constexpr uint32_t BUCKETS_B = 0x493;
     constexpr uint32_t WALK_LIMIT = 4000000;

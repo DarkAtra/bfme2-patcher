@@ -12,6 +12,11 @@ inline bool appendToPath(wchar_t (&path)[MAX_PATH], const wchar_t *tail) {
     return wcscat_s(path, tail) == 0;
 }
 
+inline bool tempFilePath(wchar_t (&path)[MAX_PATH], const wchar_t *name) {
+    const DWORD length = GetTempPathW(MAX_PATH, path);
+    return length != 0 && length < MAX_PATH && appendToPath(path, name);
+}
+
 // Puts "<game folder>\.patcher\" (next to the updater's logs) into `path` and returns its length, or 0 when it does not fit.
 inline size_t patcherFolder(wchar_t (&path)[MAX_PATH]) {
     const DWORD length = GetModuleFileNameW(nullptr, path, MAX_PATH);

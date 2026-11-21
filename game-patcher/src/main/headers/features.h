@@ -273,7 +273,7 @@ namespace features {
     // Game-wide production ids: production ids are counted for the whole game instead of per building, so recruiting a hero
     // at a second building while another hero is coming no longer takes the money and starts nothing (production_ids.cpp).
     // Off: in 2.02 heroes come only from fortress-type buildings, so it matters only when a player also owns a hero building
-    // a map places; kept for later.
+    // a map places.
     constexpr bool PRODUCTION_IDS = GAME_PATCHER_PRODUCTION_IDS != 0;
 
     // AI build queue: a skirmish AI build order that cannot get a builder is skipped instead of stopping every order behind it,

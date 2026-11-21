@@ -4,6 +4,7 @@
 
 #include "instrumentation/logic_crc_log.h"
 #include "patch_set.h"
+#include "patcher_folder.h"
 
 // Logic CRC log (debug mode, with -logcrc on the game's command line)
 //
@@ -41,8 +42,7 @@ namespace {
         }
         if (file == nullptr) {
             wchar_t path[MAX_PATH];
-            const DWORD length = GetTempPathW(MAX_PATH, path);
-            if (length == 0 || length + 32 > MAX_PATH || wcscat_s(path, L"bfme2-logic-crc.csv") != 0 || _wfopen_s(&file, path, L"w") != 0 ||
+            if (!tempFilePath(path, L"bfme2-logic-crc.csv") || _wfopen_s(&file, path, L"w") != 0 ||
                 file == nullptr) {
                 failed = true;
                 return;

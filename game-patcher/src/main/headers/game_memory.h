@@ -10,7 +10,7 @@ namespace patching {
     }
 
     template<typename T>
-    T field(const void *base, const uint32_t offset) {
+    T field(const void *base, const int32_t offset) {
         return *reinterpret_cast<const T *>(static_cast<const uint8_t *>(base) + offset);
     }
 

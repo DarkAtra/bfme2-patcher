@@ -57,7 +57,6 @@ namespace d3d {
     constexpr uint32_t SET_DEPTH_STENCIL_SURFACE = 39;
     constexpr uint32_t GET_DEPTH_STENCIL_SURFACE = 40;
     constexpr uint32_t BEGIN_STATE_BLOCK = 60;
-    constexpr uint32_t END_STATE_BLOCK = 61;
     constexpr uint32_t SET_TEXTURE = 65;
     constexpr uint32_t GET_NPATCH_MODE = 80;
     constexpr uint32_t DRAW_PRIMITIVE_UP = 83;

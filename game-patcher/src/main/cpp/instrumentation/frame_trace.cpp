@@ -7,6 +7,7 @@
 #include <cstdio>
 
 #include "instrumentation/frame_trace.h"
+#include "patcher_folder.h"
 
 // Frame pacing trace (measuring builds only, GAME_PATCHER_FRAME_PACING_TRACE)
 //
@@ -116,11 +117,9 @@ namespace {
 
     void write() {
         wchar_t path[MAX_PATH];
-        const DWORD length = GetTempPathW(MAX_PATH, path);
-        if (length == 0 || length + 32 > MAX_PATH) {
+        if (!tempFilePath(path, L"bfme2-frame-trace.csv")) {
             return;
         }
-        wcscat_s(path, L"bfme2-frame-trace.csv");
         FILE *file = nullptr;
         if (_wfopen_s(&file, path, L"w") != 0 || file == nullptr) {
             return;

@@ -4,7 +4,7 @@
 
 #include "d3d_methods.h"
 
-// The render thread's recording (being built, tools/analysis/notes/20-accelerator-port.md): the client of d3d_methods' hooks that
+// The render thread's recording (tools/analysis/notes/20-accelerator-port.md): the client of d3d_methods' hooks that
 // turns the game thread's Direct3D calls into records of render_queue, which its worker runs in the same order.
 namespace render_recorder {
 
