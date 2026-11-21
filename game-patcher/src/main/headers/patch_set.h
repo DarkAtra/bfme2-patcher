@@ -383,4 +383,18 @@ namespace patching {
         recordCave(cave);
         return true;
     }
+
+    // Undoes a commit() whose patch failed to set up afterwards: puts the original bytes back and forgets the cave. Only while
+    // no thread can have run the patched code yet.
+    inline void revert(const PatchSet &set, const Cave &cave) {
+        for (size_t i = 0; i < set.count; i++) {
+            if (set.patches[i].write) {
+                writeBytes(set.patches[i].address, set.patches[i].expected, set.patches[i].length);
+            }
+        }
+        Records &r = records();
+        if (r.caveCount > 0 && r.caves[r.caveCount - 1].base == reinterpret_cast<uintptr_t>(cave.base)) {
+            r.caveCount--;
+        }
+    }
 }

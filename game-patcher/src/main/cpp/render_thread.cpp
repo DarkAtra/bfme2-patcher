@@ -131,11 +131,14 @@ bool applyRenderThread() {
     const BYTE setupCall[5] = {0xE8, 0x1E, 0xFD, 0xFF, 0xFF};
     set.redirectCall(DEVICE_SETUP_CALL, setupCall, setupStub);
 
-    if (!render_recorder::start()) {
+    if (!commit(set, cave)) {
         VirtualFree(caveMemory, 0, MEM_RELEASE);
         return false;
     }
-    if (!commit(set, cave)) {
+    // the worker starts after the commit: under the loader lock a started worker could not be stopped again; the game's code
+    // has not run yet, so nothing can be inside the stubs a revert takes out
+    if (!render_recorder::start()) {
+        revert(set, cave);
         VirtualFree(caveMemory, 0, MEM_RELEASE);
         return false;
     }
