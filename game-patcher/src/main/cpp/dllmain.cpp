@@ -137,12 +137,18 @@ static void closeLog() {
 // however, it does not cause any harm even when the dll is still loaded via CreateRemoteThread and LoadLibraryA
 extern "C" __declspec(dllexport) void Noop() {}
 
-BOOL APIENTRY DllMain(HINSTANCE /*hinstDLL*/, const DWORD fdwReason, LPVOID lpvReserved) {
+BOOL APIENTRY DllMain(HINSTANCE hinstDLL, const DWORD fdwReason, LPVOID /*lpvReserved*/) {
 
     if (fdwReason == DLL_PROCESS_ATTACH) {
 
         openLog();
         writeLog("INFO", L"Loaded game-patcher.");
+
+        // The patches jump into this dll and the render thread runs its code, so a FreeLibrary must never unload it.
+        HMODULE pinned;
+        if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN, reinterpret_cast<LPCWSTR>(hinstDLL), &pinned)) {
+            writeLog("WARNING", L"Failed to pin game-patcher in memory: unloading it would crash the game.");
+        }
 
         const wchar_t *failedPatches[MAX_FAILED_PATCHES];
         const size_t failedPatchCount = applyPatches(failedPatches);
@@ -203,11 +209,6 @@ BOOL APIENTRY DllMain(HINSTANCE /*hinstDLL*/, const DWORD fdwReason, LPVOID lpvR
 
         closeLog();
 
-    } else if (fdwReason == DLL_PROCESS_DETACH && lpvReserved == nullptr) {
-        // Only when the dll is unloaded from a running process. At process exit the other threads are already gone and waiting
-        // under the loader lock could hang the exit, so nothing is cleaned up then.
-        LhUninstallHook(&hHook);
-        LhWaitForPendingRemovals();
     }
 
     return true;
