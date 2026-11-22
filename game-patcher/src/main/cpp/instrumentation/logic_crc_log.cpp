@@ -9,11 +9,11 @@
 // Logic CRC log (debug mode, with -logcrc on the game's command line)
 //
 // Writes the logic's CRC every LOG_INTERVAL logic frames to %TEMP%\bfme2-logic-crc.csv (frame, CRC), so that two runs of the same
-// match (the auto skirmish with -fixedseed, fixed_seed.cpp) with different builds can be compared: a build that keeps the logic
-// exact gives the same lines. The
-// CRC is the one the network heartbeat (MSG_LOGIC_CRC) carries: GameLogic::getCRC (0x00625886, thiscall, argument 0) with the
-// lite flag (0x00DE87C7) set around it, as GameLogic::update does at 0x0062E7E4. A skirmish never sends the heartbeat (game mode 2
-// clears its gate), so it is computed here, at that gate (0x0062E75D), once per logic frame.
+// match (the auto skirmish with the stock -randomSeed, as launch-test.ps1 starts it) with different builds can be compared: a build
+// that keeps the logic exact gives the same lines. The CRC is the one the network heartbeat (MSG_LOGIC_CRC) carries:
+// GameLogic::getCRC (0x00625886, thiscall, argument 0) with the lite flag (0x00DE87C7) set around it, as GameLogic::update does at
+// 0x0062E7E4. A skirmish never sends the heartbeat (game mode 2 clears its gate), so it is computed here, at that gate (0x0062E75D),
+// once per logic frame.
 
 using namespace patching;
 

@@ -98,7 +98,7 @@ Patches that change the simulation must be the same for every player in a match.
 
 With `-debugmode` on the game's command line (the updater adds it in debug mode) the dll also applies the measuring tools in
 `src/main/cpp/instrumentation` after the patches. Without it none of them is applied, so they cost nothing. Except for the auto
-skirmish and the fixed seed, they only read the game's state:
+skirmish and the headless mode, they only read the game's state:
 
 | Tool             | What it does                                                                                                                                                |
 |------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -107,11 +107,11 @@ skirmish and the fixed seed, they only read the game's state:
 | D3D call stats   | Only with `-d3dstats` in a build without the render thread: counts every Direct3D 9 and D3DX call per frame (`-d3dsim` adds the render thread simulation).  |
 | Network stats    | In networked matches, write the local command delays and how each logic frame started to `.patcher\network-<date>-<time>.csv` in the game folder.           |
 | Full memory dump | Only with `GAME_PATCHER_FULL_DUMP=1` in the game's environment: writes a dump with all memory to the temp folder at the first bad write in the game's code. |
-| Auto skirmish    | Only with `-autoskirmish` on the game's command line: starts the skirmish set up last (`Skirmish.ini`) without anyone pressing a button.                    |
-| Fixed seed       | Only with `-fixedseed`: the random generators get a fixed seed instead of the clock's, so every skirmish plays the same match (for measuring runs).          |
+| Auto skirmish    | Only with `-autoskirmish` and the stock `-file <map>`: plays the skirmish set up last (`Skirmish.ini`) on that map without the menus.                      |
+| Headless         | Only with `-headless`: the game draws nothing and its window starts minimised without taking the focus, so a validation run can play in the background.  |
 | Logic CRC log    | Only with `-logcrc`: writes the logic's checksum every 25 logic frames to the temp folder, to check that two builds compute the same match.                 |
 | Demand load log  | Only with `-loadlog`: writes every asset the game loads on demand (time, thread, duration, name) to the temp folder.                                        |
-| Test banner      | Shows the text a measuring run hands it (the harness: its label and phase) in the top left corner; nothing without a run.                                   |
+| Test banner      | Shows the text a measuring run hands it (the harness: its label and phase) in the top left corner; nothing without a run, not applied with `-headless`.     |
 
 The timers record into a file mapping named `Local\GamePatcherStats`, which the measuring tools read while the game runs.
 

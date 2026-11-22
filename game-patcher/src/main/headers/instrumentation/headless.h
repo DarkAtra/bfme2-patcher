@@ -2,5 +2,5 @@
 
 namespace instrumentation {
 
-    bool applyFixedSeed();
+    bool applyHeadless();
 }
