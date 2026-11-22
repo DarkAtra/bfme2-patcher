@@ -4,6 +4,7 @@ import java.net.URI
 
 object PatchConstants {
     val SOURCE_URL: URI by lazy { URI.create("https://github.com/DarkAtra/bfme2-patcher/commits/main/") }
+    val THIRD_PARTY_NOTICES_URL: URI by lazy { URI.create("https://github.com/DarkAtra/bfme2-patcher/blob/main/THIRD-PARTY-NOTICES.txt") }
 
     const val SERVER_URL = "https://darkatra.de"
     const val UPDATER_URL = "$SERVER_URL/bfmemod2/updater.exe"

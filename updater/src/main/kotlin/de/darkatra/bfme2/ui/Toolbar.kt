@@ -171,7 +171,14 @@ fun Toolbar(
             }
 
             Menu(text = "Credits") {
-                Item(text = "BFME: Reforged for providing the icon for this application.", onClick = {})
+                Item(text = "Third Party Notices", onClick = {
+                    if (Desktop.isDesktopSupported()) {
+                        val desktop = Desktop.getDesktop()
+                        if (desktop.isSupported(Desktop.Action.BROWSE)) {
+                            desktop.browse(PatchConstants.THIRD_PARTY_NOTICES_URL)
+                        }
+                    }
+                })
             }
         }
     }
