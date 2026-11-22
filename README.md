@@ -7,9 +7,8 @@ The `bfme2-patcher` consists of the following applications:
   `mod_asset.dat` file for it. Afterwards, it merges the `bfme2_orig_asset.dat` and the `mod_asset.dat` into a single `asset.dat` file. The resulting
   `asset.dat` should be used by the game.
 - **game-patcher**:
-  Aims to patch certain aspects of the original game executable to allow proper online gameplay. It redirects DNS queries for GameSpy and EA specific hosts to
-  servers that are maintained by the community ([t3a:online](https://t3aonline.net/)). It also disables the games SSL certificate verification so that a
-  connection to the community servers can be established.
+  Applies patches when the game process starts without changing the game files. It currently restores the online mode and applies a few performance patches that
+  make the game feel more modern. Refer to the details in [the game-patcher README.md](game-patcher/README.md).
 - **map-builder**:
   An application that helps with building the `!map.big` archive. It adjusts the camera settings for each map, generates the `mapcache.ini`
   and creates the final big archive.
