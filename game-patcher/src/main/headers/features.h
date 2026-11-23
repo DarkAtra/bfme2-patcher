@@ -112,6 +112,18 @@
 #define GAME_PATCHER_PATHFINDER_CLOSED_GATES 1
 #endif
 
+#ifndef GAME_PATCHER_PATHFINDER_CLOSEST_CELL
+#define GAME_PATCHER_PATHFINDER_CLOSEST_CELL 1
+#endif
+
+#ifndef GAME_PATCHER_PATHFINDER_CLOSEST_CELL_ALLIES
+#define GAME_PATCHER_PATHFINDER_CLOSEST_CELL_ALLIES 1
+#endif
+
+#ifndef GAME_PATCHER_MOVE_PARTIAL_PATH
+#define GAME_PATCHER_MOVE_PARTIAL_PATH 1
+#endif
+
 #ifndef GAME_PATCHER_TOOLTIP_UPGRADE_DESCRIPTION
 #define GAME_PATCHER_TOOLTIP_UPGRADE_DESCRIPTION 1
 #endif
@@ -307,6 +319,19 @@ namespace features {
     // Paths through closed gates: when a gate closes, units whose path runs through it plan a new one instead of walking
     // through the closed gate (pathfinder_closed_gates.cpp).
     constexpr bool PATHFINDER_CLOSED_GATES = GAME_PATCHER_PATHFINDER_CLOSED_GATES != 0;
+
+    // Pathfinder closest cell: a path search that cannot reach its goal falls back to the closest cell it reached where the unit
+    // fits, so units ordered into a crowd move as far as they can instead of dropping the order (pathfinder_closest_cell.cpp).
+    constexpr bool PATHFINDER_CLOSEST_CELL = GAME_PATCHER_PATHFINDER_CLOSEST_CELL != 0;
+
+    // Pathfinder closest cell, with PATHFINDER_CLOSEST_CELL: when no cell the search reached has room for the unit, it falls back to
+    // the closest one where only allied units are in the way, so units ordered into their own army's crowd move as far as they can
+    // (pathfinder_closest_cell.cpp).
+    constexpr bool PATHFINDER_CLOSEST_CELL_ALLIES = GAME_PATCHER_PATHFINDER_CLOSEST_CELL_ALLIES != 0;
+
+    // Partial paths continue: a unit on a move order that reaches the end of a path to the closest reachable cell plans again
+    // towards its goal, a few times per order, instead of stopping there (move_partial_path.cpp).
+    constexpr bool MOVE_PARTIAL_PATH = GAME_PATCHER_MOVE_PARTIAL_PATH != 0;
 
     // Tooltip upgrade description: a researched upgrade's tooltip keeps its description, with "already researched" added below
     // it instead of replacing it (tooltip_upgrade_description.cpp).

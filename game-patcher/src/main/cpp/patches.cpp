@@ -10,6 +10,7 @@
 #include "command_line.h"
 #include "pathfinder_cell_centre.h"
 #include "pathfinder_closed_gates.h"
+#include "pathfinder_closest_cell.h"
 #include "collision_contact_handler.h"
 #include "construction_initial_health.h"
 #include "crash_dump.h"
@@ -35,6 +36,7 @@
 #include "instrumentation/instrumentation.h"
 #include "life_drain.h"
 #include "material_parameters.h"
+#include "move_partial_path.h"
 #include "mount_health_ratio.h"
 #include "siege_wall_teleport_fix.h"
 #include "mount_toggle_crash_fix.h"
@@ -104,6 +106,8 @@ size_t applyPatches(const wchar_t *(&failed)[MAX_FAILED_PATCHES]) {
     runPatch(features::AI_REBUILD_TARGETS, L"AI rebuild targets", applyAiRebuildTargets, failed, count);
     runPatch(features::GROUP_ABILITY_CONDITIONS, L"Group ability conditions", applyGroupAbilityConditions, failed, count);
     runPatch(features::PATHFINDER_CLOSED_GATES, L"Paths through closed gates", applyPathfinderClosedGates, failed, count);
+    runPatch(features::PATHFINDER_CLOSEST_CELL, L"Pathfinder closest cell", applyPathfinderClosestCell, failed, count);
+    runPatch(features::MOVE_PARTIAL_PATH, L"Partial paths continue", applyMovePartialPath, failed, count);
     runPatch(features::TOOLTIP_UPGRADE_DESCRIPTION, L"Tooltip upgrade description", applyTooltipUpgradeDescription, failed, count);
     runPatch(features::TOOLTIP_KILL_COUNT, L"Tooltip kill count", applyTooltipKillCount, failed, count);
     runPatch(features::MOUNT_HEALTH_RATIO, L"Mount health ratio", applyMountHealthRatio, failed, count);

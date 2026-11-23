@@ -12,6 +12,7 @@
 #include "instrumentation/headless.h"
 #include "instrumentation/instrumentation.h"
 #include "instrumentation/logic_crc_log.h"
+#include "instrumentation/move_order_log.h"
 #include "instrumentation/network_stats.h"
 #include "instrumentation/pathfinder_timing.h"
 #include "instrumentation/stats.h"
@@ -24,7 +25,8 @@
 // nothing about how it runs, except the test aids: the auto skirmish (only with -autoskirmish) sets up the game a -file start
 // plays, the headless mode (only with -headless) draws nothing and ignores a minimised window, and the test banner (not with
 // -headless) draws the harness's line on the screen. The logic CRC log (only with -logcrc) computes the logic's CRC every few
-// seconds, which costs a moment each time; the demand load log (only with -loadlog) writes a line for every asset loaded on demand.
+// seconds, which costs a moment each time; the demand load log (only with -loadlog) writes a line for every asset loaded on demand;
+// the move order log (only with -movelog) follows the units of move orders through the pathfinder.
 // Their hooks sit on functions and call sites the patches leave alone. Without -debugmode none of this is applied.
 
 namespace {
@@ -89,5 +91,6 @@ void instrumentation::apply(const wchar_t *(&failed)[MAX_FAILED_PATCHES], size_t
     runPatch(hasArgument(L"-headless"), L"Headless", applyHeadless, failed, count);
     runPatch(hasArgument(L"-logcrc"), L"Logic CRC log", applyLogicCrcLog, failed, count);
     runPatch(hasArgument(L"-loadlog"), L"Demand load log", applyDemandLoadLog, failed, count);
+    runPatch(hasArgument(L"-movelog"), L"Move order log", applyMoveOrderLog, failed, count);
     runPatch(!hasArgument(L"-headless"), L"Test banner", applyTestBanner, failed, count);
 }
